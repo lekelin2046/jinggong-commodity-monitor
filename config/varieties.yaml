@@ -1,0 +1,235 @@
+# 精工板块大宗原材料监控 - 品种与数据源配置 v2
+#
+# 核心改进：
+# 1. akshare futures_spot_price 提供 A00铝/铜/304不锈钢/热卷/镍/铁矿/焦炭 现货基准价
+# 2. 代理映射在 orchestrator 中自动处理（HC→钢板, NI→镍生铁, A00_AL→ADC12）
+# 3. HTML/CDP 爬虫仅作为补充数据源
+
+commodities:
+  # ==================== 钢板类（3 个）====================
+  - id: AXB
+    name: 酸洗板
+    unit: 元/吨
+    category: 钢板
+    internal_name: 酸洗板
+    # 主源: 中钢网 HTML, 代理: akshare 热卷HC + 加工费
+    sources:
+      primary: zgw
+      fallback: akshare         # HC现货 → 代理映射
+      fallback2: sci99
+    threshold_pct: 5.0
+
+  - id: DXB
+    name: 镀锌板
+    unit: 元/吨
+    category: 钢板
+    internal_name: 镀锌板
+    sources:
+      primary: zgw
+      fallback: akshare
+      fallback2: sci99
+    threshold_pct: 5.0
+
+  - id: LZB
+    name: 冷轧板
+    unit: 元/吨
+    category: 钢板
+    internal_name: 冷轧板
+    sources:
+      primary: zgw
+      fallback: akshare
+      fallback2: sci99
+    threshold_pct: 5.0
+
+  # ==================== 黑色金属（2 个）====================
+  - id: J
+    name: 焦炭
+    unit: 元/吨
+    category: 黑色金属
+    internal_name: 焦炭
+    sources:
+      primary: akshare         # futures_spot_price J现货
+    threshold_pct: 3.0
+
+  - id: I
+    name: 铁矿石
+    unit: 元/吨
+    category: 黑色金属
+    internal_name: 铁矿石
+    sources:
+      primary: akshare         # futures_spot_price I现货
+    threshold_pct: 3.0
+
+  # ==================== 有色金属（3 个）====================
+  - id: A00_AL
+    name: A00铝
+    unit: 元/吨
+    category: 有色金属
+    internal_name: A00 铝
+    sources:
+      primary: ccmn            # 长江现货A00铝均价（AJAX）
+      fallback: akshare        # futures_spot_price AL现货基准
+      fallback2: smm
+    threshold_pct: 3.0
+
+  - id: ADC12
+    name: ADC12铝合金
+    unit: 元/吨
+    category: 有色金属
+    internal_name: ADC12 铝合金
+    # ADC12 = A00铝 + 加工费(约1500)
+    sources:
+      primary: smm
+      fallback: akshare        # A00_AL → 代理映射 + 1500
+    threshold_pct: 5.0
+
+  - id: CU
+    name: 铜
+    unit: 元/吨
+    category: 有色金属
+    internal_name: 铜
+    sources:
+      primary: ccmn            # 长江现货1#铜均价（AJAX）
+      fallback: akshare        # futures_spot_price CU现货基准
+    threshold_pct: 3.0
+
+  - id: SI_553_331_AVG
+    name: 金属硅中间价 441（H 列）
+    unit: 元/吨
+    category: 有色金属
+    internal_name: 金属硅中间价 441
+    sources:
+      primary: ccmn            # 金属硅553#-331# 的 avgPrice（AJAX）
+    threshold_pct: 5.0
+
+  - id: SI_3303_2202_MIN
+    name: 金属硅中间价 3303（I 列）
+    unit: 元/吨
+    category: 有色金属
+    internal_name: 金属硅中间价 3303
+    sources:
+      primary: ccmn            # 金属硅3303#-2202# 的 minPrice（AJAX）
+    threshold_pct: 5.0
+
+  - id: SI_553_331_MAX
+    name: 金属硅中间价 331（L 列）
+    unit: 元/吨
+    category: 有色金属
+    internal_name: 金属硅中间价 331
+    sources:
+      primary: ccmn            # 金属硅553#-331# 的 maxPrice（AJAX）
+    threshold_pct: 5.0
+
+  - id: MG
+    name: 1#镁
+    unit: 元/吨
+    category: 有色金属
+    internal_name: 长江现货镁中间价
+    sources:
+      primary: ccmn            # 长江现货1#镁均价（AJAX）
+      fallback2: asianmetal   # 亚洲金属网闻喜镁锭作为区域参考
+    threshold_pct: 5.0
+
+  - id: MN
+    name: 1#电解锰
+    unit: 元/吨
+    category: 有色金属
+    internal_name: 长江现货电解锰中间价
+    sources:
+      primary: ccmn            # 长江现货1#电解锰均价（AJAX）
+    threshold_pct: 5.0
+
+  # ==================== 不锈钢（5 个）====================
+  - id: SS304
+    name: 304不锈钢
+    unit: 元/吨
+    category: 不锈钢
+    internal_name: 304 不锈钢
+    sources:
+      primary: akshare         # futures_spot_price SS现货
+      fallback: bxg
+      fallback2: sci99
+    threshold_pct: 3.0
+
+  - id: SS409
+    name: 409不锈钢
+    unit: 元/吨
+    category: 不锈钢
+    internal_name: 409 不锈钢
+    # 304 铁素体不锈钢，价格约 304 的 50%
+    sources:
+      primary: bxg
+      fallback: akshare         # 304 → 代理映射 ×0.50
+    threshold_pct: 5.0
+
+  - id: SS439
+    name: 439不锈钢
+    unit: 元/吨
+    category: 不锈钢
+    internal_name: 439 不锈钢
+    sources:
+      primary: bxg
+      fallback: akshare         # 304 → 代理映射 ×0.60
+    threshold_pct: 5.0
+
+  - id: SS441
+    name: 441不锈钢
+    unit: 元/吨
+    category: 不锈钢
+    internal_name: 441 不锈钢
+    sources:
+      primary: bxg
+      fallback: akshare         # 304 → 代理映射 ×0.68
+    threshold_pct: 5.0
+
+  - id: NPI
+    name: 镍生铁
+    unit: 元/镍点
+    category: 铁合金
+    internal_name: 镍生铁（8-10%）
+    # 沪镍 → 镍生铁代理映射（orchestrator 中处理）
+    sources:
+      primary: akshare         # NI → 代理映射
+      fallback: sci99
+    threshold_pct: 5.0
+
+  # ==================== 铁合金 + 小金属（2 个）====================
+  - id: HCRFE
+    name: 高碳铬铁
+    unit: 元/基吨
+    category: 铁合金
+    internal_name: 高碳铬铁（内蒙）
+    sources:
+      primary: cnfeol
+      fallback: qqthj
+    threshold_pct: 8.0
+
+  - id: W
+    name: 钨粉
+    unit: 元/千克
+    category: 小金属
+    internal_name: 钨粉
+    sources:
+      primary: chinatungsten
+    threshold_pct: 5.0
+
+  - id: Wenxi_MG
+    name: 闻喜镁锭
+    unit: 元/吨
+    category: 小金属
+    internal_name: 镁锭99.90%min（闻喜）
+    sources:
+      primary: asianmetal       # 亚洲金属网 CDP 抓取
+      fallback: smm             # SMM 作为备源
+    threshold_pct: 5.0
+
+  # ==================== 能源（1 个）====================
+  - id: WTI
+    name: WTI原油
+    unit: 美元/桶
+    category: 能源
+    internal_name: WTI 原油
+    sources:
+      primary: akshare         # futures_foreign_commodity_realtime CL
+      fallback: akshare_ine    # INE SC0 → 代理映射
+    threshold_pct: 5.0

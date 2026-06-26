@@ -1,0 +1,39 @@
+# Excel 共享表（精工业务数据，不入 git）
+*.xlsx
+*.xls
+*.bak.*
+.~*.xlsx
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# macOS
+.DS_Store
+._*
+
+# 临时文件
+*.tmp
+*.swp
+*~
+
+# 日志
+*.log
+logs/
+
+# 数据/输出目录
+data/
+output/
+
+# 个人备份
+*.bak
+*~
+
+# 内部业务文档（可能含真实价格数据，不传公网）
+*.pdf
+核查报告*.md
+
+# 每日抓取的当日数据归档（含 ccmn 真实价格，不传公网）
+长城有色日价格查询/

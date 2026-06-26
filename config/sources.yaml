@@ -1,0 +1,126 @@
+# 数据源配置 - URL、抓取方式、健康检查
+
+sources:
+  akshare:
+    name: akshare 期货
+    type: api          # api / html / cdp
+    url: https://akshare.akfamily.xyz/
+    method: python_lib
+    timeout_sec: 30
+    health_url: null
+    rate_limit: 2      # 请求间隔秒数
+    reliability: high
+
+  akshare_wti:
+    name: akshare 外盘期货 WTI
+    type: api
+    method: python_lib
+    timeout_sec: 30
+    health_url: null
+    reliability: high
+
+  akshare_ine:
+    name: akshare INE 原油 SC0
+    type: api
+    method: python_lib
+    timeout_sec: 30
+    reliability: high
+
+  zgw:
+    name: 中钢网
+    type: html
+    url: https://baojia.steelcn.cn/
+    method: requests_bs4
+    timeout_sec: 15
+    health_url: https://baojia.steelcn.cn/
+    rate_limit: 3
+    reliability: medium-high
+
+  cnfeol:
+    name: 中国铁合金在线
+    type: html
+    url: https://www.cnfeol.com/
+    method: requests_bs4
+    timeout_sec: 15
+    health_url: https://www.cnfeol.com/
+    rate_limit: 3
+    reliability: medium-high
+
+  qqthj:
+    name: 全球铁合金网
+    type: html
+    url: https://www.qqthj.com/
+    method: requests_bs4
+    timeout_sec: 15
+    health_url: https://www.qqthj.com/
+    rate_limit: 3
+    reliability: medium
+
+  chinatungsten:
+    name: 中钨在线
+    type: html
+    url: https://news.chinatungsten.com/
+    method: requests_regex
+    timeout_sec: 15
+    health_url: https://news.chinatungsten.com/
+    rate_limit: 2
+    reliability: high
+
+  ccmn:
+    name: 长江有色金属网
+    type: html
+    url: https://www.ccmn.cn/
+    method: requests_bs4
+    timeout_sec: 15
+    health_url: https://www.ccmn.cn/
+    rate_limit: 3
+    reliability: high
+
+  baidupia:
+    name: 生意社 100ppi
+    type: api
+    url: https://www.100ppi.com/
+    method: python_lib       # via akshare
+    timeout_sec: 30
+    health_url: null
+    reliability: high
+
+  mysteel:
+    name: 我的钢铁网
+    type: html
+    url: https://www.mysteel.com/
+    method: requests_bs4
+    timeout_sec: 15
+    health_url: https://www.mysteel.com/
+    rate_limit: 3
+    reliability: medium
+
+  sci99:
+    name: 卓创资讯
+    type: cdp
+    url: https://steel.sci99.com/
+    method: chrome_cdp
+    timeout_sec: 30
+    health_url: https://steel.sci99.com/
+    rate_limit: 5
+    reliability: medium      # 付费平台免费用，反爬严格
+
+  bxg:
+    name: 51bxg 不锈钢
+    type: cdp
+    url: https://www.51bxg.com/
+    method: chrome_cdp
+    timeout_sec: 30
+    health_url: https://www.51bxg.com/
+    rate_limit: 5
+    reliability: medium      # JS混淆防爬
+
+  smm:
+    name: SMM 上海有色网
+    type: cdp
+    url: https://hq.smm.cn/
+    method: chrome_cdp
+    timeout_sec: 30
+    health_url: https://hq.smm.cn/
+    rate_limit: 5
+    reliability: medium      # 付费平台免费用
