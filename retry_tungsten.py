@@ -51,7 +51,7 @@ async def retry_tungsten():
     existing_price = ws.cell(row=target_row, column=3).value
     if existing_price and existing_price > 0:
         print(f"  ✅ 钨粉已有价 ({existing_price})，跳过")
-        wb.close()
+        wb.close()  # EXIT 0: 5点已查到价，silently 退出
         return
     
     # 2. 查钨粉
@@ -72,7 +72,7 @@ async def retry_tungsten():
     else:
         print(f"  ⚠️ 钨粉仍未出，继续标黄")
     
-    wb.close()
+    wb.close()  # EXIT 0: 5点已查到价，silently 退出
 
 
 if __name__ == "__main__":
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     existing_price = ws.cell(row=target_row, column=3).value
     if existing_price and isinstance(existing_price, (int, float)) and existing_price > 0:
         print(f"  ✅ 钨粉已有价 ({existing_price})，跳过")
-        wb.close()
+        wb.close()  # EXIT 0: 5点已查到价，silently 退出
         sys.exit(0)
     
     print("  查钨粉...")
@@ -118,5 +118,5 @@ if __name__ == "__main__":
         sys.exit(0)
     else:
         print(f"  ⚠️ 钨粉仍未出，保持标黄")
-        wb.close()
+        wb.close()  # EXIT 0: 5点已查到价，silently 退出
         sys.exit(1)
