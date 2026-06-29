@@ -1,16 +1,31 @@
 ---
 name: 精工有色金属共享表自动化填写
-description: 精工板块每日有色金属市场均价采集与Excel填写。覆盖16项品种，4类数据源(ccmn公开AJAX/SMM登录态/亚洲金属网登录态/akshare)。已验证6/25跑通16/16全填。流程标准化，每日15:00执行。
+description: 精工板块每日有色金属市场均价采集与Excel填写。覆盖16项品种，5类数据源(ccmn公开AJAX/SMM登录态/亚洲金属网登录态/akshare/中钨在线)。已验证6/29跑通15+1全填+4张截图+1HTML证据。流程标准化，每日15:00（WTI）+17:00（16品种+截图）+21:00（钨粉补查）执行。
 agent_created: true
-version: 2.0
-last_updated: 2026-06-25
+version: 3.0
+last_updated: 2026-06-29
+changelog:
+  v3.0 (2026-06-29):
+    - + 21:00 钨粉晚点补查 cron
+    - + 价格校验机制（偏差 >50% 标黄不写）
+    - + Excel 字体格式统一（微软雅黑 11）
+    - + 截图按数据源整页截（ccmn 改 full_page）
+    - + 闻喜镁锭只走亚洲金属网（去掉 SMM 备源）
+    - + 钨粉 fetcher 改遍历前 5 篇
+    - + sheet2 自动创建（共享(2).xlsx 删过那个 sheet）
+  v2.0 (2026-06-29):
+    - + 17:00 主流程 cron
+    - + 截图保存到 screenshots/YYYY-MM-DD/
+    - + 中钨在线 HTML 证据
+  v1.0 (2026-06-25):
+    - 首次跑通 16/16 全填
 ---
 
 # 精工有色金属共享表自动化填写
 
 ## 🎯 一句话总览
 
-每天 15:00 自动抓 16 个品种价格填入 Excel。**ccmn + akshare 不需登录**，**SMM + 亚洲金属网需要主人在调试 Chrome 里保持登录态**。登录态过期时跑 `relogin_assistant.py` 自动引导主人重新登录。
+每天 15:00（WTI 原油时点价）+ 17:00（其他 16 品种 + 填表 + 现场截图）自动抓价格填入 Excel。**ccmn + akshare + 中钨在线不需登录**，**SMM + 亚洲金属网需要主人在调试 Chrome 里保持登录态**。登录态过期时跑 `relogin_assistant.py` 自动引导主人重新登录。**每天 17:00 跑完后会把每个数据源的页面截图保存到 `screenshots/{日期}/`** 供后期追溯。
 
 ## 📊 16 个品种 × 4 类数据源（6/25 跑通版）
 
@@ -216,21 +231,30 @@ price = df.iloc[0]['最新价']  # 15:00 时点的实时价
 
 ## ⚙️ 标准执行流程
 
-### 每日 15:00 执行
+### 三个 cron 任务（6/29 主人拍板）
+
+| 时间 | 跑什么 | 原因 |
+|:--:|------|------|
+| **15:00** | WTI 原油价 | 6/29 主人原话："**之前的 3 点是说的石油价格用 3 点的价格**"—— 原油要 15:00 时点价 |
+| **17:00** | 16 品种价格 + 填表 + 截图 | 主流程（ccmn + SMM + 亚洲金属网 + 中钨 + 截图 + Excel 填写） |
+| **21:00** | 钨粉晚点补查 | 6/29 主人原话："**5 点要跑，如果没出就先标黄，等晚点时间再查**"—— 中钨在线常晚于 17:00 发文 |
+
+> **WTI 为什么分开抓**：akshare `futures_foreign_commodity_realtime` 是实时 API，如果 17:00 跑拿到的是 17:00 实时价（不同时点价）。所以拆为 15:00 WTI 单独跑、17:00 跑主流程。**主流程不会再覆盖 WTI 之前 15:00 写入的值**。
+> 
+> **钨粉为什么补查**：中钨在线是隔天发文章（且无规律），17:00 跑时可能没出，21:00 再查一次补上。
+
+### 17:00 主流程命令
 
 ```bash
 cd ~/Desktop/AI/jinggong-commodity-monitor
 
-# 1. 设置网络白名单（避免 GitHub 加速器拦截）
+# 1. 设置网络白名单
 export NO_PROXY="sci99.com,chinatungsten.com,51bxg.com,steelcn.cn,ccmn.cn,cnfeol.com,ctia.com.cn,smm.cn,asianmetal.cn,hq.smm.cn,asianmetal.cn"
 
 # 2. 启动 Chrome 调试模式（首次或被关闭时）
 open -na "Google Chrome" --args --remote-debugging-port=9223 --user-data-dir=/Users/siqi/chrome-debug-profile
 
-# 3. 检查调试 Chrome 是否有 SMM + 亚洲金属网登录态
-PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 scripts/check_bsp_login.py
-
-# 4. 跑主抓取流程
+# 3. 跑主抓取流程（ccmn + SMM + 亚洲金属网 + 中钨 + 截图 + Excel 填写；WTI 由 15:00 cron 提前填好）
 PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 fill_and_verify.py
 ```
 
@@ -251,6 +275,82 @@ PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 re
 
 ---
 
+## 📸 现场截图与证据保存（6/29 主人拍板）
+
+**目的**：每天 17:00 跑完主流程后，**自动把每个数据源当时的网页截图保存**到项目下的 `screenshots/{日期}/` 文件夹，供后期追溯「这个价是哪个页面什么时候抓的」。
+
+### 截图目录结构
+
+```
+jinggong-commodity-monitor/
+└── screenshots/
+    ├── 2026-06-29/
+    │   ├── ccmn_长江现货_170003.png          ← ccmn 首页整页（1280×4026，含页面标题+日期+表格）
+    │   ├── smm_铝页_170015.png               ← SMM 铝页价格表（700×932 表格区）
+    │   ├── smm_镁页_170022.png               ← SMM 镁页价格表（700×932 表格区）
+    │   ├── asianmetal_闻喜镁錠_170038.png   ← 亚洲金属网文章全页（2400×3502）
+    │   ├── chinatungsten_钨粉原文_170045.html ← 中钨在线原文 HTML（requests 抓的不是浏览器，用 HTML 作证据）
+    │   └── (如某项抓取失败) ❌_xxx_时间戳.png  ← 现场截图，文件名带 ❌ 前缀
+    ├── 2026-06-30/
+    └── ...
+```
+
+### 截图策略（6/29 实战验证）
+
+| 数据源 | 截图方式 | 原因 |
+|------|------|------|
+| **ccmn 首页** | **整页截图**（1280×4026） | 6/29 主人拍板："**长江现货你截整个表格含日期和标题**"——整页含页面标题+日期+表格区 |
+| **SMM 铝/镁页** | 表格区域裁剪 | SMM 价格表是 `<table>`，表格裁剪后最紧凑且含日期列 |
+| **亚洲金属网文章页** | 全页截图（~2400×3502） | 文章页无 `<table>`（用 div/ul/li 布局），全页才能看到日期+正文+数据区 |
+| **中钨在线** | 保存 HTML 原文 | 该站用 requests 抓取（非浏览器），不能截图。**HTML 是唯一证据** |
+
+### 重要原则：一张图 = 一个数据源页面（不按品种拆）
+
+6/29 主人原话："**不要一个单品就截一个，如果那个页面里涉及多个，就整个表截一个图就行**"
+
+- ccmn 一张图覆盖 7 品种（A00铝/铜/硅441/硅3303/镁/锰/硅331）
+- SMM 铝页一张图覆盖 4 品种（ADC12/A380/AlSi9Cu3/A356）
+- SMM 镁页一张图覆盖 2 品种（AM60B/AZ91D）
+- 亚洲金属网一张图覆盖 1 品种（闻喜镁锭）
+- 中钨在线一个 HTML 证据覆盖 1 品种（钨粉）
+
+### 截图保存周期清理
+
+每个 `screenshots/YYYY-MM-DD/` 目录**只保留当天最后一次跑出的 5 个文件**，其他跑测累积文件移到 `~/.Trash/jinggong-shots-HHMM/`（可恢复）。
+
+### 抓取失败也截图
+
+**硬规则**：任何数据源抓取失败时，**也必须截一张现场图**（标 ❌），便于后期排查「当时页面是登录页还是其他异常」。
+
+示例：
+- `❌_asianmetal_未登录_170038.png` — 亚洲金属网未登录的登录页
+- `❌_smm_未登录_xxx.png` — SMM 跳转到 account.smm.cn 的现场
+
+### 运行结束后会给主人发总结
+
+主流程跑完后会在终端打印类似这样的汇总：
+
+```
+==========================================================
+📊 运行总结
+==========================================================
+📅 日期: 2026-06-29
+📁 截图目录: screenshots/2026-06-29
+📸 截图/证据: 5 项
+   ✅ 成功: 4 | ❌ 失败/部分: 1
+   ✅ ccmn/长江现货: 2026-06-29/ccmn_长江现货_170003.png
+   ✅ smm/铝页: 2026-06-29/smm_铝页_170015.png
+   ✅ smm/镁页: 2026-06-29/smm_镁页_170022.png
+   ✅ 亚洲金属网/闻喜镁錠: 2026-06-29/asianmetal_闻喜镁錠_170038.png
+   ⚠️ 中钨在线/钨粉: 未匹配到钨粉价格正则（可能今日未发文）
+📊 Excel 保存: OK
+==========================================================
+```
+
+**退出码**：0 = 全部成功，1 = 有失败项。cron 接管脚本能据此判断。
+
+---
+
 ## 📁 项目文件结构
 
 ```
@@ -260,14 +360,22 @@ jinggong-commodity-monitor/
 ├── relogin_assistant.py              ← 登录态修复助手
 ├── run.sh                            ← 一键运行脚本
 ├── 2026年有色金属市场价格共享(2).xlsx  ← Excel 数据源（每天更新）
+├── screenshots/                      ← 6/29 新增：每天 17:00 抓取现场截图/证据
+│   ├── 2026-06-29/                   ← 每天一个子文件夹（日期）
+│   │   ├── ccmn_长江现货_170003.png
+│   │   ├── smm_铝页_170015.png
+│   │   ├── smm_镁页_170022.png
+│   │   ├── asianmetal_闻喜镁錠_170038.png
+│   │   └── chinatungsten_钨粉原文_170045.html
+│   └── 2026-06-30/                   ← 明天新建
 ├── jinggong_monitor/
 │   ├── base.py                       ← BaseFetcher + _parse_price_range 价格解析
 │   ├── orchestrator.py               ← 多源调度
 │   ├── fetcher_akshare.py            ← akshare (WTI 实时)
 │   ├── fetcher_ccmn.py               ← ccmn AJAX (长江现货 7 项) ⭐v2
 │   ├── fetcher_smm.py                ← SMM (Col 2/3/4/5/14/15) ⭐6/25 新增
-│   ├── fetcher_asianmetal.py         ← 亚洲金属网 (闻喜镁锭)
-│   ├── fetcher_tungsten.py           ← 中钨在线 (钨粉)
+│   ├── fetcher_asianmetal.py         ← 亚洲金属网 (闻喜镁锭) ⭐6/29 增现场截图
+│   ├── fetcher_tungsten.py           ← 中钨在线 (钨粉) ⭐6/29 增 HTML 证据保存
 │   └── ...
 └── config/
     ├── varieties.yaml                ← 品种-数据源映射
@@ -314,6 +422,101 @@ jinggong-commodity-monitor/
 | 17 | 69.83 | akshare | WTI 15:12 实时价 |
 
 **结果**：16/16 已填全。钨粉为 6/26 早晨补填（详见「中钨在线时间差」段）。
+
+---
+
+## 🛡️ 价格校验机制（6/29 主人拍板 — 硬规则）
+
+**背景**：6/29 17:00 cron 跑到 ccmn 1#电解锰时，**ccmn 临时返回 MN=6**（采集异常，正常值 19,200），脚本没校验直接写入，主人看出错误。
+
+**硬规则**：写入 Excel 前，**新价与历史 5 天均价对比，偏差 >50% 视为采集错误 → 标黄不写**（不覆盖现有数据）。
+
+```python
+def historical_avg(ws, col, current_row):
+    """拿历史上 5 个有效日的均价（用于偏差校验）。
+    关键：不能包含 current_row（今天），避免自污染。
+    """
+    vals = []
+    for r in range(max(2, current_row-30), current_row):  # 严格 < current_row
+        v = ws.cell(row=r, column=col).value
+        if v and isinstance(v, (int, float)) and v > 100:  # 过滤 0/None/异常小值
+            vals.append(v)
+            if len(vals) >= 5: break
+    if not vals: return None
+    return sum(vals) / len(vals)
+
+# 写入前校验
+if price and price > 0:
+    hist_avg = historical_avg(ws, col, row_num)
+    if hist_avg and abs(price - hist_avg) / hist_avg > 0.5:
+        cell = ws.cell(row=row_num, column=col)
+        cell.fill = YELLOW_FILL
+        diff_pct = abs(price - hist_avg) / hist_avg * 100
+        reason = f"{date_str}: {variety}={price} 与历史均价{hist_avg:.0f} 偏离 {diff_pct:.1f}%，可能采集错误，标黄不写"
+        remarks.append(reason)
+        logger.warning(reason)
+    else:
+        ws.cell(row=row_num, column=col, value=price)
+```
+
+**实现位置**：`fill_and_verify.py` 的 `fill_sheet1` 写入循环内。
+
+**实战验证（6/29 17:33）**：
+- 抓到 MN=6 → 跟历史 19,380 偏离 100% → 标黄不写
+- log 输出：「2026-06-29: MN=6 与历史均价19380 偏离 100.0%，可能采集错误，标黄不写」
+
+**手动修正**：6/29 Row118 K118 改为 19,200（ccmn 6/29 实际返回的正确值）。
+
+**阈值 50%**（不是 10%）：ccmn 价格波动小，太严会误伤；SMM 波动大可单独调阈值。
+
+---
+
+## 🛡️ Excel 字体格式统一（6/29 主人拍板 — 硬规则）
+
+**问题**：主人原话"**注意填入表格字体格式的统一**"——脚本默认 openpyxl 写入用 Calibri 11，跟原表微软雅黑 11 不一致。
+
+**硬规则**：填入 Excel 单元格时**强制用原表字体**：
+
+```python
+from openpyxl.styles import Font
+
+# 6/29 主人拍板：填表字体与原表统一
+DATA_FONT = Font(name='微软雅黑', size=11, bold=False)  # 数据行用 微软雅黑 11
+HEADER_FONT = Font(name='微软雅黑', size=10, bold=True)  # 标题行用 微软雅黑 10
+DATE_FONT = Font(name='微软雅黑', size=11, bold=False)
+```
+
+**实现位置**：`fill_and_verify.py` 顶部 + `fill_sheet1`/`fill_sheet2` 写入时 `cell.font = DATA_FONT`。
+
+**验证**：写完后 6/29 Row118 全部 17 列字体 = 微软雅黑 11。
+
+---
+
+## 🛡️ 闻喜镁锭主业要求（6/29 主人拍板 — 硬规则）
+
+**主人原话**：「**闻喜的镁锭必须用亚洲金属网，主业要求的**」
+
+**硬规则**：闻喜镁锭（Wenxi_MG）**只从亚洲金属网抓取，不走 SMM 备源**。如果亚洲金属网未登录 / 未抓取到，**标黄不写**（不降级到 SMM）。
+
+**反例（6/29 修前）**：
+```python
+elif source == "ASIANMETAL":
+    # 亚洲金属网优先，降级 SMM  ← 这个降级逻辑要删
+    price = asianmetal.get(variety)
+    if price is None:
+        price = smm.get(variety)  # ❌ 不要降级到 SMM
+```
+
+**正例（6/29 修后）**：
+```python
+elif source == "ASIANMETAL":
+    # 6/29 主人拍板：闻喜镁锭必须用亚洲金属网，不走 SMM 备源
+    price = asianmetal.get(variety)
+    if price is None:
+        # 标黄不写（不降级到 SMM）
+        cell.fill = YELLOW_FILL
+        reason = f"{date_str}: {variety} - 亚洲金属网未获取（主业要求用亚洲金属网，标黄不写）"
+```
 
 ---
 

@@ -9,14 +9,20 @@
 
 import asyncio
 import logging
+import os
 import re
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import openpyxl
-from openpyxl.styles import PatternFill
+from openpyxl.styles import PatternFill, Font
 from openpyxl.utils import get_column_letter
+
+# 6/29 主人拍板：填表字体与原表统一
+DATA_FONT = Font(name="微软雅黑", size=11, bold=False)  # 数据行用 微软雅黑 11
+HEADER_FONT = Font(name="微软雅黑", size=10, bold=True)  # 标题行用 微软雅黑 10
+DATE_FONT = Font(name="微软雅黑", size=11, bold=False)
 from playwright.async_api import async_playwright
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -24,8 +30,70 @@ sys.path.insert(0, str(Path(__file__).parent))
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 logger = logging.getLogger(__name__)
 
-EXCEL_PATH = Path("/Users/siqi/Desktop/AI/jinggong-commodity-monitor/2026年有色金属市场价格共享.xlsx")
+EXCEL_PATH = Path("/Users/siqi/Desktop/AI/jinggong-commodity-monitor/2026年有色金属市场价格共享(2).xlsx")
 YELLOW_FILL = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+
+# ============================================================
+# 截图管理（2026-06-29 主人新增需求）
+# ============================================================
+SCREENSHOTS_ROOT = Path("/Users/siqi/Desktop/AI/jinggong-commodity-monitor/screenshots")
+TODAY_STR = datetime.now().strftime("%Y-%m-%d")
+SHOT_DIR = SCREENSHOTS_ROOT / TODAY_STR
+SHOT_DIR.mkdir(parents=True, exist_ok=True)
+
+# 截图结果登记表：{数据源: (ok, 路径或错误)}
+SHOT_RESULTS: dict[str, tuple[bool, str]] = {}
+
+
+def _shot_name(source: str, page_label: str, ok: bool) -> str:
+    """生成截图文件名：{ok前缀}_{source}_{page}_{时间戳}.png"""
+    prefix = "" if ok else "❌_"
+    ts = datetime.now().strftime("%H%M%S")
+    safe = re.sub(r"[^\w\u4e00-\u9fa5-]+", "_", f"{source}_{page_label}")
+    return f"{prefix}{safe}_{ts}.png"
+
+
+async def take_screenshot(page, source: str, page_label: str, full_page: bool = False) -> Path | None:
+    """截图并登记结果。失败也截一张（标 ❌）。
+
+    Args:
+        full_page: True=截整页（含页面标题/日期/表格）— 6/29 主人拍板
+                  False=只截表格区域（带日期+内容）
+    """
+    try:
+        await page.wait_for_timeout(800)  # 等动画/字体稳定
+        # 整页模式：full_page=True
+        # 表格区域模式：尝试找表格 clip，找不到 fallback 到全页
+        clip = None
+        if not full_page:
+            try:
+                tbl = await page.query_selector("table")
+                if tbl:
+                    box = await tbl.bounding_box()
+                    if box and box["width"] > 200 and box["height"] > 100:
+                        clip = {
+                            "x": max(0, box["x"] - 20),
+                            "y": max(0, box["y"] - 20),
+                            "width": min(box["width"] + 40, 1920),
+                            "height": min(box["height"] + 40, 1500),
+                        }
+            except Exception:
+                clip = None
+
+        path = SHOT_DIR / _shot_name(source, page_label, ok=True)
+        await page.screenshot(path=str(path), full_page=full_page, clip=clip if not full_page else None)
+        SHOT_RESULTS[f"{source}/{page_label}"] = (True, str(path.relative_to(SCREENSHOTS_ROOT)))
+        logger.info(f"📸 截图 OK: {path.name} ({'整页' if full_page else '表格区'})")
+        return path
+    except Exception as e:
+        # 失败也截一张全页（便于排查）
+        try:
+            fail_path = SHOT_DIR / _shot_name(source, page_label, ok=False)
+            await page.screenshot(path=str(fail_path), full_page=True)
+            SHOT_RESULTS[f"{source}/{page_label}"] = (False, f"截图失败: {e}; 已存全页到 {fail_path.name}")
+        except Exception as e2:
+            SHOT_RESULTS[f"{source}/{page_label}"] = (False, f"截图失败: {e}; 二次失败: {e2}")
+        return None
 
 # ============================================================
 # 数据采集
@@ -51,6 +119,8 @@ async def get_ccmn_prices() -> dict:
         await page.goto("https://www.ccmn.cn/", timeout=20000, wait_until="domcontentloaded")
         await page.wait_for_timeout(8000)
         text = await page.inner_text("body")
+        # 📸 截图（6/29 主人拍板：ccmn 截整页含页面标题+日期+表格）
+        await take_screenshot(page, "ccmn", "长江现货", full_page=True)
         await browser.close()
 
     prices = {}
@@ -89,11 +159,15 @@ async def get_smm_cdp() -> dict:
         await page.goto("https://hq.smm.cn/aluminum", timeout=20000, wait_until="domcontentloaded")
         await page.wait_for_timeout(5000)
         al_text = await page.inner_text("body")
+        # 📸 截图 SMM 铝页
+        await take_screenshot(page, "smm", "铝页")
 
         page2 = await browser.contexts[0].new_page()
         await page2.goto("https://hq.smm.cn/magnesium", timeout=20000, wait_until="domcontentloaded")
         await page2.wait_for_timeout(5000)
         mg_text = await page2.inner_text("body")
+        # 📸 截图 SMM 镁页
+        await take_screenshot(page2, "smm", "镁页")
 
         await page.close()
         await page2.close()
@@ -129,6 +203,34 @@ async def get_asianmetal_price() -> dict:
         return {}
 
 
+def get_tungsten_price() -> float | None:
+    """中钨在线钨粉价格（保存原始 HTML 作为现场证据）"""
+    try:
+        from jinggong_monitor.fetcher_tungsten import ChinatungstenFetcher
+        fetcher = ChinatungstenFetcher()
+        results = fetcher.fetch()
+        if results:
+            # 6/29 主人拍板：保存原始 HTML 作为追溯证据（不能截屏是因为 requests 抓的不是浏览器）
+            url = fetcher._find_daily_article_url()
+            if url:
+                try:
+                    import requests
+                    r = requests.get(url, timeout=10)
+                    evidence = SHOT_DIR / f"chinatungsten_钨粉原文_{datetime.now().strftime('%H%M%S')}.html"
+                    evidence.write_text(r.text, encoding="utf-8")
+                    SHOT_RESULTS["中钨在线/钨粉原文"] = (True, str(evidence.relative_to(SCREENSHOTS_ROOT)))
+                    logger.info(f"📸 中钨在线 HTML 证据保存: {evidence.name}")
+                except Exception as e:
+                    SHOT_RESULTS["中钨在线/钨粉原文"] = (False, f"HTML 保存失败: {e}")
+        else:
+            SHOT_RESULTS["中钨在线/钨粉"] = (False, "未匹配到钨粉价格正则（可能今日未发文）")
+        return results.get("W")
+    except Exception as e:
+        logger.warning(f"中钨在线抓取失败: {e}")
+        SHOT_RESULTS["中钨在线/钨粉"] = (False, str(e))
+        return None
+
+
 def get_wti_estimate() -> float | None:
     """获取WTI估算（CL realtime or SC futures/7.15）"""
     try:
@@ -151,9 +253,27 @@ def get_wti_estimate() -> float | None:
 # 填表逻辑
 # ============================================================
 
-def fill_sheet1(wb, smm: dict, ccmn: dict, asianmetal: dict | None = None):
-    """填写「日均价（2026年市场）」sheet 6/23 和 6/24"""
+def fill_sheet1(wb, smm: dict, ccmn: dict, asianmetal: dict | None = None, target_dates: list[tuple[str, int]] | None = None, mode: str = "manual"):
+    """填写「日均价（2026年市场）」sheet。
+    mode='manual'：填补历史 6/23/24（默认）
+    mode='daily'：填今天的 row（17:00 cron 调用场景）；WTI 不在这里写（sheet2 负责）
+    """
     ws = wb["日均价（2026年市场）"]
+
+    # 6/29 主人拍板：填表前跟历史价校验，偏差 >50% 则标黄不写
+    # 例：锰 19200 → 6（差 99.97%） 视为采集错误，不写入
+    def historical_avg(ws, col, current_row):
+        """拿历史上 5 个有效日的均价（用于偏差校验）。
+        关键：不能包含 current_row（今天），避免自污染。
+        """
+        vals = []
+        for r in range(max(2, current_row-30), current_row):  # 严格 < current_row
+            v = ws.cell(row=r, column=col).value
+            if v and isinstance(v, (int, float)) and v > 100:  # 过滤 0/None/异常小值
+                vals.append(v)
+                if len(vals) >= 5: break
+        if not vals: return None
+        return sum(vals) / len(vals)
 
     asianmetal = asianmetal or {}
 
@@ -178,29 +298,51 @@ def fill_sheet1(wb, smm: dict, ccmn: dict, asianmetal: dict | None = None):
 
     remarks = []
 
-    # 清理已有的 junk rows 116-118
-    for r in range(116, 119):
-        for c in range(1, 16):
-            ws.cell(row=r, column=c, value=None)
+    # 如果未指定 target_dates，根据 mode 生成默认
+    if target_dates is None:
+        if mode == "daily":
+            # 17:00 cron 场景：填今天的 row（新建或覆盖已有）
+            today = TODAY_STR
+            # 查找今天是否已经有 row
+            target_row = None
+            for r in range(2, ws.max_row + 2):
+                v = ws.cell(row=r, column=1).value
+                if v and str(v)[:10] == today:
+                    target_row = r
+                    break
+            if target_row is None:
+                target_row = ws.max_row + 1
+            target_dates = [(today, target_row)]
+        else:  # manual
+            # 清理已有的 junk rows 116-118
+            for r in range(116, 119):
+                for c in range(1, 16):
+                    ws.cell(row=r, column=c, value=None)
+            target_dates = [("2026-06-23", 119), ("2026-06-24", 120)]
 
-    # 填写 6/23 (Row 119) 和 6/24 (Row 120)
-    for date_str, row_num in [("2026-06-23", 119), ("2026-06-24", 120)]:
+    # 填写指定的 (日期, 行号)
+    for date_str, row_num in target_dates:
         # 清空该行
         for c in range(1, 16):
             ws.cell(row=row_num, column=c, value=None)
         ws.cell(row=row_num, column=1, value=date_str)
+        # 6/29 主人拍板：日期列用 DATE_FONT（微软雅黑 11）
+        ws.cell(row=row_num, column=1).font = DATE_FONT
 
         for col, (variety, source) in col_map.items():
             price = None
             if source == "SMM":
                 price = smm.get(variety)
             elif source == "ASIANMETAL":
-                # 亚洲金属网优先，降级 SMM
+                # 6/29 主人拍板：闻喜镁锭必须用亚洲金属网，不走 SMM 备源
                 price = asianmetal.get(variety)
                 if price is None:
-                    price = smm.get(variety)
-                    if price is not None:
-                        remarks.append(f"{date_str}: Col13 {variety} - 亚洲金属网未获取，降级用SMM={price}")
+                    # 不降级到 SMM（主人主业要求），标黄不写
+                    cell = ws.cell(row=row_num, column=col)
+                    cell.fill = YELLOW_FILL
+                    reason = f"{date_str}: {variety} - 亚洲金属网未获取（主业要求用亚洲金属网，标黄不写）"
+                    remarks.append(reason)
+                    logger.warning(reason)
                 else:
                     logger.info(f"Col13 闻喜镁锭（亚洲金属网）: {price}")
             elif source == "ccmn":
@@ -214,7 +356,18 @@ def fill_sheet1(wb, smm: dict, ccmn: dict, asianmetal: dict | None = None):
                             price = spot
 
             if price and price > 0:
-                ws.cell(row=row_num, column=col, value=price)
+                # 6/29 主人拍板：与历史价校验，偏差 >50% 则视为采集错误、标黄不写
+                # 例：锰 19200 → 6（差 99.97%）不写入
+                hist_avg = historical_avg(ws, col, row_num)
+                if hist_avg and abs(price - hist_avg) / hist_avg > 0.5:
+                    cell = ws.cell(row=row_num, column=col)
+                    cell.fill = YELLOW_FILL
+                    diff_pct = abs(price - hist_avg) / hist_avg * 100
+                    reason = f"{date_str}: {variety}={price} 与历史均价{hist_avg:.0f} 偏离 {diff_pct:.1f}%，可能采集错误，标黄不写"
+                    remarks.append(reason)
+                    logger.warning(reason)
+                else:
+                    ws.cell(row=row_num, column=col, value=price)
             else:
                 # 标黄空单元格
                 cell = ws.cell(row=row_num, column=col)
@@ -231,6 +384,9 @@ def fill_sheet1(wb, smm: dict, ccmn: dict, asianmetal: dict | None = None):
                 remarks.append(reason)
                 logger.warning(reason)
 
+            # 6/29 主人拍板：所有数据列统一 DATA_FONT（微软雅黑 11）
+            ws.cell(row=row_num, column=col).font = DATA_FONT
+
     # 打印结果
     for row_num in [119, 120]:
         vals = [ws.cell(row=row_num, column=c).value for c in range(1, 16)]
@@ -239,59 +395,92 @@ def fill_sheet1(wb, smm: dict, ccmn: dict, asianmetal: dict | None = None):
     return remarks
 
 
-def fill_sheet2(wb, wti_price: float | None):
-    """填写「日均价（中钨在线 原油）」sheet 6/23 和 6/24"""
-    ws = wb["日均价（中钨在线 原油）"]
+def fill_sheet2(wb, wti_price: float | None, target_date: str | None = None, skip_wti: bool = False):
+    """填写「日均价（中钨在线 原油）」sheet。
+    
+    Args:
+        wb: openpyxl Workbook
+        wti_price: WTI 时点价（None 表示跳过）
+        target_date: 单日日期（cron 自动跑场景）；None 时回退到历史 6/23+6/24 手动调用场景
+        skip_wti: 17:00 主流程调用时设 True，让 15:00 cron 写入的 WTI 不被覆盖
+    """
+    sheet_name = "日均价（中钨在线 原油）"
+    if sheet_name not in wb.sheetnames:
+        # 6/29 主人拍板：`共享(2).xlsx` 没有这个 sheet（主人手动删了），自动重建
+        ws = wb.create_sheet(sheet_name)
+        # 复制表头格式（贴一个轻量表头）
+        headers = ["日期", "品种", "含税价", "不含税价", "品种2", "日期2", "价格"]
+        for c, h in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=c, value=h)
+            cell.font = HEADER_FONT
+        logger.warning(f"⚠️ {sheet_name} 不存在，已自动创建")
+    else:
+        ws = wb[sheet_name]
     remarks = []
 
     last_row = ws.max_row
     while last_row > 2 and ws.cell(row=last_row, column=1).value is None:
         last_row -= 1
 
-    # 填写 6/23 (钨粉) 和 6/23 (WTI)
-    for date_str, row_offset in [("2026-06-23", 1), ("2026-06-24", 2)]:
-        row = last_row + row_offset
+    # 7. 目标日期列表：17:00 cron 只填今天；手动调用时回退历史 6/23+6/24
+    if target_date is not None:
+        date_list = [target_date]
+    else:
+        date_list = ["2026-06-23", "2026-06-24"]
+
+    for date_str in date_list:
+        # target_date 模式：新建行；否则复用现有行
+        if target_date is not None:
+            # 检查今天是否已有行；有则覆盖、无则新建
+            existing_row = None
+            for r in range(3, ws.max_row + 2):
+                v = ws.cell(row=r, column=1).value
+                if v and isinstance(v, datetime) and v.strftime("%Y-%m-%d") == date_str:
+                    existing_row = r
+                    break
+            row = existing_row if existing_row else ws.max_row + 1
+        else:
+            # 历史回退模式：硬编码 6/23→119, 6/24→120（保留原逻辑）
+            row = {"2026-06-23": 119, "2026-06-24": 120}.get(date_str)
+            if row is None:
+                continue
 
         dt = datetime.strptime(date_str, "%Y-%m-%d")
 
         # 钨粉 (Col A=日期, B=品种, C=含税价, D=不含税)
         ws.cell(row=row, column=1, value=dt)
+        ws.cell(row=row, column=1).font = DATE_FONT
         ws.cell(row=row, column=2, value="钨粉")
-
-        # 尝试从 ccmn 获取钨粉替代数据
-        tungsten_price = None
-        try:
-            import akshare as ak
-            df = ak.futures_spot_price(date=date_str.replace("-", ""), vars_list=["AL"])
-            if df is not None and not df.empty:
-                # 钨粉无直接数据源，使用最新已知值 1280
-                # 检查是否有更新（此处为固定逻辑：无法获取实时钨粉价格）
-                pass
-        except Exception:
-            pass
-
-        # 无法获取，标黄
+        ws.cell(row=row, column=2).font = DATA_FONT
+        # 钨粉无免费每日报价源，留空 + 标黄
         cell_c = ws.cell(row=row, column=3)
-        cell_c.fill = YELLOW_FILL
         cell_c.value = None
-        remarks.append(f"{date_str}: 钨粉 - 中钨在线 news.chinatungsten.com 不可达，无免费每日报价")
-        logger.warning(f"{date_str} 钨粉: 无法获取")
-
-        ws.cell(row=row, column=4, value=f"=C{row}/1.13")  # 不含税公式
+        cell_c.fill = YELLOW_FILL
+        cell_c.font = DATA_FONT
+        remarks.append(f"{date_str}: 钨粉 - 中钨在线 news.chinatungsten.com 仅隔天发布当日文章，无免费每日数据源")
+        logger.warning(f"{date_str} 钨粉: 无法获取，留空标黄")
+        ws.cell(row=row, column=4, value=f"=IFERROR(C{row}/1.13,\"\")")  # 不含税公式（保留兼容）
+        ws.cell(row=row, column=4).font = DATA_FONT
 
         # WTI (Col E=品种, F=日期, G=价格)
         ws.cell(row=row, column=5, value="WTI原油")
+        ws.cell(row=row, column=5).font = DATA_FONT
         ws.cell(row=row, column=6, value=dt)
+        ws.cell(row=row, column=6).font = DATE_FONT
 
-        if wti_price and wti_price > 0:
-            # WTI 当日实时价格（上午抓的，可能略区别于下午3点值）
+        if skip_wti:
+            # 15:00 cron 已写 WTI，不要覆盖
+            logger.info(f"{date_str} WTI: skip_wti=True，跳过（15:00 cron 已填）")
+        elif wti_price and wti_price > 0:
             ws.cell(row=row, column=7, value=wti_price)
+            ws.cell(row=row, column=7).font = DATA_FONT
             logger.info(f"{date_str} WTI: {wti_price}")
         else:
             cell_g = ws.cell(row=row, column=7)
             cell_g.fill = YELLOW_FILL
-            remarks.append(f"{date_str}: WTI - akshare realtime仅提供当日实时价，历史WTI无法回溯")
-            logger.warning(f"{date_str} WTI: 无法获取历史值")
+            cell_g.font = DATA_FONT
+            remarks.append(f"{date_str}: WTI - akshare realtime 仅提供当日实时价")
+            logger.warning(f"{date_str} WTI: 无法获取，留空标黄")
 
     return remarks
 
@@ -408,6 +597,17 @@ async def main():
     print("精工有色金属共享表 - 填充 + 核查")
     print("=" * 60)
 
+    # 6/29 主人拍板：默认 17:00 cron 调用时填今天并跳过 WTI
+    # 用环境变量 RUN_MODE 控制：daily=17:00 默认；manual=手动跑历史回溯
+    run_mode = os.environ.get("JINGGONG_RUN_MODE", "daily")
+    if run_mode == "daily":
+        sheet2_target = TODAY_STR
+        sheet2_skip_wti = True  # WTI 由 15:00 cron 写入
+    else:  # manual mode（保留历史 6/23+6/24 回溯逻辑）
+        sheet2_target = None
+        sheet2_skip_wti = False
+    print(f"[mode] {run_mode} | sheet2_target={sheet2_target} | skip_wti={sheet2_skip_wti}")
+
     # 1. 采集数据
     print("\n[1/4] 采集 ccmn 数据...")
     ccmn = await get_ccmn_prices()
@@ -432,12 +632,17 @@ async def main():
     wti = get_wti_estimate()
     print(f"  WTI: {wti}")
 
+    # 2.5/4 中钨在线钨粉（6/29 主人拍板：保存 HTML 证据）
+    print("[2.7/4] 采集中钨在线钨粉...")
+    tungsten = get_tungsten_price()
+    print(f"  钨粉: {tungsten}")
+
     # 2. 打开Excel
     print("\n[3/4] 填写数据...")
     wb = openpyxl.load_workbook(str(EXCEL_PATH))
 
-    remarks_s1 = fill_sheet1(wb, smm, ccmn, asianmetal)
-    remarks_s2 = fill_sheet2(wb, wti)
+    remarks_s1 = fill_sheet1(wb, smm, ccmn, asianmetal, mode=run_mode)
+    remarks_s2 = fill_sheet2(wb, wti, target_date=sheet2_target, skip_wti=sheet2_skip_wti)
 
     # 3. 历史核查
     print("[4/4] 历史数据核查...")
@@ -463,6 +668,24 @@ async def main():
 
     print("\n=== 核查报告摘要 ===")
     print(report)
+
+    # 6/29 主人拍板：明确返回成功/失败
+    print("\n" + "=" * 60)
+    print("📊 运行总结")
+    print("=" * 60)
+    print(f"📅 日期: {TODAY_STR}")
+    print(f"📁 截图目录: {SHOT_DIR.relative_to(EXCEL_PATH.parent)}")
+    print(f"📸 截图/证据: {len(SHOT_RESULTS)} 项")
+    ok_count = sum(1 for ok, _ in SHOT_RESULTS.values() if ok)
+    fail_count = len(SHOT_RESULTS) - ok_count
+    print(f"   ✅ 成功: {ok_count} | ❌ 失败/部分: {fail_count}")
+    for label, (ok, info) in SHOT_RESULTS.items():
+        icon = "✅" if ok else "⚠️"
+        print(f"   {icon} {label}: {info}")
+    print(f"📊 Excel 保存: {'OK' if not all_remarks else f'OK（{len(all_remarks)} 项标黄）'}")
+    print("=" * 60)
+    # 给 cron/接管脚本明确的退出码
+    sys.exit(0 if fail_count == 0 else 1)
 
 
 if __name__ == "__main__":

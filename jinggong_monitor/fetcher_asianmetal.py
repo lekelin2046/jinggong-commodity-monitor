@@ -9,11 +9,17 @@
 import asyncio
 import logging
 import re
+from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from jinggong_monitor.base import BaseFetcher, FetchError
 
 logger = logging.getLogger("jinggong.fetcher.asianmetal")
+
+# 6/29 主人拍板：保存抓取现场（供后期追溯）
+_SHOT_DIR = Path("/Users/siqi/Desktop/AI/jinggong-commodity-monitor/screenshots") / datetime.now().strftime("%Y-%m-%d")
+_SHOT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class AsianmetalFetcher(BaseFetcher):
@@ -57,6 +63,12 @@ class AsianmetalFetcher(BaseFetcher):
                 page_text = await page.inner_text("body")
 
                 if "返回登录" in page_text or "login" in current_url.lower():
+                    # 📸 失败现场截图（未登录）
+                    try:
+                        await page.wait_for_timeout(800)
+                        await page.screenshot(path=str(_SHOT_DIR / f"❌_asianmetal_未登录_{datetime.now().strftime('%H%M%S')}.png"), full_page=True)
+                    except Exception:
+                        pass
                     self._raise(
                         "亚洲金属网未登录。请在调试Chrome中手动登录：\n"
                         "  1. 打开 https://www.asianmetal.cn/\n"
@@ -80,8 +92,26 @@ class AsianmetalFetcher(BaseFetcher):
                 # 检查是否又是登录页
                 title_text = await page.title()
                 if "登录" in title_text or "返回登录" in title_text:
+                    # 📸 失败现场截图
+                    try:
+                        await page.wait_for_timeout(800)
+                        await page.screenshot(path=str(_SHOT_DIR / f"❌_asianmetal_登录页_{datetime.now().strftime('%H%M%S')}.png"), full_page=True)
+                    except Exception:
+                        pass
                     self._raise("文章详情页需要登录，请确认已登录亚洲金属网")
                     return results
+
+                # 📸 6/29 主人拍板：抓取成功截文章页
+                try:
+                    await page.wait_for_timeout(800)
+                    # 亚洲金属网是文章页（无 <table>），全页截图保留日期+正文+表格
+                    await page.screenshot(
+                        path=str(_SHOT_DIR / f"asianmetal_闻喜镁錠_{datetime.now().strftime('%H%M%S')}.png"),
+                        full_page=True,
+                    )
+                    logger.info("📸 亚洲金属网文章页截图 OK")
+                except Exception as e:
+                    logger.warning(f"亚洲金属网截图失败: {e}")
 
                 # Step 4: 从文章表格中提取闻喜镁锭价格（JS 按表格行提取）
                 price = await self._extract_wenxi_from_table(page)
