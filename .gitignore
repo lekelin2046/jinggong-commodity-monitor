@@ -23,9 +23,10 @@ __pycache__/
 *.log
 logs/
 
-# 数据/输出目录
+# 数据/输出目录（看板 HTML 需入 git 供 GitHub Pages 部署）
 data/
-output/
+output/*
+!output/看板.html
 
 # 个人备份
 *.bak
