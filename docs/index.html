@@ -100,7 +100,8 @@ function updateMonthOptions(year, selectedMonth) {
 
 function switchMonth() {
   const y = document.getElementById("yearSelect").value;
-  updateMonthOptions(y, null);
+  const prevMonth = document.getElementById("monthSelect").value;
+  updateMonthOptions(y, prevMonth);
   const m = document.getElementById("monthSelect").value;
   renderAll(y, parseInt(m));
 }
