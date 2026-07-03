@@ -51,12 +51,12 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
   <select id="monthSelect" onchange="switchMonth()"></select>
 </div>
 
-<div id="charts"></div>
-
 <div class="card">
   <h3>📋 月度价格明细表（左右横拉 →）</h3>
   <div class="table-wrap" id="tableContainer"></div>
 </div>
+
+<div id="charts"></div>
 
 <script>
 // ===== DATA =====
@@ -117,10 +117,10 @@ function renderAll(year, month) {
   destroyCharts();
   const container = document.getElementById("charts");
   container.innerHTML = "";
-  
+
+  renderTable(year, month);
   renderMonthlyTrends(container, year, month);
   renderAnnualTrend(container, year);
-  renderTable(year, month);
 }
 
 // 月度日趋势图
