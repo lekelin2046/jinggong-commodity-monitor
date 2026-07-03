@@ -10,7 +10,7 @@ os.environ["NO_PROXY"] = "ccmn.cn,chinatungsten.com,smm.cn,hq.smm.cn,user.smm.cn
 
 PROJECT   = Path(__file__).parent
 DATA_FILE = PROJECT / "data" / "price_history.json"
-HTML_OUT  = PROJECT / "docs" / "看板.html"
+HTML_OUT  = PROJECT / "docs" / "index.html"
 
 # ========== 品种分类（参照 PDF 快报分组逻辑） ==========
 CATEGORIES = [
