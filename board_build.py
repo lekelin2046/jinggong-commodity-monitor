@@ -394,39 +394,35 @@ function renderMonthlyTrends(container, year, month) {{
   }});
 }}
 
-// 年度趋势图
+// 年度趋势图（按天）
 function renderAnnualTrend(container, year) {{
   const card = document.createElement("div");
   card.className = "card";
   const cid = "chart-annual-" + Math.random().toString(36).substr(2,6);
-  card.innerHTML = `<h3>📊 年度趋势图 (${{year}}年月均价)</h3><div class="chart-wrap annual"><canvas id="${{cid}}"></canvas></div>`;
+  card.innerHTML = `<h3>📊 年度趋势图 (${{year}}年)</h3><div class="chart-wrap annual"><canvas id="${{cid}}"></canvas></div>`;
   container.appendChild(card);
   
-  const labels = [];
-  for(let m=1; m<=12; m++) {{
-    const prefix = `${{year}}-${{String(m).padStart(2,"0")}}`;
-    if(Object.keys(ALL_DATA).some(d => d.startsWith(prefix))) labels.push(m+"月");
-  }}
-  if(labels.length === 0) {{ card.innerHTML += '<p class="no-data">暂无年度数据</p>'; return; }}
+  // 获取该年所有有数据的日期
+  const allDates = Object.keys(ALL_DATA)
+    .filter(d => d.startsWith(String(year)) && Object.values(ALL_DATA[d]).some(v => v !== null))
+    .sort();
+  if(allDates.length === 0) {{ card.innerHTML += '<p class="no-data">暂无年度数据</p>'; return; }}
+  
+  const labels = allDates.map(d => d.substring(5)); // "MM-DD"
   
   const allCodes = CATEGORIES.flatMap(c => c.codes);
   const datasets = allCodes.map((code, i) => {{
-    const points = [];
-    for(let m=1; m<=labels.length; m++) {{
-      const prefix = `${{year}}-${{String(m).padStart(2,"0")}}`;
-      let sum=0, cnt=0;
-      Object.entries(ALL_DATA).forEach(([d, prices]) => {{
-        if(d.startsWith(prefix) && prices[code] != null) {{ sum += prices[code]; cnt++; }}
-      }});
-      points.push(cnt > 0 ? Math.round(sum/cnt) : null);
-    }}
+    const points = allDates.map(d => {{
+      const prices = ALL_DATA[d];
+      return prices && prices[code] != null ? prices[code] : null;
+    }});
     const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
     return {{
       label: VARIETY_NAMES[code]+"("+unit+")",
       data: points,
       borderColor: COLORS[i % COLORS.length],
       backgroundColor: "transparent",
-      tension: 0.3, pointRadius: 2,
+      tension: 0.1, pointRadius: 0,
       spanGaps: false
     }};
   }}).filter(ds => ds.data.some(v => v !== null));
@@ -439,8 +435,14 @@ function renderAnnualTrend(container, year) {{
         responsive: true, maintainAspectRatio: false,
         plugins: {{ tooltip: {{ mode: "index", intersect: false }} }},
         scales: {{
-          x: {{ title: {{ display: true, text: "月份" }} }},
-          y: {{ title: {{ display: true, text: "月均价" }}, beginAtZero: false }}
+          x: {{ 
+            title: {{ display: true, text: "日期" }},
+            ticks: {{
+              maxTicksLimit: 14,
+              autoSkip: true
+            }}
+          }},
+          y: {{ title: {{ display: true, text: "价格" }}, beginAtZero: false }}
         }}
       }}
     }});
