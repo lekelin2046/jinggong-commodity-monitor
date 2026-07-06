@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadData() {
   try {
-    const resp = await fetch('data.json');
+    const resp = await fetch('data.json?v=2');
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const json = await resp.json();
     ALL_DATA = json.data || {};

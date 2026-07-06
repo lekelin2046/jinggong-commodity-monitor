@@ -103,7 +103,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div class="header">
   <h1>📊 有色金属每日价格看板</h1>
   <span class="updated" id="updatedTime">加载中...</span>
-  <a href="editor.html" style="color:#fff;background:#1a73e8;padding:4px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:500;margin-left:12px">编辑数据</a>
+  <a href="editor.html?v=2" style="color:#fff;background:#1a73e8;padding:4px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:500;margin-left:12px">编辑数据</a>
 </div>
 
 <div class="controls">
@@ -745,7 +745,7 @@ function isWorkingDay(d) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    const resp = await fetch("data.json");
+    const resp = await fetch("data.json?v=2");
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const json = await resp.json();
     ALL_DATA = json.data;
