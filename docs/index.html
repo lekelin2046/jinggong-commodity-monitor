@@ -233,8 +233,7 @@ function renderAll(year, month) {
 
 // 月度日趋势图
 function renderMonthlyTrends(container, year, month) {
-  const prefix = `${year}-${String(month).padStart(2,"0")}`;
-  const days = getMonthDays(year, month);
+  const days = getMonthDays(year, month).filter(d => isWorkingDay(d));
   const labels = days.map(d => d.getDate());
   
   CATEGORIES.forEach(cat => {
@@ -344,9 +343,10 @@ function renderTable(year, month) {
   const days = getMonthDays(year, month);
   const allCodes = CATEGORIES.flatMap(c => c.codes);
   
-  // 收集该月有数据的日期
+  // 收集该月工作日（有数据）
   const activeDays = days.filter(d => {
-    const ds = d.toISOString().substring(0,10);
+    if (!isWorkingDay(d)) return false;
+    const ds = formatDateLocal(d);
     return ALL_DATA[ds] && Object.values(ALL_DATA[ds]).some(v => v !== null);
   });
   
@@ -720,8 +720,44 @@ function toggleAvgTable() {
 }
 
 // ===== INIT =====
+let HOLIDAY_MAP = {}; // "2026-01-01": true
+
+async function loadHolidays(year) {
+  try {
+    const resp = await fetch(`https://timor.tech/api/holiday/year/${year}`);
+    if (!resp.ok) return;
+    const json = await resp.json();
+    if (json.code === 0 && json.holiday) {
+      for (const [k, v] of Object.entries(json.holiday)) {
+        // k = "01-01", v.holiday = true means holiday
+        if (v.holiday) {
+          const m = k.split("-")[0];
+          const d = k.split("-")[1];
+          HOLIDAY_MAP[`${year}-${m}-${d}`] = true;
+        }
+      }
+    }
+  } catch(e) { console.warn("Holiday API failed, using weekends only"); }
+}
+
+function isWorkingDay(d) {
+  const ds = formatDateLocal(d);
+  // 节假日
+  if (HOLIDAY_MAP[ds]) return false;
+  // 周末（0=周日, 6=周六）
+  const dow = d.getDay();
+  if (dow === 0 || dow === 6) return false;
+  return true;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   try {
+    // 加载节假日数据
+    const years = [...new Set(Object.keys(ALL_DATA || {}).map(d => d.substring(0,4)))];
+    await Promise.all(years.map(loadHolidays));
+    // 如果 ALL_DATA 为空，加载当前年
+    if (years.length === 0) await loadHolidays(new Date().getFullYear());
+
     const resp = await fetch("data.json");
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const json = await resp.json();
