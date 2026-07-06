@@ -5,111 +5,181 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>数据编辑 · 有色金属价格</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Microsoft YaHei', sans-serif; background: #f5f5f5; color: #333; min-height: 100vh; }
-.header { background: #1a1a2e; color: #fff; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { font-size: 18px; font-weight: 600; }
-.header span { font-size: 13px; opacity: .7; }
-.toolbar { background: #fff; padding: 12px 24px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; }
-.toolbar select, .toolbar input, .toolbar button { padding: 6px 14px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; }
-.toolbar button { cursor: pointer; font-weight: 500; }
-.btn-save { background: #1a73e8; color: #fff; border-color: #1a73e8; }
-.btn-save:disabled { opacity: .5; cursor: not-allowed; }
-.btn-token { background: #fff; color: #333; }
-#status { font-size: 12px; color: #666; margin-left: 8px; }
-.editor-wrap { overflow-x: auto; padding: 8px 24px 24px; }
-table { border-collapse: collapse; width: max-content; background: #fff; }
-th, td { border: 1px solid #e0e0e0; padding: 6px 8px; font-size: 12px; text-align: center; min-width: 72px; }
-th { background: #f0f0f0; font-weight: 600; position: sticky; top: 0; z-index: 2; }
-th:first-child { position: sticky; left: 0; z-index: 3; background: #f0f0f0; min-width: 100px; }
-td:first-child { position: sticky; left: 0; background: #fafafa; font-weight: 600; z-index: 1; }
-td.cat { background: #e8e8e8; font-weight: 700; font-size: 13px; text-align: left; padding: 8px; }
-td.cell input { width: 72px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center; }
-td.cell input:focus { border-color: #1a73e8; outline: none; box-shadow: 0 0 0 2px rgba(26,115,232,.15); }
-td.cell input.empty { color: #ccc; }
-td.cell input.has-data { color: #333; font-weight: 500; }
-.tag-new { background: #e8f5e9; color: #2e7d32; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
-.token-area { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-.token-area input { width: 280px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 12px; font-family: monospace; }
-.hint { background: #fff3cd; color: #856404; padding: 10px 24px; font-size: 12px; border-bottom: 1px solid #ffc107; }
-.hint a { color: #1a73e8; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Microsoft YaHei',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+
+/* ===== AUTH SCREEN ===== */
+.auth-screen{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1a1a2e}
+.auth-card{background:#fff;border-radius:12px;padding:40px;width:420px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.auth-card h1{font-size:20px;font-weight:600;color:#1a1a2e;margin-bottom:8px}
+.auth-card p{font-size:13px;color:#666;margin-bottom:24px;line-height:1.6}
+.auth-card label{display:block;font-size:13px;font-weight:600;color:#333;text-align:left;margin-bottom:6px}
+.auth-card input{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:monospace;margin-bottom:16px}
+.auth-card input:focus{border-color:#1a73e8;outline:none;box-shadow:0 0 0 3px rgba(26,115,232,.1)}
+.auth-card button{width:100%;padding:12px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+.auth-card button:hover{background:#1557b0}
+.auth-card .steps{text-align:left;font-size:12px;color:#888;margin-top:20px;line-height:1.8}
+.auth-card .steps a{color:#1a73e8}
+.auth-card .steps .num{display:inline-block;width:18px;height:18px;background:#1a73e8;color:#fff;border-radius:9px;text-align:center;font-size:11px;margin-right:6px}
+.auth-error{color:#dc2626;font-size:12px;margin-top:-8px;margin-bottom:12px;display:none}
+
+/* ===== HEADER (editor mode) ===== */
+.header{background:#1a1a2e;color:#fff;padding:12px 24px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:18px;font-weight:600}
+.header span{font-size:13px;opacity:.7}
+.header-right{display:flex;align-items:center;gap:12px;font-size:12px}
+.header-right button{cursor:pointer;padding:4px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:12px}
+.toolbar{background:#fff;padding:12px 24px;display:flex;gap:12px;align-items:center;border-bottom:1px solid #e0e0e0;flex-wrap:wrap}
+.toolbar select,.toolbar button{padding:6px 14px;border-radius:6px;border:1px solid #ccc;font-size:13px}
+.toolbar button{cursor:pointer;font-weight:500}
+.btn-save{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+#status{font-size:12px;color:#666;margin-left:8px}
+.editor-wrap{overflow-x:auto;padding:8px 24px 24px}
+table{border-collapse:collapse;width:max-content;background:#fff}
+th,td{border:1px solid #e0e0e0;padding:6px 8px;font-size:12px;text-align:center;min-width:72px}
+th{background:#f0f0f0;font-weight:600;position:sticky;top:0;z-index:2}
+th:first-child{position:sticky;left:0;z-index:3;background:#f0f0f0;min-width:100px}
+td:first-child{position:sticky;left:0;background:#fafafa;font-weight:600;z-index:1}
+td.cat{background:#e8e8e8;font-weight:700;font-size:13px;text-align:left;padding:8px}
+td.cell input{width:72px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px;text-align:center}
+td.cell input:focus{border-color:#1a73e8;outline:none;box-shadow:0 0 0 2px rgba(26,115,232,.15)}
+td.cell input.empty{color:#ccc}
+td.cell input.has-data{color:#333;font-weight:500}
+.tag-new{background:#e8f5e9;color:#2e7d32;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px}
 </style>
 </head>
 <body>
-<div class="header">
-  <div>
+
+<!-- AUTH SCREEN (shown when no token) -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
     <h1>有色金属价格 · 数据编辑</h1>
-    <span>编辑后点保存 → 自动更新在线看板</span>
-  </div>
-  <div class="token-area" id="tokenArea">
-    <span>GitHub Token:</span>
+    <p>编辑后保存即自动同步到在线看板</p>
+    <label for="tokenInput">GitHub Personal Access Token</label>
     <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-    <button class="btn-token" onclick="saveToken()">保存</button>
+    <p class="auth-error" id="authError"></p>
+    <button onclick="saveToken()" id="authBtn">验证并进入编辑</button>
+    <div class="steps">
+      <div><span class="num">1</span> 打开 <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a></div>
+      <div><span class="num">2</span> 点 Generate new token (classic)，勾选 <b>repo</b></div>
+      <div><span class="num">3</span> 复制生成的 ghp_xxx... 粘贴到上方</div>
+      <div><span class="num">4</span> 点「验证并进入编辑」，Token 保存在浏览器本地</div>
+    </div>
   </div>
 </div>
-<div id="hintArea"></div>
-<div class="toolbar">
-  <select id="yearSelect" onchange="loadMonth()">
-    <option value="2026">2026年</option>
-  </select>
-  <select id="monthSelect" onchange="loadMonth()">
-    <option value="01">1月</option><option value="02">2月</option><option value="03">3月</option>
-    <option value="04">4月</option><option value="05">5月</option><option value="06">6月</option>
-    <option value="07">7月</option><option value="08">8月</option><option value="09">9月</option>
-    <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
-  </select>
-  <button class="btn-save" id="saveBtn" onclick="saveData()" disabled>保存并更新看板</button>
-  <span id="status"></span>
+
+<!-- EDITOR SCREEN (shown after token verified) -->
+<div id="editorScreen" style="display:none">
+  <div class="header">
+    <div>
+      <h1>有色金属价格 · 数据编辑</h1>
+      <span>编辑后点保存 → 自动更新在线看板</span>
+    </div>
+    <div class="header-right">
+      <span id="tokenStatus"></span>
+      <button onclick="logout()">退出</button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <select id="yearSelect" onchange="loadMonth()"><option value="2026">2026年</option></select>
+    <select id="monthSelect" onchange="loadMonth()"></select>
+    <button class="btn-save" id="saveBtn" onclick="saveData()">保存并更新看板</button>
+    <span id="status"></span>
+  </div>
+  <div class="editor-wrap" id="editorWrap"></div>
 </div>
-<div class="editor-wrap" id="editorWrap"></div>
 
 <script>
-// ===== VARIETY DEFINITIONS (must match data.json keys exactly) =====
+// ===== VARIETY DEFINITIONS =====
 const VARIETY_NAMES = {
-  "ADC12": "ADC12", "A380": "A380", "AlSi9Cu3": "AlSi9Cu3", "A356": "A356",
-  "A00_AL": "A00铝", "CU": "铜", "SI_441": "硅441", "SI_3303": "硅3303",
-  "SI_331": "硅331", "MG": "镁", "MN": "电解锰", "Wenxi_MG": "闻喜镁锭",
-  "AM60B": "AM60B", "AZ91D": "AZ91D", "W": "钨粉", "WTI": "WTI原油"
+  "ADC12":"ADC12","A380":"A380","AlSi9Cu3":"AlSi9Cu3","A356":"A356",
+  "A00_AL":"A00铝","CU":"铜","SI_441":"硅441","SI_3303":"硅3303",
+  "SI_331":"硅331","MG":"镁","MN":"电解锰","Wenxi_MG":"闻喜镁锭",
+  "AM60B":"AM60B","AZ91D":"AZ91D","W":"钨粉","WTI":"WTI原油"
 };
-const VARIETY_UNITS = { "W": "元/千克", "WTI": "USD/bbl", "MN": "元/吨" };
+const VARIETY_UNITS = {"W":"元/千克","WTI":"USD/bbl","MN":"元/吨"};
 const CATEGORIES = [
-  { name: "铝及铝合金", codes: ["ADC12", "A380", "AlSi9Cu3", "A356", "A00_AL"] },
-  { name: "铜硅镁锰", codes: ["CU", "SI_441", "SI_3303", "SI_331", "MG", "MN"] },
-  { name: "镁合金", codes: ["Wenxi_MG", "AM60B", "AZ91D"] },
-  { name: "钨粉及原油", codes: ["W", "WTI"] },
+  {name:"铝及铝合金",codes:["ADC12","A380","AlSi9Cu3","A356","A00_AL"]},
+  {name:"铜硅镁锰",codes:["CU","SI_441","SI_3303","SI_331","MG","MN"]},
+  {name:"镁合金",codes:["Wenxi_MG","AM60B","AZ91D"]},
+  {name:"钨粉及原油",codes:["W","WTI"]},
 ];
+const MONTHS = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 
-let ALL_DATA = {};
-let GITHUB_TOKEN = localStorage.getItem('gh_token') || '';
-let currentDates = [];
-let currentYear = '2026', currentMonth = '07';
+let ALL_DATA = {}, GITHUB_TOKEN = '', currentDates = [], currentYear = '2026', currentMonth = '07';
 
 // ===== INIT =====
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
+  GITHUB_TOKEN = localStorage.getItem('gh_token') || '';
   if (GITHUB_TOKEN) {
     document.getElementById('tokenInput').value = GITHUB_TOKEN;
-    document.getElementById('saveBtn').disabled = false;
+    showEditor();
   }
+  // Month select options
+  document.getElementById('monthSelect').innerHTML = MONTHS.map(m => `<option value="${m}">${parseInt(m)}月</option>`).join('');
+});
+
+async function saveToken() {
+  const t = document.getElementById('tokenInput').value.trim();
+  const errEl = document.getElementById('authError');
+  if (!t) { errEl.textContent = '请输入 Token'; errEl.style.display = 'block'; return; }
+  if (!t.startsWith('ghp_') && !t.startsWith('github_pat_')) {
+    errEl.textContent = 'Token 格式不正确，应以 ghp_ 或 github_pat_ 开头';
+    errEl.style.display = 'block'; return;
+  }
+
+  // Verify token by calling GitHub API
+  errEl.style.display = 'none';
+  try {
+    const resp = await fetch('https://api.github.com/user', {
+      headers: {'Authorization':'token '+t,'Accept':'application/vnd.github.v3+json'}
+    });
+    if (!resp.ok) throw new Error('HTTP '+resp.status);
+    const user = await resp.json();
+    localStorage.setItem('gh_token', t);
+    localStorage.setItem('gh_user', user.login);
+    GITHUB_TOKEN = t;
+    showEditor();
+  } catch(e) {
+    errEl.textContent = 'Token 验证失败: ' + e.message + '（请确认勾选了 repo 权限）';
+    errEl.style.display = 'block';
+  }
+}
+
+async function showEditor() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('editorScreen').style.display = 'block';
+  document.getElementById('tokenStatus').textContent = 'Token: ' + (localStorage.getItem('gh_user') || '***');
   const now = new Date();
   currentYear = String(now.getFullYear());
-  currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+  currentMonth = String(now.getMonth()+1).padStart(2,'0');
   document.getElementById('yearSelect').value = currentYear;
   document.getElementById('monthSelect').value = currentMonth;
   await loadData();
   renderTable();
-});
+}
 
+function logout() {
+  localStorage.removeItem('gh_token');
+  localStorage.removeItem('gh_user');
+  GITHUB_TOKEN = '';
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('editorScreen').style.display = 'none';
+  document.getElementById('tokenInput').value = '';
+  ALL_DATA = {};
+}
+
+// ===== LOAD DATA =====
 async function loadData() {
   try {
     const resp = await fetch('data.json?v=2');
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    if (!resp.ok) throw new Error('HTTP '+resp.status);
     const json = await resp.json();
     ALL_DATA = json.data || {};
     setStatus('数据已加载', 'green');
   } catch(e) {
-    setStatus('数据加载失败: ' + e.message, 'red');
-    document.getElementById('hintArea').innerHTML =
-      '<div class="hint">需要通过 HTTP 服务器访问此页面（不能直接用 file:// 打开）。<a href="https://lekelin2046.github.io/jinggong-commodity-monitor/editor.html" target="_blank">点此打开线上版</a></div>';
+    setStatus('数据加载失败: '+e.message, 'red');
   }
 }
 
@@ -125,7 +195,6 @@ function renderTable() {
   const y = parseInt(currentYear), m = parseInt(currentMonth);
   const days = getWorkDays(y, m);
   currentDates = days;
-  const codes = CATEGORIES.flatMap(c => c.codes);
 
   let html = '<table><thead><tr><th>品种</th>';
   days.forEach(d => {
@@ -155,109 +224,65 @@ function renderTable() {
 
 // ===== SAVE =====
 async function saveData() {
-  if (!GITHUB_TOKEN) { alert('请先输入 GitHub Token'); return; }
+  if (!GITHUB_TOKEN) { logout(); return; }
   const saveBtn = document.getElementById('saveBtn');
-  saveBtn.disabled = true;
-  saveBtn.textContent = '保存中...';
+  saveBtn.disabled = true; saveBtn.textContent = '保存中...';
   setStatus('正在收集数据...', '#666');
 
-  // Read all inputs
   const inputs = document.querySelectorAll('td.cell input');
   const updates = {};
   inputs.forEach(inp => {
-    const ds = inp.dataset.date;
-    const code = inp.dataset.code;
-    const v = inp.value.trim();
+    const ds = inp.dataset.date, code = inp.dataset.code, v = inp.value.trim();
     if (!updates[ds]) updates[ds] = {};
-    if (v !== '') {
-      const num = parseFloat(v);
-      updates[ds][code] = isNaN(num) ? null : num;
-    } else {
-      updates[ds][code] = null;
-    }
+    if (v !== '') { const num = parseFloat(v); updates[ds][code] = isNaN(num) ? null : num; }
+    else updates[ds][code] = null;
   });
 
-  // Merge into ALL_DATA
-  for (const [ds, row] of Object.entries(updates)) {
-    if (!ALL_DATA[ds]) {
-      // Create new row with all codes as null
-      ALL_DATA[ds] = {};
-      CATEGORIES.flatMap(c => c.codes).forEach(code => { ALL_DATA[ds][code] = null; });
-    }
+  for (const [ds,row] of Object.entries(updates)) {
+    if (!ALL_DATA[ds]) { ALL_DATA[ds] = {}; CATEGORIES.flatMap(c=>c.codes).forEach(c=>{ALL_DATA[ds][c]=null;}); }
     Object.assign(ALL_DATA[ds], row);
   }
 
-  const totalDays = Object.keys(ALL_DATA).length;
   const content = JSON.stringify({
     last_updated: new Date().toISOString().substring(0,10),
-    total_days: totalDays,
+    total_days: Object.keys(ALL_DATA).length,
     data: ALL_DATA
   }, null, 2);
 
   setStatus('正在提交到 GitHub...', '#1a73e8');
-
   try {
-    // Get current file SHA
     const getResp = await fetch('https://api.github.com/repos/lekelin2046/jinggong-commodity-monitor/contents/docs/data.json', {
-      headers: { 'Authorization': 'token ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' }
+      headers: {'Authorization':'token '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
     });
-    if (!getResp.ok) throw new Error('读取GitHub失败: ' + getResp.status + ' ' + (await getResp.text()).substring(0,100));
-    const fileInfo = await getResp.json();
+    if (!getResp.ok) throw new Error('读取失败 HTTP '+getResp.status);
+    const fi = await getResp.json();
 
-    // Commit
     const commitResp = await fetch('https://api.github.com/repos/lekelin2046/jinggong-commodity-monitor/contents/docs/data.json', {
-      method: 'PUT',
-      headers: { 'Authorization': 'token ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+      method:'PUT',
+      headers: {'Authorization':'token '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
       body: JSON.stringify({
-        message: `editor: 手动更新数据 ${new Date().toISOString().substring(0,10)}`,
+        message: 'editor: 手动更新数据 '+new Date().toISOString().substring(0,10),
         content: btoa(unescape(encodeURIComponent(content))),
-        sha: fileInfo.sha,
-        branch: 'main'
+        sha: fi.sha, branch: 'main'
       })
     });
-    if (!commitResp.ok) throw new Error('提交失败: ' + commitResp.status);
-
-    setStatus('提交成功！看板将在约30秒后自动更新', 'green');
+    if (!commitResp.ok) throw new Error('提交失败 HTTP '+commitResp.status);
+    setStatus('提交成功！看板约30秒后自动更新', 'green');
   } catch(e) {
-    setStatus('保存失败: ' + e.message, 'red');
+    setStatus('保存失败: '+e.message, 'red');
+    if (e.message.includes('401')) logout();
   }
-  saveBtn.disabled = false;
-  saveBtn.textContent = '保存并更新看板';
+  saveBtn.disabled = false; saveBtn.textContent = '保存并更新看板';
 }
 
 // ===== HELPERS =====
-function getWorkDays(year, month) {
-  const days = [];
-  const d = new Date(year, month-1, 1);
-  while (d.getMonth() === month-1) {
-    const dow = d.getDay();
-    if (dow !== 0 && dow !== 6) days.push(new Date(d));
-    d.setDate(d.getDate() + 1);
-  }
+function getWorkDays(y,m) {
+  const days=[], d=new Date(y,m-1,1);
+  while(d.getMonth()===m-1) { if(d.getDay()!==0&&d.getDay()!==6) days.push(new Date(d)); d.setDate(d.getDate()+1); }
   return days;
 }
-
-function formatDate(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-
-function setStatus(msg, color) {
-  const s = document.getElementById('status');
-  s.textContent = msg;
-  s.style.color = color || '#666';
-}
-
-function saveToken() {
-  const t = document.getElementById('tokenInput').value.trim();
-  if (!t) { alert('请输入 GitHub Personal Access Token'); return; }
-  localStorage.setItem('gh_token', t);
-  GITHUB_TOKEN = t;
-  document.getElementById('saveBtn').disabled = false;
-  setStatus('Token 已保存', 'green');
-}
+function formatDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function setStatus(msg,color) { const s=document.getElementById('status'); s.textContent=msg; s.style.color=color||'#666'; }
 </script>
 </body>
 </html>
