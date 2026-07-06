@@ -64,15 +64,20 @@ td.cell input.has-data { color: #333; font-weight: 500; }
 <div class="editor-wrap" id="editorWrap"></div>
 
 <script>
-// ===== VARIETY DEFINITIONS =====
+// ===== VARIETY DEFINITIONS (must match data.json keys exactly) =====
+const VARIETY_NAMES = {
+  "ADC12": "ADC12", "A380": "A380", "AlSi9Cu3": "AlSi9Cu3", "A356": "A356",
+  "A00_AL": "A00铝", "CU": "铜", "SI_441": "硅441", "SI_3303": "硅3303",
+  "SI_331": "硅331", "MG": "镁", "MN": "电解锰", "Wenxi_MG": "闻喜镁锭",
+  "AM60B": "AM60B", "AZ91D": "AZ91D", "W": "钨粉", "WTI": "WTI原油"
+};
+const VARIETY_UNITS = { "W": "元/千克", "WTI": "USD/bbl", "MN": "元/吨" };
 const CATEGORIES = [
-  { name: '铝合金', codes: ['ADC12','A380','AlSi9Cu3','A356'] },
-  { name: '基本有色', codes: ['A00铝','铜','镁','锰'] },
-  { name: '金属硅', codes: ['硅441','硅3303','硅331'] },
-  { name: '镁合金/特殊', codes: ['闻喜镁锭','AM60B','AZ91D'] },
-  { name: '其他', codes: ['钨粉','WTI'] },
+  { name: "铝及铝合金", codes: ["ADC12", "A380", "AlSi9Cu3", "A356", "A00_AL"] },
+  { name: "铜硅镁锰", codes: ["CU", "SI_441", "SI_3303", "SI_331", "MG", "MN"] },
+  { name: "镁合金", codes: ["Wenxi_MG", "AM60B", "AZ91D"] },
+  { name: "钨粉及原油", codes: ["W", "WTI"] },
 ];
-const UNITS = { WTI: '美元/桶', 钨粉: '元/公斤', default: '元/吨' };
 
 let ALL_DATA = {};
 let GITHUB_TOKEN = localStorage.getItem('gh_token') || '';
@@ -134,7 +139,7 @@ function renderTable() {
   CATEGORIES.forEach(cat => {
     html += `<tr><td class="cat" colspan="${days.length+1}">${cat.name}</td></tr>`;
     cat.codes.forEach(code => {
-      html += `<tr><td>${code}<br><small style="color:#999;font-weight:400">${UNITS[code]||UNITS.default}</small></td>`;
+      html += `<tr><td>${VARIETY_NAMES[code]}<br><small style="color:#999;font-weight:400">${VARIETY_UNITS[code]||'元/吨'}</small></td>`;
       days.forEach(d => {
         const ds = formatDate(d);
         const v = (ALL_DATA[ds] && ALL_DATA[ds][code] != null) ? ALL_DATA[ds][code] : '';
