@@ -246,7 +246,7 @@ function renderMonthlyTrends(container, year, month) {
     
     const datasets = cat.codes.map((code, i) => {
       const points = days.map(d => {
-        const ds = d.toISOString().substring(0,10);
+        const ds = formatDateLocal(d);
         const prices = ALL_DATA[ds];
         return prices && prices[code] != null ? prices[code] : null;
       });
@@ -370,7 +370,7 @@ function renderTable(year, month) {
       html += `<tr><td class="sticky-col">${VARIETY_NAMES[code]}<span class="unit-tag">${VARIETY_UNITS[code] || DEFAULT_UNIT}</span></td>`;
       let sum=0, cnt=0;
       activeDays.forEach((d, i) => {
-        const ds = d.toISOString().substring(0,10);
+        const ds = formatDateLocal(d);
         const v = ALL_DATA[ds] && ALL_DATA[ds][code] != null ? ALL_DATA[ds][code] : null;
         const isLatest = i === lastIdx;
         if(v != null) { sum += v; cnt++; html += `<td${isLatest ? ' class="latest-day"' : ''}>${Number.isInteger(v) ? v : v.toFixed(2)}</td>`; }
@@ -688,6 +688,13 @@ function getMonthDays(year, month) {
   const d = new Date(year, month-1, 1);
   while(d.getMonth() === month-1) { days.push(new Date(d)); d.setDate(d.getDate()+1); }
   return days;
+}
+
+function formatDateLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function destroyCharts() {
