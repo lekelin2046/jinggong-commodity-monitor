@@ -14,6 +14,7 @@ import re
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Optional
 
 import openpyxl
 from openpyxl.styles import PatternFill, Font
@@ -26,17 +27,109 @@ DATE_FONT = Font(name="微软雅黑", size=11, bold=False)
 from playwright.async_api import async_playwright
 
 sys.path.insert(0, str(Path(__file__).parent))
+from jinggong_monitor.credentials import require_smm, require_asianmetal
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 logger = logging.getLogger(__name__)
 
-EXCEL_PATH = Path("/Users/siqi/Desktop/AI/jinggong-commodity-monitor/2026年有色金属市场价格共享(2).xlsx")
+EXCEL_PATH = Path(__file__).parent / "2026年有色金属市场价格共享(2).xlsx"
 YELLOW_FILL = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+
+# ============================================================
+# 自动登录配置（2026-07-02 突破：networkidle → domcontentloaded）
+# 账号密码从环境变量 / .env 读取，缺失即报错（不保留默认密码）
+# ============================================================
+SMM_ACCOUNT, SMM_PASSWORD = require_smm()
+ASIANMETAL_ACCOUNT, ASIANMETAL_PASSWORD = require_asianmetal()
+
+# 代理白名单：国内站点直连
+_PROXY_DOMAINS = "sci99.com,chinatungsten.com,51bxg.com,steelcn.cn,ccmn.cn,cnfeol.com,ctia.com.cn,smm.cn,asianmetal.cn,hq.smm.cn,user.smm.cn,www.asianmetal.cn"
+os.environ.setdefault("NO_PROXY", _PROXY_DOMAINS)
+os.environ.setdefault("no_proxy", os.environ.get("NO_PROXY", _PROXY_DOMAINS))
+
+
+async def _launch_headless_browser():
+    """统一启动 headless 浏览器（去掉对 9223 调试 Chrome 的依赖）"""
+    p = await async_playwright().start()
+    browser = await p.chromium.launch(
+        headless=True,
+        args=["--disable-blink-features=AutomationControlled", "--no-sandbox"],
+    )
+    return p, browser
+
+
+async def _smm_login_and_get_cookies(context) -> bool:
+    """在给定 context 里自动登录 SMM（无需验证码）
+
+    返回 True 表示登录成功（URL 不含 login）。
+    2026-07-02 实测：domcontentloaded + 5s 等待，5 秒内必登录成功。
+    """
+    page = await context.new_page()
+    try:
+        await page.goto("https://user.smm.cn/login", timeout=30000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(3000)
+        await page.locator("#userName").fill(SMM_ACCOUNT)
+        await page.locator("#password").fill(SMM_PASSWORD)
+        await page.locator("#user_account_password_login_button").click()
+        await asyncio.sleep(5)
+        return "login" not in page.url.lower()
+    finally:
+        await page.close()
+
+
+async def _asianmetal_login_and_get_cookies(context) -> bool:
+    """在给定 context 里自动登录亚洲金属网
+
+    2026-07-02 实测：主登录表单（txtUserLoginName/txtUserPwd）无法建立主站会话；
+    真正可用的是顶部登录弹窗（cnopenloginname / cnopenloginpwd / openloginbutn）。
+    访问受保护文章会触发弹窗，登录后跳回文章页。
+    """
+    page = await context.new_page()
+    try:
+        protected_url = "https://www.asianmetal.cn/news/2974825/"
+        await page.goto(protected_url, timeout=30000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(3000)
+
+        # 显示并填充顶部登录弹窗
+        await page.evaluate(
+            """(args) => {
+                const loginWin = document.getElementById("loginWin");
+                const showFilter = document.getElementById("showFilter");
+                if (loginWin) loginWin.style.display = "block";
+                if (showFilter) showFilter.style.display = "block";
+                document.getElementById("cnopenloginname").value = args.user;
+                document.getElementById("cnopenloginpwd").value = args.pwd;
+            }""",
+            {"user": ASIANMETAL_ACCOUNT, "pwd": ASIANMETAL_PASSWORD},
+        )
+        await page.wait_for_timeout(500)
+        await page.locator("#openloginbutn").click()
+        await asyncio.sleep(8)
+
+        # 处理「账号在线中」强制下线弹窗：点 #outlinebutn 继续
+        try:
+            for _ in range(2):
+                await page.wait_for_timeout(3000)
+                body = await page.inner_text("body")
+                if "此账号在线中" in body or "强制对方下线" in body:
+                    print(f"  检测到账号在线中弹窗，点击「登陆」强制进入...")
+                    try:
+                        await page.locator("#outlinebutn").click(timeout=3000)
+                    except Exception:
+                        await page.evaluate('''() => { if (typeof outLine === "function") outLine(); }''')
+                    await page.wait_for_timeout(3000)
+        except Exception:
+            pass
+
+        body = await page.inner_text("body")
+        return "news/2974825" in page.url and ("注销" in body or "欢迎" in body)
+    finally:
+        await page.close()
 
 # ============================================================
 # 截图管理（2026-06-29 主人新增需求）
 # ============================================================
-SCREENSHOTS_ROOT = Path("/Users/siqi/Desktop/AI/jinggong-commodity-monitor/screenshots")
+SCREENSHOTS_ROOT = Path(__file__).parent / "screenshots"
 TODAY_STR = datetime.now().strftime("%Y-%m-%d")
 SHOT_DIR = SCREENSHOTS_ROOT / TODAY_STR
 SHOT_DIR.mkdir(parents=True, exist_ok=True)
@@ -53,7 +146,7 @@ def _shot_name(source: str, page_label: str, ok: bool) -> str:
     return f"{prefix}{safe}_{ts}.png"
 
 
-async def take_screenshot(page, source: str, page_label: str, full_page: bool = False) -> Path | None:
+async def take_screenshot(page, source: str, page_label: str, full_page: bool = False) -> Optional[Path]:
     """截图并登记结果。失败也截一张（标 ❌）。
 
     Args:
@@ -99,7 +192,7 @@ async def take_screenshot(page, source: str, page_label: str, full_page: bool = 
 # 数据采集
 # ============================================================
 
-def get_akshare_spot(variety: str, date_str: str) -> float | None:
+def get_akshare_spot(variety: str, date_str: str) -> Optional[float]:
     """从akshare获取futures_spot_price"""
     import akshare as ak
     try:
@@ -112,57 +205,68 @@ def get_akshare_spot(variety: str, date_str: str) -> float | None:
 
 
 async def get_ccmn_prices() -> dict:
-    """Playwright抓长江有色首页"""
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, args=["--no-sandbox"])
-        page = await browser.new_page()
-        await page.goto("https://www.ccmn.cn/", timeout=20000, wait_until="domcontentloaded")
-        await page.wait_for_timeout(8000)
-        text = await page.inner_text("body")
-        # 📸 截图（6/29 主人拍板：ccmn 截整页含页面标题+日期+表格）
-        await take_screenshot(page, "ccmn", "长江现货", full_page=True)
-        await browser.close()
+    """调 ccmn AJAX 端点（fetcher_ccmn.CcmnFetcher）+ 截图存档
 
-    prices = {}
-    ccmn_map = [
-        ("A00_AL", r"A00铝\D+?(\d+)\D+?(\d+)\D+?(\d+)", 3),
-        ("CU", r"铜[^铝锌铅锡镍]{0,10}?(\d{5,6})\D+?(\d{5,6})", 2),
-        # 金属硅中间价（2026-06-26 主人拍板 — 硬规则）：
-        #   H 列 441 = 金属硅553#-331# 的 avgPrice（group 3）
-        #   L 列 331 = 金属硅553#-331# 的 maxPrice（group 2）
-        #   I 列 3303 = 金属硅3303#-2202# 的 minPrice（group 1）
-        ("SI_553_331_AVG", r"金属硅553#-331#\D+?(\d+)\D+?(\d+)\D+?(\d+)", 3),
-        ("SI_553_331_MAX", r"金属硅553#-331#\D+?(\d+)\D+?(\d+)\D+?(\d+)", 2),
-        ("SI_3303_2202_MIN", r"金属硅3303#-2202#\D+?(\d+)\D+?(\d+)\D+?(\d+)", 1),
-        ("MG", r"1#镁\D+?(\d+)\D+?(\d+)\D+?(\d+)", 3),
-        ("MN", r"1#电解锰[^合]\D+?(\d+)\D+?(\d+)\D+?(\d+)", 3),
-        ("ADC12", r"铝合金ADC12\D+?(\d+)\D+?(\d+)\D+?(\d+)", 3),
-        ("A380", r"A380\D+?[^合金]*?(\d+)\D+?(\d+)\D+?(\d+)", 3),
-        ("A356", r"A356[^.]\D+?(\d+)\D+?(\d+)\D+?(\d+)", 3),
-    ]
-    for name, pat, groups in ccmn_map:
-        m = re.search(pat, text)
-        if m:
-            if groups == 2:
-                prices[name] = round((int(m.group(1)) + int(m.group(2))) / 2, 2)
-            else:
-                prices[name] = int(m.group(groups))
+    2026-07-02 改造：去掉 CDP 9223 依赖，独立 headless 浏览器截图。
+    6/30 主人拍板：禁用首页 Playwright + 正则方案（ccmn 6 月起将电解锰表格分行了，
+    正则 r"1#电解锰[^合]\\D+?(\\d+)..." 会匹配错位抓到无关小数字 → 写出 6 这种离谱值）。
+    现在直接复用 fetcher_ccmn.py 验证过的 AJAX 端点（POST /shop/historyData/...）。
+    """
+    # 📸 截图存档：ccmn 截整页含页面标题+日期+表格（独立 headless，不再依赖 9223）
+    p, browser = await _launch_headless_browser()
+    try:
+        ctx = await browser.new_context(viewport={"width": 1280, "height": 900})
+        page = await ctx.new_page()
+        await page.goto("https://www.ccmn.cn/cjxh.shtml", timeout=20000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(3000)
+        await take_screenshot(page, "ccmn", "长江现货", full_page=True)
+        await page.close()
+        await ctx.close()
+    except Exception as e:
+        print(f"⚠️ ccmn 截图失败（不影响数据采集）: {e}")
+    finally:
+        await browser.close()
+        await p.stop()
+
+    # 调 AJAX 端点（fetcher_ccmn 是 6/25 验证过的稳定实现）
+    from jinggong_monitor.fetcher_ccmn import CcmnFetcher
+    fetcher = CcmnFetcher()
+    today = datetime.now().strftime("%Y-%m-%d")
+    prices = fetcher.fetch(today)
     return prices
 
 
 async def get_smm_cdp() -> dict:
-    """CDP连接用户Chrome抓SMM登录后数据"""
-    async with async_playwright() as p:
-        browser = await p.chromium.connect_over_cdp("http://localhost:9223")
+    """自动登录 SMM 抓 7 个品种价格（2026-07-02 改造）
 
-        page = await browser.contexts[0].new_page()
+    之前：connect_over_cdp(localhost:9223) → 依赖主人手动开 Chrome 登录态
+    现在：独立 headless 浏览器，5秒自动登录 + cookies 注入 + 抓取
+    实测：ADC12/A380/AlSi9Cu3/A356/闻喜镁锭/AM60B/AZ91D 全部抓到
+    """
+    p, browser = await _launch_headless_browser()
+    try:
+        context = await browser.new_context(
+            viewport={"width": 1280, "height": 900},
+            bypass_csp=True,
+        )
+
+        # 1. 自动登录 SMM
+        login_ok = await _smm_login_and_get_cookies(context)
+        if not login_ok:
+            logger.warning("SMM 自动登录失败，可能账号密码错或网站改版")
+            return {}
+        logger.info("SMM 自动登录成功")
+
+        # 2. 访问铝行情页
+        page = await context.new_page()
         await page.goto("https://hq.smm.cn/aluminum", timeout=20000, wait_until="domcontentloaded")
         await page.wait_for_timeout(5000)
         al_text = await page.inner_text("body")
         # 📸 截图 SMM 铝页
         await take_screenshot(page, "smm", "铝页")
 
-        page2 = await browser.contexts[0].new_page()
+        # 3. 访问镁行情页
+        page2 = await context.new_page()
         await page2.goto("https://hq.smm.cn/magnesium", timeout=20000, wait_until="domcontentloaded")
         await page2.wait_for_timeout(5000)
         mg_text = await page2.inner_text("body")
@@ -171,8 +275,25 @@ async def get_smm_cdp() -> dict:
 
         await page.close()
         await page2.close()
-        await browser.close()
 
+        # 4. 保存 cookies（必须在 context.close() 之前，否则 cookies() 会报错）
+        try:
+            cookies = await context.cookies()
+            cookie_path = Path(__file__).parent / "data" / "smm_cookies.json"
+            cookie_path.parent.mkdir(parents=True, exist_ok=True)
+            import json
+            with open(cookie_path, "w") as f:
+                json.dump(cookies, f, indent=2, ensure_ascii=False)
+            logger.info(f"SMM cookies 保存: {len(cookies)} 条")
+        except Exception as e:
+            logger.warning(f"cookies 保存失败（不影响抓取）: {e}")
+
+        await context.close()
+    finally:
+        await browser.close()
+        await p.stop()
+
+    # 5. 正则提取价格
     prices = {}
     smm_patterns = {
         "ADC12": (al_text, r"SMM铝合金ADC12\D+?(\d+)\D+?(\d+)\D+?(\d+)"),
@@ -191,19 +312,198 @@ async def get_smm_cdp() -> dict:
 
 
 async def get_asianmetal_price() -> dict:
-    """CDP连接用户Chrome抓亚洲金属网闻喜镁锭价格"""
+    """自动登录亚洲金属网抓闻喜镁锭价格（2026-07-02 改造）
+
+    之前：connect_over_cdp(localhost:9223) + fetcher._fetch_via_cdp（实际不存在该方法）
+    现在：独立 headless 浏览器，自动登录 + 跳文章页 + 尝试表格提取 → 失败走 OCR 备选
+
+    6/30 主人拍板：6 月起价格表改为图片渲染（防爬），原 _extract_wenxi_from_table 拿不到文字。
+    业主硬要求：闻喜镁锭必须用亚洲金属网，不走 SMM 备源。
+    """
+    p, browser = await _launch_headless_browser()
     try:
-        sys.path.insert(0, str(Path(__file__).parent))
-        from jinggong_monitor.fetcher_asianmetal import AsianmetalFetcher
-        fetcher = AsianmetalFetcher()
-        prices = await fetcher._fetch_via_cdp()
-        return prices
-    except Exception as e:
-        logger.warning(f"亚洲金属网抓取失败: {e}")
+        context = await browser.new_context(
+            viewport={"width": 1280, "height": 900},
+            bypass_csp=True,
+        )
+
+        # 1. 自动登录亚洲金属网
+        login_ok = await _asianmetal_login_and_get_cookies(context)
+        if not login_ok:
+            logger.warning("亚洲金属网自动登录失败")
+            return {}
+        logger.info("亚洲金属网自动登录成功")
+
+        # 2. 保存 cookies
+        try:
+            cookies = await context.cookies()
+            cookie_path = Path(__file__).parent / "data" / "asianmetal_cookies.json"
+            cookie_path.parent.mkdir(parents=True, exist_ok=True)
+            import json
+            with open(cookie_path, "w") as f:
+                json.dump(cookies, f, indent=2, ensure_ascii=False)
+            logger.info(f"亚洲金属网 cookies 保存: {len(cookies)} 条")
+        except Exception as e:
+            logger.warning(f"cookies 保存失败: {e}")
+
+        # 3. 跳到镁锭新闻列表页，找今日镁锭价格文章
+        page = await context.new_page()
+        await page.goto("https://www.asianmetal.cn/MagnesiumPricesHistory", timeout=20000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(3000)
+
+        article_url = await page.evaluate('''
+            () => {
+                const links = document.querySelectorAll('a[href*="/news/"]');
+                for (const a of links) {
+                    const t = (a.innerText || '').split('\\n')[0].trim();
+                    if (!t) continue;
+                    if (t.includes('镁合金') || t.includes('镁粉') || t.includes('99.95%min')) continue;
+                    if (t.includes('镁锭') && t.includes('价格')) return a.href;
+                }
+                return null;
+            }
+        ''')
+
+        if not article_url:
+            logger.warning("亚洲金属网未找到今日镁锭文章")
+            await take_screenshot(page, "asianmetal", "列表页未找到文章", full_page=True)
+            await page.close()
+            await context.close()
+            return {}
+
+        # 4. 打开文章详情页
+        logger.info(f"打开文章: {article_url}")
+        await page.goto(article_url, timeout=20000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(5000)
+
+        # 5. 截图存证
+        await take_screenshot(page, "asianmetal", "闻喜镁锭", full_page=True)
+
+        # 6. 尝试文字提取（表格/正则）
+        body_text = await page.inner_text("body")
+        wenxi_row = re.search(
+            r'闻喜[\s\S]{0,40}?镁锭[\s\S]{0,40}?99[.,]9%min[\s\S]{0,40}?'
+            r'(\d[\d,.]+\d)\s*[-–~]\s*(\d[\d,.]+\d)',
+            body_text,
+        )
+        if wenxi_row:
+            low = float(wenxi_row.group(1).replace(",", ""))
+            high = float(wenxi_row.group(2).replace(",", ""))
+            if 10000 < low < 50000 and 10000 < high < 50000:
+                mid = round((low + high) / 2, 2)
+                logger.info(f"亚洲金属网闻喜镁锭（文字）: {low}-{high} → {mid}")
+                await page.close()
+                await context.close()
+                return {"Wenxi_MG": mid}
+
+        # 7. 文字提取失败（图片渲染）→ 走 OCR 备选
+        logger.warning("文字提取失败（价格表可能是图片），走 OCR 备选")
+        await page.close()
+        await context.close()
+
+        price = await _ocr_asianmetal_fallback()
+        if price:
+            return {"Wenxi_MG": price}
         return {}
+    finally:
+        await browser.close()
+        await p.stop()
 
 
-def get_tungsten_price() -> float | None:
+async def _ocr_asianmetal_fallback() -> Optional[float]:
+    """OCR 备选：自动登录 + 开文章页 → 截全页 → 调 OCR.space → 正则取闻喜+区间
+
+    6/30 主人拍板：价格表是图片，不是不让你动，是必须动——走 OCR 拿。
+    抓完后会写一份截图证据到 screenshots/ 以便人工复核。
+    2026-07-02 改造：去掉 CDP 9223 依赖，独立 headless + 自动登录。
+    """
+    import requests
+    import re
+
+    p, browser = await _launch_headless_browser()
+    shot_path = None
+    try:
+        context = await browser.new_context(viewport={"width": 1280, "height": 900}, bypass_csp=True)
+        # 自动登录
+        login_ok = await _asianmetal_login_and_get_cookies(context)
+        if not login_ok:
+            logger.warning("OCR 备选：亚洲金属网自动登录失败")
+            return None
+
+        page = await context.new_page()
+        await page.goto(
+            "https://www.asianmetal.cn/MagnesiumPricesHistory",
+            timeout=20000,
+            wait_until="domcontentloaded",
+        )
+        await page.wait_for_timeout(3000)
+        # 抓第一个含「镁锭价格分区域」+ 不含「镁合金/镁粉/99.95%min」的文章链接
+        href = await page.evaluate('''
+            () => {
+                const links = document.querySelectorAll('a[href*="/news/"]');
+                for (const a of links) {
+                    const t = a.innerText.split('\\n')[0];
+                    if (!t) continue;
+                    if (t.includes('镁合金') || t.includes('镁粉') || t.includes('99.95%min')) continue;
+                    if (t.includes('镁锭') && t.includes('价格')) return a.href;
+                }
+                return null;
+            }
+        ''')
+        if not href:
+            logger.warning("OCR 备选：未找到今日镁锭文章 URL")
+            return None
+
+        # 打开文章页 + 截全页
+        await page.goto(href, timeout=30000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(8000)
+        shot_path = SHOT_DIR / f"asianmetal_闻喜镁锭_OCR备选_{datetime.now().strftime('%H%M%S')}.png"
+        await page.screenshot(path=str(shot_path), full_page=True, timeout=60000)
+        logger.info(f"OCR 备选截图保存: {shot_path}")
+        await page.close()
+        await context.close()
+    finally:
+        await browser.close()
+        await p.stop()
+
+    if not shot_path or not shot_path.exists():
+        logger.warning("OCR 备选：截图未保存")
+        return None
+
+    # 调 OCR.space 免费 API
+    try:
+        with open(shot_path, "rb") as f:
+            img_data = f.read()
+        resp = requests.post(
+            "https://api.ocr.space/parse/image",
+            files={"filename": ("img.png", img_data, "image/png")},
+            data={"language": "chs", "isOverlayRequired": "false"},
+            headers={"apikey": os.environ.get("OCR_SPACE_APIKEY", "")},
+            timeout=60,
+        )
+        result = resp.json()
+        if not result.get("ParsedResults"):
+            logger.warning(f"OCR.space 无结果: {result.get('ErrorMessage')}")
+            return None
+        text = result["ParsedResults"][0]["ParsedText"]
+        logger.info(f"OCR 文本前 500 字: {text[:500]}")
+        # 找「闻喜」+「镁锭」+ 99.9 同行 + 区间
+        m = re.search(r"闻喜[\s\S]{0,30}镁锭[\s\S]{0,30}99[\.,]9\s*%?\s*min?[\s\S]{0,30}?(\d[\d,\.]+)\s*[-–~]\s*(\d[\d,\.]+)", text)
+        if m:
+            low = float(m.group(1).replace(",", ""))
+            high = float(m.group(2).replace(",", ""))
+            if 10000 < low < 50000 and 10000 < high < 50000:
+                mid = round((low + high) / 2, 2)
+                logger.info(f"OCR 备选拿到闻喜镁锭: {low}-{high} → {mid}")
+                return mid
+        logger.warning("OCR 备选：未在文本中匹配到「闻喜+镁锭+99.9%min」区间")
+        return None
+    except Exception as e:
+        logger.warning(f"OCR 备选异常: {e}")
+        return None
+
+
+def get_tungsten_price() -> Optional[float]:
     """中钨在线钨粉价格（保存原始 HTML 作为现场证据）"""
     try:
         from jinggong_monitor.fetcher_tungsten import ChinatungstenFetcher
@@ -231,7 +531,7 @@ def get_tungsten_price() -> float | None:
         return None
 
 
-def get_wti_estimate() -> float | None:
+def get_wti_estimate() -> Optional[float]:
     """获取WTI估算（CL realtime or SC futures/7.15）"""
     try:
         import akshare as ak
@@ -253,7 +553,7 @@ def get_wti_estimate() -> float | None:
 # 填表逻辑
 # ============================================================
 
-def fill_sheet1(wb, smm: dict, ccmn: dict, asianmetal: dict | None = None, target_dates: list[tuple[str, int]] | None = None, mode: str = "manual"):
+def fill_sheet1(wb, smm: dict, ccmn: dict, asianmetal: Optional[dict] = None, target_dates: Optional[list[tuple[str, int]]] = None, mode: str = "manual"):
     """填写「日均价（2026年市场）」sheet。
     mode='manual'：填补历史 6/23/24（默认）
     mode='daily'：填今天的 row（17:00 cron 调用场景）；WTI 不在这里写（sheet2 负责）
@@ -395,7 +695,7 @@ def fill_sheet1(wb, smm: dict, ccmn: dict, asianmetal: dict | None = None, targe
     return remarks
 
 
-def fill_sheet2(wb, wti_price: float | None, target_date: str | None = None, skip_wti: bool = False):
+def fill_sheet2(wb, wti_price: Optional[float], target_date: Optional[str] = None, skip_wti: bool = False):
     """填写「日均价（中钨在线 原油）」sheet。
     
     Args:

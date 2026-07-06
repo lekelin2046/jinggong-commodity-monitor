@@ -38,3 +38,10 @@ output/*
 
 # 每日抓取的当日数据归档（含 ccmn 真实价格，不传公网）
 长城有色日价格查询/
+
+# 凭据文件（含 SMM / 亚洲金属网账号密码，严禁入 git）
+.env
+.env.local
+.env.*.local
+secrets.json
+credentials.json

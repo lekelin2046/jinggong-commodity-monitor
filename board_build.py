@@ -9,6 +9,7 @@ from pathlib import Path
 from collections import defaultdict
 
 sys.path.insert(0, str(Path(__file__).parent))
+from jinggong_monitor.credentials import require_smm
 os.environ["NO_PROXY"] = "ccmn.cn,chinatungsten.com,smm.cn,hq.smm.cn,user.smm.cn,asianmetal.cn"
 
 PROJECT  = Path(__file__).parent
@@ -72,8 +73,7 @@ async def fetch_ccmn():
 async def fetch_smm():
     """headless 自动登录 SMM → 抓 7 品种"""
     from playwright.async_api import async_playwright
-    SMM_USER = "13512903125"
-    SMM_PASS = "Lt_091788"
+    SMM_USER, SMM_PASS = require_smm()
 
     async with async_playwright() as p:
         b = await p.chromium.launch(headless=True, args=["--no-sandbox"])

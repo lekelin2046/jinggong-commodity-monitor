@@ -17,8 +17,8 @@ from jinggong_monitor.fetcher_zgw import ZgwFetcher
 from jinggong_monitor.fetcher_tungsten import ChinatungstenFetcher
 from jinggong_monitor.fetcher_ccmn import CcmnFetcher
 from jinggong_monitor.fetcher_playwright import PlaywrightFetcher
-from jinggong_monitor.fetcher_cdp import Sci99Fetcher
 from jinggong_monitor.fetcher_asianmetal import AsianmetalFetcher
+from jinggong_monitor.fetcher_smm import SmmFetcher
 
 logger = logging.getLogger("jinggong.orchestrator")
 
@@ -28,7 +28,7 @@ _SOURCE_REGISTRY = {
     "akshare_ine": AkshareFetcher,
     "zgw":        ZgwFetcher,
     "bxg":        PlaywrightFetcher,   # 🆕 Playwright 替代 CDP
-    "smm":        PlaywrightFetcher,
+    "smm":        SmmFetcher,           # Cookie + Playwright 独立实例
     "cnfeol":     PlaywrightFetcher,   # 🆕 Playwright 替代 requests/BS4
     "asianmetal":  AsianmetalFetcher,  # 亚洲金属网 CDP 抓取
     "100ppi":     None,               # 生意社暂未实现独立fetcher
@@ -67,8 +67,8 @@ class PriceCollector:
                 if "akshare" not in self._fetchers:
                     self._fetchers["akshare"] = AkshareFetcher()
                 return self._fetchers["akshare"]
-            # Playwright 系列共用（bxg/smm/cnfeol都用Playwright）
-            if source_name in ("bxg", "smm", "cnfeol"):
+            # Playwright 系列共用（bxg/cnfeol都用Playwright，smm 独立）
+            if source_name in ("bxg", "cnfeol"):
                 if "playwright" not in self._fetchers:
                     self._fetchers["playwright"] = PlaywrightFetcher()
                 return self._fetchers["playwright"]
