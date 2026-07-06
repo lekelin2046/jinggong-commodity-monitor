@@ -720,30 +720,22 @@ function toggleAvgTable() {
 }
 
 // ===== INIT =====
-let HOLIDAY_MAP = {}; // "2026-01-01": true
-
-async function loadHolidays(year) {
-  try {
-    const resp = await fetch(`https://timor.tech/api/holiday/year/${year}`);
-    if (!resp.ok) return;
-    const json = await resp.json();
-    if (json.code === 0 && json.holiday) {
-      for (const [k, v] of Object.entries(json.holiday)) {
-        // k = "01-01", v.holiday = true means holiday
-        if (v.holiday) {
-          const m = k.split("-")[0];
-          const d = k.split("-")[1];
-          HOLIDAY_MAP[`${year}-${m}-${d}`] = true;
-        }
-      }
-    }
-  } catch(e) { console.warn("Holiday API failed, using weekends only"); }
-}
+// 2026年中国法定节假日（硬编码，不依赖外部API）
+const HOLIDAYS_2026 = new Set([
+  "2026-01-01","2026-01-02","2026-01-03", // 元旦
+  "2026-01-28","2026-01-29","2026-01-30","2026-01-31",
+  "2026-02-01","2026-02-02","2026-02-03", // 春节
+  "2026-04-04","2026-04-05","2026-04-06", // 清明
+  "2026-05-01","2026-05-02","2026-05-03","2026-05-04","2026-05-05", // 劳动节
+  "2026-06-19","2026-06-20","2026-06-21", // 端午
+  "2026-10-01","2026-10-02","2026-10-03","2026-10-04",
+  "2026-10-05","2026-10-06","2026-10-07","2026-10-08", // 中秋+国庆
+]);
 
 function isWorkingDay(d) {
   const ds = formatDateLocal(d);
   // 节假日
-  if (HOLIDAY_MAP[ds]) return false;
+  if (HOLIDAYS_2026.has(ds)) return false;
   // 周末（0=周日, 6=周六）
   const dow = d.getDay();
   if (dow === 0 || dow === 6) return false;
@@ -752,12 +744,6 @@ function isWorkingDay(d) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    // 加载节假日数据
-    const years = [...new Set(Object.keys(ALL_DATA || {}).map(d => d.substring(0,4)))];
-    await Promise.all(years.map(loadHolidays));
-    // 如果 ALL_DATA 为空，加载当前年
-    if (years.length === 0) await loadHolidays(new Date().getFullYear());
-
     const resp = await fetch("data.json");
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const json = await resp.json();
