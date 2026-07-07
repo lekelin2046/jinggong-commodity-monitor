@@ -20,7 +20,6 @@ body{font-family:-apple-system,'Microsoft YaHei',sans-serif;background:#f5f5f5;c
 .auth-card button:hover{background:#1557b0}
 .auth-card .steps{text-align:left;font-size:12px;color:#888;margin-top:20px;line-height:1.8}
 .auth-card .steps a{color:#1a73e8}
-.auth-card .steps .num{display:inline-block;width:18px;height:18px;background:#1a73e8;color:#fff;border-radius:9px;text-align:center;font-size:11px;margin-right:6px}
 .auth-error{color:#dc2626;font-size:12px;margin-top:-8px;margin-bottom:12px;display:none}
 
 /* ===== HEADER (editor mode) ===== */
@@ -56,15 +55,12 @@ td.cell input.has-data{color:#333;font-weight:500}
   <div class="auth-card">
     <h1>有色金属价格 · 数据编辑</h1>
     <p>编辑后保存即自动同步到在线看板</p>
-    <label for="tokenInput">GitHub Personal Access Token</label>
-    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+    <label for="tokenInput">访问令牌（Token）</label>
+    <input type="password" id="tokenInput" placeholder="输入访问令牌">
     <p class="auth-error" id="authError"></p>
     <button onclick="saveToken()" id="authBtn">验证并进入编辑</button>
     <div class="steps">
-      <div><span class="num">1</span> 打开 <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a></div>
-      <div><span class="num">2</span> 点 Generate new token (classic)，勾选 <b>repo</b></div>
-      <div><span class="num">3</span> 复制生成的 ghp_xxx... 粘贴到上方</div>
-      <div><span class="num">4</span> 点「验证并进入编辑」，Token 保存在浏览器本地</div>
+      <div style="color:#dc2626;font-weight:600">⚠️ 请勿将令牌分享给他人或上传到公共仓库</div>
     </div>
   </div>
 </div>
@@ -77,7 +73,7 @@ td.cell input.has-data{color:#333;font-weight:500}
       <span>编辑后点保存 → 自动更新在线看板</span>
     </div>
     <div class="header-right">
-      <span id="tokenStatus"></span>
+      <span id="tokenStatus" style="color:rgba(255,255,255,.5)"></span>
       <button onclick="logout()">退出</button>
     </div>
   </div>
@@ -124,12 +120,12 @@ async function saveToken() {
   const t = document.getElementById('tokenInput').value.trim();
   const errEl = document.getElementById('authError');
   if (!t) { errEl.textContent = '请输入 Token'; errEl.style.display = 'block'; return; }
-  if (!t.startsWith('ghp_') && !t.startsWith('github_pat_')) {
-    errEl.textContent = 'Token 格式不正确，应以 ghp_ 或 github_pat_ 开头';
+  if (t.length < 10) {
+    errEl.textContent = 'Token 格式不正确，请检查';
     errEl.style.display = 'block'; return;
   }
 
-  // Verify token by calling GitHub API
+  // 验证 Token
   errEl.style.display = 'none';
   try {
     const resp = await fetch('https://api.github.com/user', {
@@ -138,11 +134,10 @@ async function saveToken() {
     if (!resp.ok) throw new Error('HTTP '+resp.status);
     const user = await resp.json();
     localStorage.setItem('gh_token', t);
-    localStorage.setItem('gh_user', user.login);
     GITHUB_TOKEN = t;
     showEditor();
   } catch(e) {
-    errEl.textContent = 'Token 验证失败: ' + e.message + '（请确认勾选了 repo 权限）';
+    errEl.textContent = '验证失败: ' + e.message;
     errEl.style.display = 'block';
   }
 }
@@ -150,7 +145,7 @@ async function saveToken() {
 async function showEditor() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('editorScreen').style.display = 'block';
-  document.getElementById('tokenStatus').textContent = 'Token: ' + (localStorage.getItem('gh_user') || '***');
+  document.getElementById('tokenStatus').textContent = '·';
   const now = new Date();
   currentYear = String(now.getFullYear());
   currentMonth = String(now.getMonth()+1).padStart(2,'0');
@@ -162,7 +157,6 @@ async function showEditor() {
 
 function logout() {
   localStorage.removeItem('gh_token');
-  localStorage.removeItem('gh_user');
   GITHUB_TOKEN = '';
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('editorScreen').style.display = 'none';
@@ -249,7 +243,7 @@ async function saveData() {
     data: ALL_DATA
   }, null, 2);
 
-  setStatus('正在提交到 GitHub...', '#1a73e8');
+  setStatus('正在提交数据...', '#1a73e8');
   try {
     const getResp = await fetch('https://api.github.com/repos/lekelin2046/jinggong-commodity-monitor/contents/docs/data.json', {
       headers: {'Authorization':'token '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
