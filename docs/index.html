@@ -241,10 +241,6 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
   </div>
 </div>
 
-<hr class="section-divider">
-
-<!-- ===== 年度 ===== -->
-<div class="section trend" id="charts"></div>
 
 <script>
 // ===== DATA =====
@@ -304,9 +300,6 @@ function getSelected() {
 // ===== RENDER =====
 function renderAll(year, month) {
   destroyCharts();
-  const container = document.getElementById("charts");
-  // Only clear children, preserve the section div itself
-  while (container.firstChild) container.removeChild(container.firstChild);
   const dailyContainer = document.getElementById("dailyTrends");
   dailyContainer.innerHTML = "";
 
@@ -317,7 +310,6 @@ function renderAll(year, month) {
   renderMonthlyAvgComparison();
   renderVolatilityTrend();
   renderPrediction();
-  renderAnnualTrend(container, year);
 }
 
 // 月度日趋势图
@@ -369,67 +361,6 @@ function renderMonthlyTrends(container, year, month) {
       card.innerHTML += '<p class="no-data">本月暂无数据</p>';
     }
   });
-}
-
-// 年度趋势图（按天）
-function renderAnnualTrend(container, year) {
-  // container is already .section.trend, just add label
-  const labelDiv = document.createElement("div");
-  labelDiv.className = "section-label trend";
-  labelDiv.innerHTML = '<span class="bar"></span>年度';
-  container.prepend(labelDiv);
-
-  const card = document.createElement("div");
-  card.className = "card";
-  const cid = "chart-annual-" + Math.random().toString(36).substr(2,6);
-  card.innerHTML = `<h3>📊 年度趋势图 (${year}年) <span class="badge badge-trend">年度</span></h3><div class="chart-wrap annual"><canvas id="${cid}"></canvas></div>`;
-  container.appendChild(card);
-  
-  // 获取该年所有有数据的日期
-  const allDates = Object.keys(ALL_DATA)
-    .filter(d => d.startsWith(String(year)) && Object.values(ALL_DATA[d]).some(v => v !== null))
-    .sort();
-  if(allDates.length === 0) { card.innerHTML += '<p class="no-data">暂无年度数据</p>'; return; }
-  
-  const labels = allDates.map(d => d.substring(5)); // "MM-DD"
-  
-  const allCodes = CATEGORIES.flatMap(c => c.codes);
-  const datasets = allCodes.map((code, i) => {
-    const points = allDates.map(d => {
-      const prices = ALL_DATA[d];
-      return prices && prices[code] != null ? prices[code] : null;
-    });
-    const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
-    return {
-      label: VARIETY_NAMES[code]+"("+unit+")",
-      data: points,
-      borderColor: COLORS[i % COLORS.length],
-      backgroundColor: "transparent",
-      tension: 0.1, pointRadius: 0,
-      spanGaps: false
-    };
-  }).filter(ds => ds.data.some(v => v !== null));
-  
-  if(datasets.length > 0) {
-    new Chart(document.getElementById(cid), {
-      type: "line",
-      data: { labels, datasets },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { tooltip: { mode: "index", intersect: false } },
-        scales: {
-          x: { 
-            title: { display: true, text: "日期" },
-            ticks: {
-              maxTicksLimit: 14,
-              autoSkip: true
-            }
-          },
-          y: { title: { display: true, text: "价格" }, beginAtZero: false }
-        }
-      }
-    });
-  }
 }
 
 // 月度横拉表
