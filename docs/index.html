@@ -570,6 +570,10 @@ function renderKPIs(year, month) {
   const alPrevDay = prevDateVal["A00_AL"];
   const adcPrevDay = prevDateVal["ADC12"];
 
+  // 月均价（用于 KPI 副行）
+  const cuAvg = monthData["CU"] ? monthData["CU"].avg : null;
+  const alAvg = monthData["A00_AL"] ? monthData["A00_AL"].avg : null;
+  const adcAvg = monthData["ADC12"] ? monthData["ADC12"].avg : null;
   const cuPrev = prevMonthData["CU"] ? prevMonthData["CU"].avg : null;
   const alPrev = prevMonthData["A00_AL"] ? prevMonthData["A00_AL"].avg : null;
   const adcPrev = prevMonthData["ADC12"] ? prevMonthData["ADC12"].avg : null;
