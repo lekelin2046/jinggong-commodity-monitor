@@ -120,6 +120,9 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
   <div class="table-wrap" id="tableContainer"></div>
 </div>
 
+<!-- 日趋势图（按品种分类，紧跟明细表） -->
+<div id="dailyTrends"></div>
+
 <!-- 月度均价明细表（可折叠，默认收起） -->
 <div class="card">
   <div class="collapsible-header" onclick="toggleAvgTable()">
@@ -221,14 +224,16 @@ function renderAll(year, month) {
   destroyCharts();
   const container = document.getElementById("charts");
   container.innerHTML = "";
+  const dailyContainer = document.getElementById("dailyTrends");
+  dailyContainer.innerHTML = "";
 
   renderKPIs(year, month);
   renderMonthlyAvgTable(year);
   renderTable(year, month);
+  renderMonthlyTrends(dailyContainer, year, month);
   renderMonthlyAvgComparison();
   renderVolatilityTrend();
   renderPrediction();
-  renderMonthlyTrends(container, year, month);
   renderAnnualTrend(container, year);
 }
 
