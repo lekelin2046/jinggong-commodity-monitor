@@ -108,6 +108,12 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .toggle-icon.expanded{transform:rotate(0deg)}
 .collapsible-body{overflow:hidden;transition:max-height .3s ease}
 
+/* ===== 导出工具栏 ===== */
+.export-bar{display:flex;gap:6px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.export-btn{padding:4px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;color:#334155;cursor:pointer;font-weight:500;transition:all .15s}
+.export-btn:hover{background:#f8fafc;border-color:#94a3b8}
+.export-btn svg{vertical-align:-2px;margin-right:3px}
+
 @media (max-width:768px){
   body{padding:8px}
   .card{padding:10px}
@@ -129,6 +135,13 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div class="controls">
   <select id="yearSelect" onchange="switchMonth()"></select>
   <select id="monthSelect" onchange="switchMonth()"></select>
+</div>
+
+<div class="export-bar">
+  <span style="font-size:11px;color:#94a3b8">导出:</span>
+  <button class="export-btn" onclick="exportExcel()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Excel</button>
+  <button class="export-btn" onclick="exportPDF()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</button>
+  <button class="export-btn" onclick="exportMarkdown()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Markdown</button>
 </div>
 
 <!-- KPI 摘要行 -->
@@ -807,6 +820,69 @@ document.addEventListener("DOMContentLoaded", async () => {
   const sel = getSelected();
   renderAll(sel.year, sel.month);
 });
+
+// ===== 导出功能 =====
+function _getExportData() {
+  const y = parseInt(document.getElementById("yearSelect").value);
+  const m = parseInt(document.getElementById("monthSelect").value);
+  const prefix = `${y}-${String(m).padStart(2,"0")}`;
+  const allCodes = CATEGORIES.flatMap(c => c.codes);
+  const dates = Object.keys(ALL_DATA).filter(d => d.startsWith(prefix)).sort();
+  const monthLabel = `${y}年${m}月`;
+  return { y, m, prefix, allCodes, dates, monthLabel };
+}
+
+function exportExcel() {
+  const { allCodes, dates, monthLabel } = _getExportData();
+  // CSV 格式（Excel 可直接打开），带 BOM 支持 Excel 正确识别 UTF-8
+  let csv = '\uFEFF品种,单位,' + dates.join(',') + '\n';
+  CATEGORIES.forEach(cat => {
+    cat.codes.forEach(code => {
+      const name = VARIETY_NAMES[code];
+      const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
+      const vals = dates.map(d => {
+        const v = ALL_DATA[d] && ALL_DATA[d][code];
+        return v != null ? v : '';
+      });
+      csv += name + ',' + unit + ',' + vals.join(',') + '\n';
+    });
+  });
+  _download(csv, `有色金属价格_${monthLabel}.csv`, 'text/csv;charset=utf-8');
+}
+
+function exportMarkdown() {
+  const { allCodes, dates, monthLabel } = _getExportData();
+  let md = `# 有色金属价格 ${monthLabel}\n\n`;
+  md += `| 品种 | 单位 | ` + dates.map(d => d.substring(5)).join(' | ') + ' |\n';
+  md += '| --- | --- | ' + dates.map(() => '---').join(' | ') + ' |\n';
+  CATEGORIES.forEach(cat => {
+    md += `| **${cat.name}** | | |\n`;
+    cat.codes.forEach(code => {
+      const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
+      const vals = dates.map(d => {
+        const v = ALL_DATA[d] && ALL_DATA[d][code];
+        return v != null ? (Number.isInteger(v) ? v : v.toFixed(2)) : '—';
+      });
+      md += `| ${VARIETY_NAMES[code]} | ${unit} | ` + vals.join(' | ') + ' |\n';
+    });
+  });
+  _download(md, `有色金属价格_${monthLabel}.md`, 'text/markdown;charset=utf-8');
+}
+
+function exportPDF() {
+  // 利用 window.print() + @media print 样式，简洁可靠
+  // 浏览器原生导出 PDF，无需第三方库
+  window.print();
+}
+
+function _download(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 </script>
 </body>
 </html>

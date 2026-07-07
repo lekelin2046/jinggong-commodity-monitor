@@ -78,6 +78,7 @@ td.cell input.has-data{color:#333;font-weight:500}
     </div>
   </div>
   <div class="toolbar">
+    <a href="index.html" style="color:#1a73e8;text-decoration:none;font-size:12px;font-weight:500">← 返回看板</a>
     <select id="yearSelect" onchange="loadMonth()"><option value="2026">2026年</option></select>
     <select id="monthSelect" onchange="loadMonth()"></select>
     <button class="btn-save" id="saveBtn" onclick="saveData()">保存并更新看板</button>
@@ -155,7 +156,16 @@ async function saveToken() {
 async function showEditor() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('editorScreen').style.display = 'block';
-  document.getElementById('tokenStatus').textContent = '·';
+  // 显示当前登录用户名（2026-07-07 优化）
+  try {
+    const resp = await fetch('https://api.github.com/user', {
+      headers: {'Authorization':'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    if (resp.ok) {
+      const user = await resp.json();
+      document.getElementById('tokenStatus').textContent = user.login || user.name || '';
+    }
+  } catch(e) { /* ignore */ }
   const now = new Date();
   currentYear = String(now.getFullYear());
   currentMonth = String(now.getMonth()+1).padStart(2,'0');
@@ -166,7 +176,8 @@ async function showEditor() {
 }
 
 function logout() {
-  localStorage.removeItem('gh_token');
+  sessionStorage.removeItem('gh_token');
+  sessionStorage.removeItem('editor_draft');
   GITHUB_TOKEN = '';
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('editorScreen').style.display = 'none';
