@@ -55,7 +55,11 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 /* 月均价列冻结右侧 */
 .table-wrap td.sticky-right,.table-wrap th.sticky-right{position:sticky;right:0;z-index:1}
 .table-wrap thead th.sticky-right{z-index:3}
-/* 最新一天高亮 */
+.no-data{color:#94a3b8}
+/* 今日列绿色高亮 */
+.table-wrap td.today-col{background:#dcfce7;font-weight:600;color:#14532d}
+.table-wrap thead th.today-col{background:#bbf7d0;color:#14532d}
+/* 最新一天蓝色高亮（年度趋势等场景） */
 .table-wrap td.latest-day{background:#dbeafe;font-weight:700;color:#1e40af}
 .table-wrap thead th.latest-day{background:#bfdbfe;color:#1e3a8a}
 .unit-tag{font-size:10px;color:#94a3b8;margin-left:2px}
@@ -126,6 +130,21 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
   .kpi-card{min-width:120px}
   .kpi-card .kpi-value{font-size:18px}
   .dual-charts{flex-direction:column}
+}
+</style>
+
+<!-- Print 样式：PDF 导出时隐藏控件，只保留表格和图表 -->
+<style>
+@media print {
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .header, .controls, .export-wrap, .section-label, .section-divider,
+  .collapsible-header .toggle-icon { display: none !important; }
+  .collapsible-body { display: block !important; max-height: none !important; }
+  .card { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; page-break-inside: avoid; }
+  .chart-wrap, .chart-wrap.compact, .chart-wrap.annual { height: 180px !important; }
+  .kpi-card { box-shadow: none; border: 1px solid #e2e8f0; }
+  .table-wrap { overflow: visible; max-height: none; }
+  .trend-grid { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
@@ -433,10 +452,15 @@ function renderTable(year, month) {
   }
   
   const lastIdx = activeDays.length - 1;
+  // 标记"今天"的列索引（用于高亮）
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const todayIdx = activeDays.findIndex(d => formatDateLocal(d) === todayStr);
+  
   let html = '<table><thead><tr><th class="sticky-col">品种</th>';
   activeDays.forEach((d, i) => {
-    const cls = i === lastIdx ? ' class="latest-day"' : '';
-    html += `<th${cls}>${d.getMonth()+1}/${d.getDate()}</th>`;
+    const isToday = i === todayIdx;
+    const cls = isToday ? ' class="today-col"' : '';
+    html += `<th${cls}>${d.getMonth()+1}/${d.getDate()}${isToday ? '<br><span style="font-size:9px;font-weight:700">今日</span>' : ''}</th>`;
   });
   html += '<th class="avg-col sticky-right">月均价</th></tr></thead><tbody>';
   
@@ -449,9 +473,9 @@ function renderTable(year, month) {
       activeDays.forEach((d, i) => {
         const ds = formatDateLocal(d);
         const v = ALL_DATA[ds] && ALL_DATA[ds][code] != null ? ALL_DATA[ds][code] : null;
-        const isLatest = i === lastIdx;
-        if(v != null) { sum += v; cnt++; html += `<td${isLatest ? ' class="latest-day"' : ''}>${Number.isInteger(v) ? v : v.toFixed(2)}</td>`; }
-        else html += `<td${isLatest ? ' class="latest-day no-data"' : ' class="no-data"'}>—</td>`;
+        const isToday = i === todayIdx;
+        if(v != null) { sum += v; cnt++; html += `<td${isToday ? ' class="today-col"' : ''}>${Number.isInteger(v) ? v : v.toFixed(2)}</td>`; }
+        else html += `<td${isToday ? ' class="today-col no-data"' : ' class="no-data"'}>—</td>`;
       });
       const avg = cnt > 0 ? Math.round(sum/cnt) : null;
       html += `<td class="avg-col sticky-right">${avg != null ? (Number.isInteger(avg) ? avg : avg.toFixed(2)) : "—"}</td></tr>`;
@@ -523,16 +547,29 @@ function renderKPIs(year, month) {
   });
   const avgMom = momChanges.length > 0 ? momChanges.reduce((a,b) => a+b, 0) / momChanges.length : 0;
 
-  // Key varieties
+// Key varieties
   function fmtChg(cur, prev) {
     if (cur == null || prev == null) return "";
     const chg = (cur - prev) / prev * 100;
     const cls = chg >= 0 ? "kpi-up" : "kpi-down";
-    return `<span class="kpi-change ${cls}">${chg >= 0 ? "+" : ""}${chg.toFixed(1)}%</span>`;
+    const arrow = chg >= 0 ? "▲" : "▼";
+    return `<span class="kpi-change ${cls}">${arrow}${Math.abs(chg).toFixed(1)}%</span>`;
   }
-  const cuAvg = monthData["CU"] ? monthData["CU"].avg : null;
-  const alAvg = monthData["A00_AL"] ? monthData["A00_AL"].avg : null;
-  const adcAvg = monthData["ADC12"] ? monthData["ADC12"].avg : null;
+
+  // 日涨跌：最新日 vs 前一日
+  const allSortedDates = dates;
+  const latestDateVal = latestDate ? (ALL_DATA[latestDate] || {}) : {};
+  const prevDate = allSortedDates.length >= 2 ? allSortedDates[allSortedDates.length - 2] : null;
+  const prevDateVal = prevDate ? (ALL_DATA[prevDate] || {}) : {};
+
+  // 最新日价格（用于 KPI 显示）
+  const cuLatest = latestDateVal["CU"];
+  const alLatest = latestDateVal["A00_AL"];
+  const adcLatest = latestDateVal["ADC12"];
+  const cuPrevDay = prevDateVal["CU"];
+  const alPrevDay = prevDateVal["A00_AL"];
+  const adcPrevDay = prevDateVal["ADC12"];
+
   const cuPrev = prevMonthData["CU"] ? prevMonthData["CU"].avg : null;
   const alPrev = prevMonthData["A00_AL"] ? prevMonthData["A00_AL"].avg : null;
   const adcPrev = prevMonthData["ADC12"] ? prevMonthData["ADC12"].avg : null;
@@ -544,19 +581,19 @@ function renderKPIs(year, month) {
       <div class="kpi-sub">${latestDate || "暂无数据"}</div>
     </div>
     <div class="kpi-card accent-cu">
-      <div class="kpi-label">铜 (CU)</div>
-      <div class="kpi-value">${cuAvg ? Math.round(cuAvg).toLocaleString() : "—"}<span class="unit">元/吨</span>${fmtChg(cuAvg, cuPrev)}</div>
-      <div class="kpi-sub">月均价 · 长江现货</div>
+      <div class="kpi-label">铜 (CU) · 最新</div>
+      <div class="kpi-value">${cuLatest != null ? Math.round(cuLatest).toLocaleString() : "—"}<span class="unit">元/吨</span>${fmtChg(cuLatest, cuPrevDay)}</div>
+      <div class="kpi-sub">日涨跌 · 月均${cuAvg ? Math.round(cuAvg).toLocaleString() : "—"}${fmtChg(cuAvg, cuPrev)}</div>
     </div>
     <div class="kpi-card accent-al">
-      <div class="kpi-label">A00 铝</div>
-      <div class="kpi-value">${alAvg ? Math.round(alAvg).toLocaleString() : "—"}<span class="unit">元/吨</span>${fmtChg(alAvg, alPrev)}</div>
-      <div class="kpi-sub">月均价 · 长江现货</div>
+      <div class="kpi-label">A00 铝 · 最新</div>
+      <div class="kpi-value">${alLatest != null ? Math.round(alLatest).toLocaleString() : "—"}<span class="unit">元/吨</span>${fmtChg(alLatest, alPrevDay)}</div>
+      <div class="kpi-sub">日涨跌 · 月均${alAvg ? Math.round(alAvg).toLocaleString() : "—"}${fmtChg(alAvg, alPrev)}</div>
     </div>
     <div class="kpi-card accent-adc">
-      <div class="kpi-label">ADC12</div>
-      <div class="kpi-value">${adcAvg ? Math.round(adcAvg).toLocaleString() : "—"}<span class="unit">元/吨</span>${fmtChg(adcAvg, adcPrev)}</div>
-      <div class="kpi-sub">月均价 · SMM</div>
+      <div class="kpi-label">ADC12 · 最新</div>
+      <div class="kpi-value">${adcLatest != null ? Math.round(adcLatest).toLocaleString() : "—"}<span class="unit">元/吨</span>${fmtChg(adcLatest, adcPrevDay)}</div>
+      <div class="kpi-sub">日涨跌 · 月均${adcAvg ? Math.round(adcAvg).toLocaleString() : "—"}${fmtChg(adcAvg, adcPrev)}</div>
     </div>
     <div class="kpi-card accent-mom">
       <div class="kpi-label">月均价环比</div>
