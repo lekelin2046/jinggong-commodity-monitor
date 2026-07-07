@@ -664,58 +664,113 @@ function renderPrediction() {
   const stats = computeMonthlyStats(year);
   const months = Object.keys(stats).sort();
   const noteEl = document.getElementById("predictionNote");
-  if (months.length < 2) { noteEl.innerHTML = "需要至少 2 个月的数据才能进行预测。"; return; }
+  if (months.length < 3) { noteEl.innerHTML = "需要至少 3 个月的数据才能进行预测。"; return; }
 
   const sel = document.getElementById("predVariety");
   const code = sel ? sel.value : "A00_AL";
-  const monthlyAvgs = months.map(m => { const s = stats[m][code]; return s && s.avg != null ? s.avg : null; }).filter(v => v !== null);
-  if (monthlyAvgs.length < 2) { noteEl.innerHTML = `${VARIETY_NAMES[code]} 数据不足，无法预测。`; return; }
-
-  const N = monthlyAvgs.length;
-  const x = Array.from({ length: N }, (_, i) => i);
-  const sumX = x.reduce((a, b) => a + b, 0);
-  const sumY = monthlyAvgs.reduce((a, b) => a + b, 0);
-  const sumXY = x.reduce((a, i) => a + i * monthlyAvgs[i], 0);
-  const sumX2 = x.reduce((a, i) => a + i * i, 0);
-  const slope = (N * sumXY - sumX * sumY) / (N * sumX2 - sumX * sumX);
-  const intercept = (sumY - slope * sumX) / N;
-  const predValue = slope * N + intercept;
-  const residuals = x.map(i => monthlyAvgs[i] - (slope * i + intercept));
-  const SE = Math.sqrt(residuals.reduce((s, r) => s + r * r, 0) / Math.max(N - 2, 1));
-  const ciLower = predValue - 1.96 * SE;
-  const ciUpper = predValue + 1.96 * SE;
-
-  // 3-month moving average
-  const maData = x.map(i => i < 2 ? null : (monthlyAvgs[i - 2] + monthlyAvgs[i - 1] + monthlyAvgs[i]) / 3);
   const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
+  const monthlyAvgs = months.map(m => { const s = stats[m][code]; return s && s.avg != null ? s.avg : null; });
+  if (monthlyAvgs.filter(v => v !== null).length < 3) { noteEl.innerHTML = `${VARIETY_NAMES[code]} 数据不足，无法预测。`; return; }
+
+  const N = months.length;
+  const validMonths = months.filter((_, i) => monthlyAvgs[i] != null);
+  const validAvgs = monthlyAvgs.filter(v => v !== null);
+  const nValid = validAvgs.length;
+
+  // ===== 1. 加权线性回归趋势（近期权重更高）=====
+  const x = validAvgs.map((_, i) => i);
+  // 指数衰减权重：最近的月份权重最大
+  const weights = validAvgs.map((_, i) => Math.pow(0.7, nValid - 1 - i));
+  const sumW = weights.reduce((a, b) => a + b, 0);
+  const wX = x.reduce((a, xi, i) => a + weights[i] * xi, 0);
+  const wY = validAvgs.reduce((a, yi, i) => a + weights[i] * yi, 0);
+  const wXY = x.reduce((a, xi, i) => a + weights[i] * xi * validAvgs[i], 0);
+  const wX2 = x.reduce((a, xi, i) => a + weights[i] * xi * xi, 0);
+  const denom = sumW * wX2 - wX * wX;
+  const slope = denom !== 0 ? (sumW * wXY - wX * wY) / denom : 0;
+  const intercept = (wY - slope * wX) / sumW;
+
+  // ===== 2. 动量修正（最近2个月的变动率）=====
+  const lastAvg = validAvgs[nValid - 1];
+  const prevAvg = validAvgs[nValid - 2];
+  const momentum = lastAvg && prevAvg ? (lastAvg - prevAvg) / prevAvg : 0; // 正=上涨势头
+
+  // ===== 3. 综合预测值 =====
+  // 趋势外推占 70%，动量占 30%
+  const trendPred = slope * nValid + intercept;
+  const momentumPred = lastAvg * (1 + momentum);
+  const predValue = trendPred * 0.7 + momentumPred * 0.3;
+
+  // ===== 4. 自适应置信区间（考虑趋势不确定性）=====
+  const residuals = validAvgs.map((yi, i) => yi - (slope * i + intercept));
+  const SE = Math.sqrt(residuals.reduce((s, r) => s + r * r, 0) / Math.max(nValid - 2, 1));
+  // 预测月份比最后一个数据点远 1 个月，不确定性略增
+  const predSE = SE * 1.15;
+  const ciLower = predValue - 1.96 * predSE;
+  const ciUpper = predValue + 1.96 * predSE;
+
+  // ===== 5. EWMA 平滑线（替代简单3月MA）=====
+  const ewmaAlpha = 0.4;
+  const ewmaData = [];
+  let ewma = validAvgs[0];
+  ewmaData.push(ewma);
+  for (let i = 1; i < nValid; i++) {
+    ewma = ewmaAlpha * validAvgs[i] + (1 - ewmaAlpha) * ewma;
+    ewmaData.push(ewma);
+  }
+  // 外推 EWMA
+  const ewmaPred = ewmaAlpha * predValue + (1 - ewmaAlpha) * ewma;
+
+  // ===== 构建图表 =====
   const nextMonthNum = parseInt(months[months.length - 1]) + 1;
-  const labels = [...months.map(m => parseInt(m) + "月"), `${nextMonthNum}月(预测)`];
+  const labels = [...validMonths.map(m => parseInt(m) + "月"), `${nextMonthNum}月(预测)`];
+  const nullPad = Array(nValid).fill(null);
+
+  // 趋势线数据
+  const trendLine = x.map(i => slope * i + intercept);
 
   const datasets = [
-    { label: "置信区间上界", data: [...Array(N).fill(null), Math.round(ciUpper)], borderColor: "transparent", backgroundColor: "rgba(147,51,234,0.12)", pointRadius: 0, fill: false, type: "line" },
-    { label: "置信区间下界", data: [...Array(N).fill(null), Math.round(ciLower)], borderColor: "transparent", backgroundColor: "rgba(147,51,234,0.12)", pointRadius: 0, fill: "-1", type: "line" },
-    { label: "实际月均价", data: [...monthlyAvgs.map(v => Math.round(v)), null], borderColor: "#2563eb", backgroundColor: "transparent", tension: 0.3, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2.5 },
-    { label: "线性回归趋势", data: [...x.map(i => Math.round(slope * i + intercept)), Math.round(predValue)], borderColor: "#ea580c", backgroundColor: "transparent", borderDash: [6, 3], pointRadius: 0, borderWidth: 1.5, tension: 0 },
-    { label: "3月移动平均", data: [...maData.map(v => v != null ? Math.round(v) : null), null], borderColor: "#16a34a", backgroundColor: "transparent", borderDash: [3, 3], pointRadius: 2, borderWidth: 1.5, tension: 0.3 },
-    { label: `预测值: ${Math.round(predValue).toLocaleString()}`, data: [...Array(N).fill(null), Math.round(predValue)], borderColor: "#9333ea", backgroundColor: "#9333ea", pointRadius: 8, pointHoverRadius: 10, pointStyle: "rectRot", showLine: false },
+    // 置信区间（填充区域）
+    { label: "95%置信上界", data: [...nullPad, Math.round(ciUpper)], borderColor: "transparent", backgroundColor: "rgba(147,51,234,0.10)", pointRadius: 0, fill: false, type: "line" },
+    { label: "95%置信下界", data: [...nullPad, Math.round(ciLower)], borderColor: "transparent", backgroundColor: "rgba(147,51,234,0.10)", pointRadius: 0, fill: "-1", type: "line" },
+    // 实际月均价
+    { label: "实际月均价", data: [...validAvgs.map(v => Math.round(v)), null], borderColor: "#2563eb", backgroundColor: "transparent", tension: 0.3, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2.5 },
+    // 加权趋势线
+    { label: "加权趋势", data: [...trendLine.map(v => Math.round(v)), Math.round(trendPred)], borderColor: "#ea580c", backgroundColor: "transparent", borderDash: [6, 3], pointRadius: 0, borderWidth: 1.5, tension: 0 },
+    // EWMA 平滑
+    { label: "EWMA平滑", data: [...ewmaData.map(v => Math.round(v)), Math.round(ewmaPred)], borderColor: "#16a34a", backgroundColor: "transparent", borderDash: [3, 3], pointRadius: 2, borderWidth: 1.5, tension: 0.3 },
+    // 预测值（大菱形）
+    { label: `预测: ${Math.round(predValue).toLocaleString()}`, data: [...nullPad, Math.round(predValue)], borderColor: "#9333ea", backgroundColor: "#9333ea", pointRadius: 8, pointHoverRadius: 10, pointStyle: "rectRot", showLine: false },
   ];
 
   if (window._predChart) window._predChart.destroy();
   window._predChart = new Chart(document.getElementById("predictionChart"), {
     type: "line", data: { labels, datasets },
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { tooltip: { mode: "index", intersect: false }, legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } } },
-      scales: { x: { title: { display: true, text: "月份" } }, y: { title: { display: true, text: "价格 (" + unit + ")" }, beginAtZero: false } }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        tooltip: { mode: "index", intersect: false },
+        legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } }
+      },
+      scales: {
+        x: { title: { display: true, text: "月份" } },
+        y: { title: { display: true, text: "价格 (" + unit + ")" }, beginAtZero: false }
+      }
     }
   });
 
-  const trend = slope > 0 ? "上涨" : slope < 0 ? "下跌" : "持平";
-  const rate = Math.abs(slope / monthlyAvgs[N - 1] * 100).toFixed(2);
-  const ciWidth = ((ciUpper - ciLower) / predValue * 100).toFixed(1);
+  // ===== 预测摘要 =====
+  const trendDir = slope > 0 ? "上涨" : slope < 0 ? "下跌" : "持平";
+  const trendRate = lastAvg ? Math.abs(slope / lastAvg * 100).toFixed(2) : "0.00";
+  const momDir = momentum > 0.005 ? "加速" : momentum < -0.005 ? "减速" : "平稳";
+  const ciWidth = predValue ? ((ciUpper - ciLower) / predValue * 100).toFixed(1) : "0";
+  const vsLastMonth = lastAvg ? ((predValue - lastAvg) / lastAvg * 100).toFixed(1) : "0";
+  const vsArrow = parseFloat(vsLastMonth) >= 0 ? "▲" : "▼";
+
   noteEl.innerHTML =
-    `<strong>${VARIETY_NAMES[code]}</strong> ${nextMonthNum}月预测均价: <strong style="color:#9333ea">${Math.round(predValue).toLocaleString()} ${unit}</strong><br>` +
-    `趋势: ${trend} (月均变化率 ${rate}%) | 95%置信区间: ${Math.round(ciLower).toLocaleString()} ~ ${Math.round(ciUpper).toLocaleString()} ${unit} (带宽 ${ciWidth}%)<br>` +
-    `<span class="ci-band"></span> 紫色区域为预测置信区间 | 基于${N}个月历史数据线性外推`;
+    `<strong>${VARIETY_NAMES[code]}</strong> ${nextMonthNum}月预测: <strong style="color:#9333ea">${Math.round(predValue).toLocaleString()} ${unit}</strong> ${vsArrow}${Math.abs(vsLastMonth)}% 较本月<br>` +
+    `趋势: ${trendDir} (月均${trendRate}%) | 动量: ${momDir} | 置信区间: ${Math.round(ciLower).toLocaleString()} ~ ${Math.round(ciUpper).toLocaleString()} (带宽${ciWidth}%)<br>` +
+    `<span style="font-size:10px;color:#94a3b8">模型: 加权趋势(70%) + 动量修正(30%) + EWMA平滑 | 基于${nValid}个月数据</span>`;
 }
 
 // ===== 下拉框初始化 =====
