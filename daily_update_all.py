@@ -179,6 +179,17 @@ async def main():
     print(f"  全品种抓取 · {TODAY}")
     print(f"{'='*50}\n")
 
+    # 第一步: git pull + 同步在线编辑到 Excel
+    print("[0/4] 同步在线编辑...")
+    try:
+        subprocess.run(["git", "pull"], cwd=str(SCRIPT_DIR), capture_output=True, text=True)
+        print("  git pull 完成")
+        # 将 data.json 中的在线编辑回写到 Excel
+        from sync_from_web import sync_to_excel
+        sync_to_excel()
+    except Exception as e:
+        print(f"  ⚠️ 同步失败: {e}（继续执行）")
+
     all_prices = {}
 
     all_prices.update(await fetch_ccmn())
