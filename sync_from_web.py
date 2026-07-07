@@ -45,16 +45,13 @@ DATE_FONT = Font(name="微软雅黑", size=11, bold=False)
 def git_pull():
     """拉取最新代码（含同事在线编辑的 data.json）"""
     print("→ git pull --rebase ...")
-    result = subprocess.run(
-        ["git", "pull", "--rebase", "origin", "main"],
-        cwd=str(SCRIPT_DIR),
-        capture_output=True, text=True,
-    )
-    print(result.stdout.strip())
-    if result.returncode != 0:
-        print(f"⚠️  git pull 失败: {result.stderr}", file=sys.stderr)
-        return False
-    return True
+    from git_helper import git_pull_rebase
+    ok = git_pull_rebase(str(SCRIPT_DIR))
+    if ok:
+        print("  ✅ 拉取成功")
+    else:
+        print("  ⚠️ 拉取失败（可能需要代理或网络不可用）")
+    return ok
 
 
 def _parse_excel_date(val):

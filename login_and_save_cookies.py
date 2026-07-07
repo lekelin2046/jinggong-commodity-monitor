@@ -27,10 +27,23 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 # ============================================================
 
 # 账号信息从环境变量 / .env 读取（不落盘、不保留默认密码）
-from jinggong_monitor.credentials import (
-    SMM_ACCOUNT, SMM_PASSWORD,
-    ASIANMETAL_ACCOUNT, ASIANMETAL_PASSWORD,
-)
+from jinggong_monitor.credentials import require_smm, require_asianmetal
+
+# 延迟调用（遵循 credentials.py 动态读取设计，非 import 时固化）
+_smm_cred = None
+_asianmetal_cred = None
+
+def _get_smm():
+    global _smm_cred
+    if _smm_cred is None:
+        _smm_cred = require_smm()
+    return _smm_cred
+
+def _get_asianmetal():
+    global _asianmetal_cred
+    if _asianmetal_cred is None:
+        _asianmetal_cred = require_asianmetal()
+    return _asianmetal_cred
 
 # 站点 URL
 SMM_LOGIN_URL = "https://user.smm.cn/login"                    # SMM 实际登录页
@@ -74,6 +87,7 @@ async def login_smm(browser) -> bool:
 
         # Step 3: 填账号（id=userName，精确匹配，绝不碰搜索框）
         try:
+            SMM_ACCOUNT, SMM_PASSWORD = _get_smm()
             account_input = page.locator("#userName")
             await account_input.wait_for(state="visible", timeout=5000)
             await account_input.fill(SMM_ACCOUNT)
@@ -185,6 +199,7 @@ async def login_asianmetal(browser) -> bool:
         print(f"[{now_str()}]  当前URL: {page.url}")
 
         # 通过 JavaScript 显示登录弹窗并填充凭据（弹窗默认隐藏，顶部登录链接可能被遮罩层拦截）
+        ASIANMETAL_ACCOUNT, ASIANMETAL_PASSWORD = _get_asianmetal()
         print(f"[{now_str()}]  填充顶部登录弹窗...")
         await page.evaluate(
             """(args) => {

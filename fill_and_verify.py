@@ -902,9 +902,12 @@ async def main():
     # 这样同事在线编辑的内容会先合并进 Excel，再被今天的新数据覆盖
     print("\n[0/4] 同步在线编辑 → Excel ...")
     try:
-        from sync_from_web import git_pull as _gp, sync_to_excel as _sync
-        if _gp():
+        from sync_from_web import sync_to_excel as _sync
+        from git_helper import git_pull_rebase as _pull
+        if _pull():
             _sync()
+        else:
+            print("  ⚠️ git pull 失败，跳过在线同步（使用本地 Excel）")
     except Exception as e:
         print(f"  ⚠️ 在线同步失败（继续执行）: {e}")
 
@@ -955,9 +958,16 @@ async def main():
     remarks_s1 = fill_sheet1(wb, smm, ccmn, asianmetal, mode=run_mode)
     remarks_s2 = fill_sheet2(wb, wti, target_date=sheet2_target, skip_wti=sheet2_skip_wti)
 
-    # 3. 历史核查
-    print("[4/4] 历史数据核查...")
-    report = verify_historical(wb)
+    # 3. 历史核查（仅 manual 模式执行，daily 跳过——硬编码的 6/16-22 已过时）
+    if run_mode == "manual":
+        print("[4/4] 历史数据核查...")
+        report = verify_historical(wb)
+        report_path = EXCEL_PATH.parent / "核查报告_2026-06-16_to_22.md"
+        report_path.write_text(report, encoding="utf-8")
+        print(f"核查报告: {report_path}")
+    else:
+        print("[4/4] 跳过历史核查（daily 模式）")
+        report = "（daily 模式，跳过历史核查）"
 
     # 4. 保存Excel
     wb.save(str(EXCEL_PATH))
@@ -968,7 +978,6 @@ async def main():
     report_path.write_text(report, encoding="utf-8")
 
     print(f"\nExcel 已保存: {EXCEL_PATH}")
-    print(f"核查报告: {report_path}")
 
     # 打印备注信息
     all_remarks = remarks_s1 + remarks_s2
@@ -1000,43 +1009,28 @@ async def main():
     # 这样 17:00 cron 跑完后看板自动更新，无需手动 excel_to_web.py
     print("\n[发布] 自动更新看板 ...")
     try:
-        project_dir = EXCEL_PATH.parent
-        export_script = project_dir / "export_excel_to_json.py"
+        project_dir = str(EXCEL_PATH.parent)
+        export_script = EXCEL_PATH.parent / "export_excel_to_json.py"
         # 1. 导出 data.json
         exp = subprocess.run(
             [sys.executable, str(export_script)],
-            cwd=str(project_dir), capture_output=True, text=True, timeout=60,
+            cwd=project_dir, capture_output=True, text=True, timeout=60,
         )
         if exp.returncode != 0:
             print(f"  ⚠️ 导出 data.json 失败: {exp.stderr.strip()[:200]}")
         else:
             print(f"  ✅ data.json 已导出")
-            # 2. git add + commit + pull --rebase + push
-            for cmd in [
-                ["git", "add", "docs/data.json"],
-                ["git", "commit", "-m", f"自动更新 {TODAY_STR}"],
-            ]:
-                r = subprocess.run(cmd, cwd=str(project_dir), capture_output=True, text=True)
-                if r.returncode != 0 and "nothing to commit" not in r.stdout.lower():
-                    print(f"  ⚠️ {' '.join(cmd[:2])}: {r.stdout.strip() or r.stderr.strip()}")
-                    break
+            # 2. 一站式发布（含代理检测、冲突处理）
+            from git_helper import publish_to_github
+            ok = publish_to_github(
+                files=["docs/data.json"],
+                commit_msg=f"auto-update {TODAY_STR}",
+                cwd=project_dir,
+            )
+            if ok:
+                print(f"  ✅ 看板已推送: https://lekelin2046.github.io/jinggong-commodity-monitor/")
             else:
-                # pull --rebase
-                pull = subprocess.run(
-                    ["git", "pull", "--rebase", "origin", "main"],
-                    cwd=str(project_dir), capture_output=True, text=True, timeout=30,
-                )
-                if pull.returncode != 0 and "conflict" in (pull.stdout + pull.stderr).lower():
-                    print(f"  ❌ rebase 冲突，请手动解决: git -C {project_dir} rebase --continue")
-                else:
-                    push = subprocess.run(
-                        ["git", "push"],
-                        cwd=str(project_dir), capture_output=True, text=True, timeout=30,
-                    )
-                    if push.returncode == 0:
-                        print(f"  ✅ 看板已推送: https://lekelin2046.github.io/jinggong-commodity-monitor/")
-                    else:
-                        print(f"  ⚠️ push 失败: {push.stderr.strip()[:200]}")
+                print(f"  ⚠️ 看板推送失败（data.json 已在本地，可手动 python3 excel_to_web.py）")
     except Exception as e:
         print(f"  ⚠️ 发布失败（不影响 Excel 数据）: {e}")
 

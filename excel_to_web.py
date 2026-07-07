@@ -32,58 +32,13 @@ def export_json():
 
 
 def git_push(commit_msg: str):
-    """推送 docs/data.json 到 GitHub Pages
-    
-    2026-07-07 修复：先 commit 再 pull --rebase，正确处理远程在线编辑
-    流程：add → commit → pull --rebase → push
-    - 如果远程有新提交（在线编辑），rebase 会把本地 commit 叠加到远程之上
-    - data.json 冲突时，提醒用户手动解决（本地 Excel vs 远程在线编辑）
-    """
-    # 先检查是否有变化
-    r = subprocess.run(["git", "diff", "--quiet", "docs/data.json"], cwd=str(SCRIPT_DIR))
-    if r.returncode == 0:
-        print("  (data.json 无变化，跳过推送)")
-        return True
-
-    # 1. add + commit（本地先存档）
-    for cmd in [["git", "add", "docs/data.json"], ["git", "commit", "-m", commit_msg]]:
-        result = subprocess.run(cmd, cwd=str(SCRIPT_DIR), capture_output=True, text=True)
-        if result.returncode != 0:
-            err = result.stderr.strip()
-            if "nothing to commit" in err.lower():
-                print("  (无变化，跳过)")
-                return True
-            print(f"WARN: git {' '.join(cmd[:2])} failed: {err}", file=sys.stderr)
-            return False
-
-    # 2. pull --rebase（把远程在线编辑合并进来，本地 commit 叠加到远程之上）
-    print("  → git pull --rebase origin main ...")
-    pull = subprocess.run(
-        ["git", "pull", "--rebase", "origin", "main"],
-        cwd=str(SCRIPT_DIR), capture_output=True, text=True,
+    """推送 docs/data.json 到 GitHub Pages（含代理 + 冲突处理）"""
+    from git_helper import publish_to_github
+    return publish_to_github(
+        files=["docs/data.json"],
+        commit_msg=commit_msg,
+        cwd=str(SCRIPT_DIR),
     )
-    if pull.returncode != 0:
-        err = pull.stderr.strip() + " " + pull.stdout.strip()
-        if "conflict" in err.lower() or "CONFLICT" in err:
-            print(f"❌ data.json 冲突！远程有在线编辑，本地 Excel 也有修改", file=sys.stderr)
-            print(f"   请手动解决冲突后运行: git rebase --continue && git push", file=sys.stderr)
-            print(f"   或放弃本地: git rebase --abort && python3 sync_from_web.py", file=sys.stderr)
-            # 不自动 abort，让用户看到冲突文件
-            return False
-        # 网络问题：尝试继续 push（可能远程无新提交）
-        print(f"  ⚠️ pull 网络失败（继续尝试 push）: {err}")
-
-    # 3. push
-    push = subprocess.run(["git", "push"], cwd=str(SCRIPT_DIR), capture_output=True, text=True)
-    if push.returncode != 0:
-        err = push.stderr.strip()
-        if "fetch first" in err.lower() or "non-fast-forward" in err.lower():
-            print(f"❌ 推送被拒（远程有新提交），请重试或手动 sync", file=sys.stderr)
-            return False
-        print(f"  git push failed: {err}", file=sys.stderr)
-        return False
-    print("  ✅ 推送成功")
-    return True
 
 
 def main():

@@ -107,10 +107,15 @@ let ALL_DATA = {}, ALL_VARIETIES = null, GITHUB_TOKEN = '', currentDates = [], c
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
-  GITHUB_TOKEN = localStorage.getItem('gh_token') || '';
+  GITHUB_TOKEN = sessionStorage.getItem('gh_token') || '';
   if (GITHUB_TOKEN) {
     document.getElementById('tokenInput').value = GITHUB_TOKEN;
     showEditor();
+  }
+  // 恢复未保存的草稿（2026-07-07 新增）
+  const draft = sessionStorage.getItem('editor_draft');
+  if (draft) {
+    try { ALL_DATA = JSON.parse(draft); console.log('草稿已恢复'); } catch(e) { sessionStorage.removeItem('editor_draft'); }
   }
   // Month select options
   document.getElementById('monthSelect').innerHTML = MONTHS.map(m => `<option value="${m}">${parseInt(m)}月</option>`).join('');
@@ -129,11 +134,16 @@ async function saveToken() {
   errEl.style.display = 'none';
   try {
     const resp = await fetch('https://api.github.com/user', {
-      headers: {'Authorization':'token '+t,'Accept':'application/vnd.github.v3+json'}
+      headers: {'Authorization':'Bearer '+t,'Accept':'application/vnd.github.v3+json'}
     });
     if (!resp.ok) throw new Error('HTTP '+resp.status);
     const user = await resp.json();
-    localStorage.setItem('gh_token', t);
+    // 验证仓库权限（2026-07-07 新增）
+    const repoResp = await fetch('https://api.github.com/repos/lekelin2046/jinggong-commodity-monitor', {
+      headers: {'Authorization':'Bearer '+t,'Accept':'application/vnd.github.v3+json'}
+    });
+    if (!repoResp.ok) throw new Error('无仓库访问权限 HTTP '+repoResp.status);
+    sessionStorage.setItem('gh_token', t);
     GITHUB_TOKEN = t;
     showEditor();
   } catch(e) {
@@ -250,25 +260,37 @@ async function saveData() {
   setStatus('正在提交数据...', '#1a73e8');
   try {
     const getResp = await fetch('https://api.github.com/repos/lekelin2046/jinggong-commodity-monitor/contents/docs/data.json', {
-      headers: {'Authorization':'token '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+      headers: {'Authorization':'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
     });
     if (!getResp.ok) throw new Error('读取失败 HTTP '+getResp.status);
     const fi = await getResp.json();
 
     const commitResp = await fetch('https://api.github.com/repos/lekelin2046/jinggong-commodity-monitor/contents/docs/data.json', {
       method:'PUT',
-      headers: {'Authorization':'token '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+      headers: {'Authorization':'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
       body: JSON.stringify({
         message: 'editor: 手动更新数据 '+new Date().toISOString().substring(0,10),
         content: btoa(unescape(encodeURIComponent(content))),
         sha: fi.sha, branch: 'main'
       })
     });
-    if (!commitResp.ok) throw new Error('提交失败 HTTP '+commitResp.status);
+    if (!commitResp.ok) {
+      const errBody = await commitResp.json().catch(()=>({}));
+      if (commitResp.status === 409) {
+        throw new Error('文件已被其他人修改，请刷新页面后重试');
+      }
+      throw new Error('提交失败 HTTP '+commitResp.status+(errBody.message?': '+errBody.message:''));
+    }
+    // 保存成功，清除草稿
+    sessionStorage.removeItem('editor_draft');
     setStatus('提交成功！看板约30秒后自动更新', 'green');
   } catch(e) {
     setStatus('保存失败: '+e.message, 'red');
     if (e.message.includes('401')) logout();
+    if (e.message.includes('其他人修改')) {
+      // 保存草稿到 sessionStorage，防止编辑丢失
+      sessionStorage.setItem('editor_draft', JSON.stringify(ALL_DATA));
+    }
   }
   saveBtn.disabled = false; saveBtn.textContent = '保存并更新看板';
 }
