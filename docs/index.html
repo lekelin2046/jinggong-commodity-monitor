@@ -15,8 +15,30 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .controls select{padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer}
 .card{background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:14px}
 .card h3{font-size:14px;font-weight:600;margin-bottom:8px;color:#334155}
+
+/* ===== 分区系统 ===== */
+.section{margin-bottom:16px}
+.section-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+.section-label .bar{width:3px;height:14px;border-radius:2px}
+.section-label.daily .bar{background:#2563eb}
+.section-label.monthly .bar{background:#ea580c}
+.section-label.trend .bar{background:#9333ea}
+.section-divider{border:none;border-top:1px dashed #cbd5e1;margin:20px 0 4px}
+/* 分区卡片左边框色 */
+.section.daily .card{border-left:3px solid #2563eb}
+.section.monthly .card{border-left:3px solid #ea580c}
+.section.trend .card{border-left:3px solid #9333ea}
+/* 分区 badge 颜色 */
+.badge{font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px;margin-left:4px}
+.badge-daily{background:#dbeafe;color:#1d4ed8}
+.badge-monthly{background:#ffedd5;color:#c2410c}
+.badge-trend{background:#f3e8ff;color:#7e22ce}
+.badge-cross{background:#fef3c7;color:#a16207}
+.badge-predict{background:#ede9fe;color:#6d28d9}
+
 .chart-wrap{position:relative;height:240px}
 .chart-wrap.annual{height:300px}
+.chart-wrap.compact{height:200px}
 
 /* 横拉表 */
 .table-wrap{overflow-x:auto;margin-top:4px;-webkit-overflow-scrolling:touch}
@@ -53,14 +75,12 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .kpi-card.accent-adc{border-left-color:#ea580c}
 .kpi-card.accent-mom{border-left-color:#9333ea}
 
-/* ===== 区块标题 ===== */
-.section-title{font-size:14px;font-weight:600;color:#334155;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.section-title .badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;background:#e0e7ff;color:#4338ca}
-.section-title .hint{font-size:11px;font-weight:400;color:#94a3b8;margin-left:auto}
-
 /* ===== 双列图表 ===== */
-.dual-charts{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap}
-.dual-charts .card{flex:1;min-width:320px;margin-bottom:0}
+.dual-charts{display:flex;gap:14px;flex-wrap:wrap}
+.dual-charts .card{flex:1;min-width:300px;margin-bottom:14px}
+/* 日趋势 2×2 网格 */
+.trend-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:768px){.trend-grid{grid-template-columns:1fr}}
 
 /* ===== 月度均价明细表 ===== */
 .avg-table-wrap{overflow-x:auto;margin-top:4px;-webkit-overflow-scrolling:touch}
@@ -114,55 +134,65 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <!-- KPI 摘要行 -->
 <div class="kpi-row" id="kpiRow"></div>
 
-<!-- 月度价格明细表（优先显示） -->
-<div class="card">
-  <h3>📋 月度价格明细表（左右横拉 →）</h3>
-  <div class="table-wrap" id="tableContainer"></div>
-</div>
+<!-- ===== 日维度 ===== -->
+<div class="section daily">
+  <div class="section-label daily"><span class="bar"></span>日维度</div>
 
-<!-- 日趋势图（按品种分类，紧跟明细表） -->
-<div id="dailyTrends"></div>
-
-<!-- 月度均价明细表（可折叠，默认收起） -->
-<div class="card">
-  <div class="collapsible-header" onclick="toggleAvgTable()">
-    <h3>📋 月度均价明细表（含环比）</h3>
-    <span class="toggle-icon" id="avgToggleIcon">▶ 点击展开</span>
-  </div>
-  <div class="collapsible-body" id="avgTableBody" style="display:none">
-    <div class="avg-table-wrap" id="avgTableContainer"></div>
-  </div>
-</div>
-
-<!-- 月度均价趋势对比 -->
-<div class="card">
-  <div class="section-title">📈 月度均价趋势对比 <span class="badge">跨月</span> <span class="hint">各品种月度均价折线对比，识别长期趋势</span></div>
-  <div style="margin-bottom:8px">
-    <select id="avgTrendCategory" onchange="renderMonthlyAvgComparison()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer"></select>
-  </div>
-  <div class="chart-wrap" style="height:300px"><canvas id="avgTrendChart"></canvas></div>
-</div>
-
-<!-- 波动趋势 + 下月预测（双列） -->
-<div class="dual-charts">
   <div class="card">
-    <div class="section-title">📊 月度波动趋势 <span class="badge">区间</span> <span class="hint">最高-最低-均价</span></div>
-    <div style="margin-bottom:8px">
-      <select id="volCategory" onchange="renderVolatilityTrend()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer"></select>
-    </div>
-    <div class="chart-wrap" style="height:320px"><canvas id="volatilityChart"></canvas></div>
+    <h3>📋 日价格明细表 <span class="badge badge-daily">每日</span> <span style="font-size:11px;color:#94a3b8;margin-left:auto;float:right">← 左右横拉 →</span></h3>
+    <div class="table-wrap" id="tableContainer"></div>
   </div>
+
+  <div class="trend-grid" id="dailyTrends"></div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ===== 月维度 ===== -->
+<div class="section monthly">
+  <div class="section-label monthly"><span class="bar"></span>月维度</div>
+
   <div class="card">
-    <div class="section-title">🔮 下月价格预测 <span class="badge">预测</span> <span class="hint">移动平均 + 线性回归</span></div>
-    <div style="margin-bottom:8px">
-      <select id="predVariety" onchange="renderPrediction()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer"></select>
+    <div class="collapsible-header" onclick="toggleAvgTable()">
+      <h3>📋 月度均价明细表 <span class="badge badge-monthly">月度</span> <span class="badge badge-cross">含环比</span></h3>
+      <span class="toggle-icon" id="avgToggleIcon">▶ 点击展开</span>
     </div>
-    <div class="chart-wrap" style="height:320px"><canvas id="predictionChart"></canvas></div>
-    <div class="prediction-note" id="predictionNote"></div>
+    <div class="collapsible-body" id="avgTableBody" style="display:none">
+      <div class="avg-table-wrap" id="avgTableContainer"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📈 月度均价趋势对比 <span class="badge badge-monthly">跨月</span></h3>
+    <div style="margin-bottom:8px">
+      <select id="avgTrendCategory" onchange="renderMonthlyAvgComparison()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer"></select>
+    </div>
+    <div class="chart-wrap" style="height:300px"><canvas id="avgTrendChart"></canvas></div>
+  </div>
+
+  <div class="dual-charts">
+    <div class="card">
+      <h3>📊 月度波动趋势 <span class="badge badge-monthly">区间</span></h3>
+      <div style="margin-bottom:8px">
+        <select id="volCategory" onchange="renderVolatilityTrend()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer"></select>
+      </div>
+      <div class="chart-wrap compact" style="height:280px"><canvas id="volatilityChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>🔮 下月价格预测 <span class="badge badge-predict">预测</span></h3>
+      <div style="margin-bottom:8px">
+        <select id="predVariety" onchange="renderPrediction()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer"></select>
+      </div>
+      <div class="chart-wrap compact" style="height:280px"><canvas id="predictionChart"></canvas></div>
+      <div class="prediction-note" id="predictionNote"></div>
+    </div>
   </div>
 </div>
 
-<div id="charts"></div>
+<hr class="section-divider">
+
+<!-- ===== 年度 ===== -->
+<div class="section trend" id="charts"></div>
 
 <script>
 // ===== DATA =====
@@ -223,7 +253,8 @@ function getSelected() {
 function renderAll(year, month) {
   destroyCharts();
   const container = document.getElementById("charts");
-  container.innerHTML = "";
+  // Only clear children, preserve the section div itself
+  while (container.firstChild) container.removeChild(container.firstChild);
   const dailyContainer = document.getElementById("dailyTrends");
   dailyContainer.innerHTML = "";
 
@@ -245,8 +276,9 @@ function renderMonthlyTrends(container, year, month) {
   CATEGORIES.forEach(cat => {
     const card = document.createElement("div");
     card.className = "card";
+    card.style.marginBottom = "0";
     const cid = "chart-" + Math.random().toString(36).substr(2,6);
-    card.innerHTML = `<h3>📈 ${cat.name} · 日趋势</h3><div class="chart-wrap"><canvas id="${cid}"></canvas></div>`;
+    card.innerHTML = `<h3>📈 ${cat.name} <span class="badge badge-daily">日趋势</span></h3><div class="chart-wrap compact"><canvas id="${cid}"></canvas></div>`;
     container.appendChild(card);
     
     const datasets = cat.codes.map((code, i) => {
@@ -289,10 +321,16 @@ function renderMonthlyTrends(container, year, month) {
 
 // 年度趋势图（按天）
 function renderAnnualTrend(container, year) {
+  // container is already .section.trend, just add label
+  const labelDiv = document.createElement("div");
+  labelDiv.className = "section-label trend";
+  labelDiv.innerHTML = '<span class="bar"></span>年度';
+  container.prepend(labelDiv);
+
   const card = document.createElement("div");
   card.className = "card";
   const cid = "chart-annual-" + Math.random().toString(36).substr(2,6);
-  card.innerHTML = `<h3>📊 年度趋势图 (${year}年)</h3><div class="chart-wrap annual"><canvas id="${cid}"></canvas></div>`;
+  card.innerHTML = `<h3>📊 年度趋势图 (${year}年) <span class="badge badge-trend">年度</span></h3><div class="chart-wrap annual"><canvas id="${cid}"></canvas></div>`;
   container.appendChild(card);
   
   // 获取该年所有有数据的日期
