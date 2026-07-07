@@ -103,7 +103,7 @@ const CATEGORIES = [
 ];
 const MONTHS = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 
-let ALL_DATA = {}, GITHUB_TOKEN = '', currentDates = [], currentYear = '2026', currentMonth = '07';
+let ALL_DATA = {}, ALL_VARIETIES = null, GITHUB_TOKEN = '', currentDates = [], currentYear = '2026', currentMonth = '07';
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -167,10 +167,12 @@ function logout() {
 // ===== LOAD DATA =====
 async function loadData() {
   try {
-    const resp = await fetch('data.json?v=2');
+    const resp = await fetch('data.json?ts=' + Date.now());
     if (!resp.ok) throw new Error('HTTP '+resp.status);
     const json = await resp.json();
     ALL_DATA = json.data || {};
+    // 保留 varieties 字段，保存时原样写回（2026-07-07 修复：之前会丢失）
+    ALL_VARIETIES = json.varieties || null;
     setStatus('数据已加载', 'green');
   } catch(e) {
     setStatus('数据加载失败: '+e.message, 'red');
@@ -240,6 +242,8 @@ async function saveData() {
   const content = JSON.stringify({
     last_updated: new Date().toISOString().substring(0,10),
     total_days: Object.keys(ALL_DATA).length,
+    // 2026-07-07 修复：保留 varieties 字段，避免数据格式不一致
+    varieties: ALL_VARIETIES || ["ADC12","A380","AlSi9Cu3","A356","A00_AL","CU","SI_441","SI_3303","SI_331","MG","MN","Wenxi_MG","AM60B","AZ91D","W","WTI"],
     data: ALL_DATA
   }, null, 2);
 

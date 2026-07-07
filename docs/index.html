@@ -750,7 +750,7 @@ function isWorkingDay(d) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    const resp = await fetch("data.json?v=2");
+    const resp = await fetch("data.json?ts=" + Date.now());
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const json = await resp.json();
     ALL_DATA = json.data;

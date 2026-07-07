@@ -22,7 +22,8 @@ except ImportError:
 
 # ===== 配置 =====
 SCRIPT_DIR = Path(__file__).parent
-DEFAULT_EXCEL = SCRIPT_DIR / "2026年有色金属市场价格.xlsx"
+# 2026-07-07：统一用「共享(2).xlsx」（cron 实际写入的文件），避免双 Excel 分叉
+DEFAULT_EXCEL = SCRIPT_DIR / "2026年有色金属市场价格共享(2).xlsx"
 OUTPUT_JSON = SCRIPT_DIR / "docs" / "data.json"
 SHEET_NAME = "日均价（2026年市场）"
 
@@ -77,12 +78,31 @@ def export(excel_path: str, output_path: str):
 
     for r in range(2, ws.max_row + 1):
         date_val = ws.cell(r, 1).value
-        if not isinstance(date_val, datetime.datetime):
+        if date_val is None:
             continue
-        if date_val.year != 2026:
+        # 接受 datetime 和字符串两种日期格式（fill_and_verify.py 写字符串，历史行是 datetime）
+        if isinstance(date_val, datetime.datetime):
+            if date_val.year != 2026:
+                continue
+            date_str = date_val.strftime("%Y-%m-%d")
+        elif isinstance(date_val, str):
+            s = date_val.strip()
+            if not s or s.startswith("备注"):
+                continue
+            # 尝试多种格式
+            parsed = None
+            for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d"):
+                try:
+                    parsed = datetime.datetime.strptime(s, fmt)
+                    break
+                except ValueError:
+                    continue
+            if parsed is None or parsed.year != 2026:
+                continue
+            date_str = parsed.strftime("%Y-%m-%d")
+        else:
             continue
 
-        date_str = date_val.strftime("%Y-%m-%d")
         day_data = {}
         has_any = False
 

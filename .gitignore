@@ -45,3 +45,14 @@ output/*
 .env.*.local
 secrets.json
 credentials.json
+
+# 浏览器调试缓存（可能含登录态/cookie，严禁入 git）
+.chrome-debug-profile/
+.workbuddy/
+.codebuddy/
+.trae-html-share-packages/
+dist/
+
+# 临时分析产物
+jinggong-eval-*/
+项目评价报告*.html
