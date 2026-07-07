@@ -156,16 +156,7 @@ async function saveToken() {
 async function showEditor() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('editorScreen').style.display = 'block';
-  // 显示当前登录用户名（2026-07-07 优化）
-  try {
-    const resp = await fetch('https://api.github.com/user', {
-      headers: {'Authorization':'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
-    });
-    if (resp.ok) {
-      const user = await resp.json();
-      document.getElementById('tokenStatus').textContent = user.login || user.name || '';
-    }
-  } catch(e) { /* ignore */ }
+  document.getElementById('tokenStatus').textContent = '·';
   const now = new Date();
   currentYear = String(now.getFullYear());
   currentMonth = String(now.getMonth()+1).padStart(2,'0');
@@ -205,6 +196,13 @@ function loadMonth() {
   currentMonth = document.getElementById('monthSelect').value;
   renderTable();
 }
+
+// 自动保存草稿到 sessionStorage（每 30 秒，关闭浏览器不丢数据）
+setInterval(() => {
+  if (GITHUB_TOKEN && Object.keys(ALL_DATA).length > 0) {
+    sessionStorage.setItem('editor_draft', JSON.stringify(ALL_DATA));
+  }
+}, 30000);
 
 // ===== RENDER =====
 function renderTable() {

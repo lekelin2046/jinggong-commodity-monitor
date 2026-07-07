@@ -108,11 +108,16 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .toggle-icon.expanded{transform:rotate(0deg)}
 .collapsible-body{overflow:hidden;transition:max-height .3s ease}
 
-/* ===== 导出工具栏 ===== */
-.export-bar{display:flex;gap:6px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
-.export-btn{padding:4px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;color:#334155;cursor:pointer;font-weight:500;transition:all .15s}
-.export-btn:hover{background:#f8fafc;border-color:#94a3b8}
-.export-btn svg{vertical-align:-2px;margin-right:3px}
+/* ===== 导出按钮 ===== */
+.export-wrap{position:relative;display:inline-block}
+.export-toggle{padding:5px 14px;border:1px solid #cbd5e1;border-radius:7px;font-size:12px;background:#fff;color:#334155;cursor:pointer;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.export-toggle:hover{background:#f8fafc;border-color:#94a3b8}
+.export-toggle svg{flex-shrink:0}
+.export-menu{position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);padding:4px;min-width:150px;display:none;z-index:100}
+.export-menu.open{display:block}
+.export-menu-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;font-size:13px;color:#334155;cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .12s}
+.export-menu-item:hover{background:#f1f5f9}
+.export-menu-item svg{color:#64748b;flex-shrink:0}
 
 @media (max-width:768px){
   body{padding:8px}
@@ -135,13 +140,28 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div class="controls">
   <select id="yearSelect" onchange="switchMonth()"></select>
   <select id="monthSelect" onchange="switchMonth()"></select>
-</div>
-
-<div class="export-bar">
-  <span style="font-size:11px;color:#94a3b8">导出:</span>
-  <button class="export-btn" onclick="exportExcel()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Excel</button>
-  <button class="export-btn" onclick="exportPDF()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</button>
-  <button class="export-btn" onclick="exportMarkdown()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Markdown</button>
+  <div style="margin-left:auto">
+    <div class="export-wrap">
+      <button class="export-toggle" onclick="toggleExportMenu(event)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        导出
+      </button>
+      <div class="export-menu" id="exportMenu">
+        <button class="export-menu-item" onclick="exportExcel();closeExportMenu()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Excel (.csv)
+        </button>
+        <button class="export-menu-item" onclick="exportPDF();closeExportMenu()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l3 3 3-3"/></svg>
+          PDF (打印)
+        </button>
+        <button class="export-menu-item" onclick="exportMarkdown();closeExportMenu()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Markdown (.md)
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- KPI 摘要行 -->
@@ -822,6 +842,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // ===== 导出功能 =====
+function toggleExportMenu(e) {
+  e.stopPropagation();
+  document.getElementById('exportMenu').classList.toggle('open');
+}
+function closeExportMenu() {
+  document.getElementById('exportMenu').classList.remove('open');
+}
+document.addEventListener('click', closeExportMenu);
+
 function _getExportData() {
   const y = parseInt(document.getElementById("yearSelect").value);
   const m = parseInt(document.getElementById("monthSelect").value);
