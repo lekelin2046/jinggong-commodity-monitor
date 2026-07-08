@@ -22,8 +22,8 @@ except ImportError:
 
 # ===== 配置 =====
 SCRIPT_DIR = Path(__file__).parent
-# 2026-07-07：统一用「共享(2).xlsx」（cron 实际写入的文件），避免双 Excel 分叉
-DEFAULT_EXCEL = SCRIPT_DIR / "2026年有色金属市场价格共享(2).xlsx"
+# 数据源：2026年有色金属市场价格.xlsx（主人指定的唯一数据源）
+DEFAULT_EXCEL = SCRIPT_DIR / "2026年有色金属市场价格.xlsx"
 OUTPUT_JSON = SCRIPT_DIR / "docs" / "data.json"
 SHEET_NAME = "日均价（2026年市场）"
 

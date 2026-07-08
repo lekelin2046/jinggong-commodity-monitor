@@ -33,7 +33,7 @@ from jinggong_monitor.credentials import require_smm, require_asianmetal
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 logger = logging.getLogger(__name__)
 
-EXCEL_PATH = Path(__file__).parent / "2026年有色金属市场价格共享(2).xlsx"
+EXCEL_PATH = Path(__file__).parent / "2026年有色金属市场价格.xlsx"
 YELLOW_FILL = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
 # ============================================================

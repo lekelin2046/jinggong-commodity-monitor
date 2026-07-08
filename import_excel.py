@@ -7,7 +7,7 @@ from datetime import datetime
 import openpyxl
 
 PROJECT = Path(__file__).parent
-EXCEL_PATH = PROJECT / "2026年有色金属市场价格共享(2).xlsx"
+EXCEL_PATH = PROJECT / "2026年有色金属市场价格.xlsx"
 DB_PATH = PROJECT / "data" / "prices.db"
 
 # Sheet1 列 → 品种代码（参照前面摸清的映射）

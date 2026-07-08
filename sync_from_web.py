@@ -25,8 +25,8 @@ except ImportError:
     sys.exit(1)
 
 SCRIPT_DIR = Path(__file__).parent
-# 2026-07-07：与 cron 路径统一（fill_and_verify.py 写共享(2).xlsx）
-EXCEL_PATH = SCRIPT_DIR / "2026年有色金属市场价格共享(2).xlsx"
+# 2026-07-07：数据源统一为 2026年有色金属市场价格.xlsx
+EXCEL_PATH = SCRIPT_DIR / "2026年有色金属市场价格.xlsx"
 JSON_PATH = SCRIPT_DIR / "docs" / "data.json"
 SHEET_NAME = "日均价（2026年市场）"
 
