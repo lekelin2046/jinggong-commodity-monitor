@@ -1,0 +1,8 @@
+# 有色金属大宗商品价格监控看板依赖
+
+## 核心依赖
+openpyxl>=3.1.2
+playwright>=1.40.0
+
+## Python 内置库（无需 pip 安装）
+# sqlite3, urllib.request, subprocess, json, datetime, re, pathlib, typing, logging
