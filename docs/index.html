@@ -40,13 +40,13 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .chart-wrap.annual{height:300px}
 .chart-wrap.compact{height:200px}
 
-/* 横拉表 */
-.table-wrap{overflow-x:auto;margin-top:4px;-webkit-overflow-scrolling:touch}
-.table-wrap table{border-collapse:collapse;font-size:12px;white-space:nowrap;min-width:100%}
-.table-wrap th,.table-wrap td{padding:5px 8px;border:1px solid #e2e8f0;text-align:center}
+/* 日价格明细表：自适应容器宽度，取消左右横拉 */
+.table-wrap{margin-top:4px}
+.table-wrap table{border-collapse:collapse;font-size:12px;width:100%;table-layout:fixed;min-width:0}
+.table-wrap th,.table-wrap td{padding:5px 4px;border:1px solid #e2e8f0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .table-wrap thead th{background:#f8fafc;position:sticky;top:0;z-index:2;font-weight:600}
-.table-wrap tbody td{min-width:60px}
-.table-wrap .sticky-col{position:sticky;left:0;background:#f8fafc;z-index:1;text-align:left;font-weight:600;min-width:90px}
+.table-wrap tbody td{min-width:0}
+.table-wrap .sticky-col{position:sticky;left:0;background:#f8fafc;z-index:1;text-align:left;font-weight:600;width:96px;min-width:0}
 .table-wrap thead .sticky-col{z-index:3}
 .table-wrap .cat-row td{background:#e2e8f0;font-weight:700;text-align:left;font-size:12px;padding:3px 8px;position:sticky;left:0;z-index:1}
 .table-wrap .cat-row td:first-child{z-index:3}
@@ -191,7 +191,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
   <div class="section-label daily"><span class="bar"></span>日维度</div>
 
   <div class="card">
-    <h3>📋 日价格明细表 <span class="badge badge-daily">每日</span> <span style="font-size:11px;color:#94a3b8;margin-left:auto;float:right">← 左右横拉 →</span></h3>
+    <h3>📋 日价格明细表 <span class="badge badge-daily">每日</span></h3>
     <div class="table-wrap" id="tableContainer"></div>
   </div>
 
@@ -415,11 +415,6 @@ function renderTable(year, month) {
   
   html += '</tbody></table>';
   container.innerHTML = html;
-  
-  // 滚动到最右侧，显示最新一天
-  requestAnimationFrame(() => {
-    container.scrollLeft = container.scrollWidth;
-  });
 }
 
 // ===== MONTHLY STATS ENGINE =====
