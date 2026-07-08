@@ -408,8 +408,8 @@ function renderTable(year, month) {
         if(v != null) { sum += v; cnt++; html += `<td${isToday ? ' class="today-col"' : ''}>${Number.isInteger(v) ? v : v.toFixed(2)}</td>`; }
         else html += `<td${isToday ? ' class="today-col no-data"' : ' class="no-data"'}>—</td>`;
       });
-      const avg = cnt > 0 ? Math.round(sum/cnt) : null;
-      html += `<td class="avg-col sticky-right">${avg != null ? (Number.isInteger(avg) ? avg : avg.toFixed(2)) : "—"}</td></tr>`;
+      const avg = cnt > 0 ? Math.round(sum/cnt * 100) / 100 : null;
+      html += `<td class="avg-col sticky-right">${avg != null ? (Number.isInteger(avg) ? avg.toLocaleString() : avg.toFixed(2)) : "—"}</td></tr>`;
     });
   });
   
@@ -556,9 +556,9 @@ function renderMonthlyAvgTable(year) {
       html += `<tr><td class="sticky-col">${VARIETY_NAMES[code]}<span class="unit-tag">${VARIETY_UNITS[code] || DEFAULT_UNIT}</span></td>`;
       months.forEach(m => {
         const s = stats[m][code];
-        const avg = s && s.avg != null ? Math.round(s.avg) : null;
+        const avg = s && s.avg != null ? Math.round(s.avg * 100) / 100 : null;
         html += avg != null
-          ? `<td${m === latestMonth ? ' class="latest-month"' : ''}>${avg.toLocaleString()}</td>`
+          ? `<td${m === latestMonth ? ' class="latest-month"' : ''}>${Number.isInteger(avg) ? avg.toLocaleString() : avg.toFixed(2)}</td>`
           : `<td${m === latestMonth ? ' class="latest-month"' : ''} class="no-data">—</td>`;
       });
       // MoM: latest vs previous
