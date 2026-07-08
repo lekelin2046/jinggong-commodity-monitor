@@ -770,7 +770,8 @@ function renderPrediction() {
   noteEl.innerHTML =
     `<strong>${VARIETY_NAMES[code]}</strong> ${nextMonthNum}月预测: <strong style="color:#9333ea">${Math.round(predValue).toLocaleString()} ${unit}</strong> ${vsArrow}${Math.abs(vsLastMonth)}% 较本月<br>` +
     `趋势: ${trendDir} (月均${trendRate}%) | 动量: ${momDir} | 置信区间: ${Math.round(ciLower).toLocaleString()} ~ ${Math.round(ciUpper).toLocaleString()} (带宽${ciWidth}%)<br>` +
-    `<span style="font-size:10px;color:#94a3b8">模型: 加权趋势(70%) + 动量修正(30%) + EWMA平滑 | 基于${nValid}个月数据</span>`;
+    `<span style="font-size:10px;color:#94a3b8">模型: 加权趋势(70%) + 动量修正(30%) + EWMA平滑 | 基于${nValid}个月数据</span><br>` +
+    `<span style="font-size:10px;color:#a855f7">⚠ 本预测仅基于历史价格数据的统计模型，未考虑宏观政策、供需突变、地缘事件等外部因素，结果仅供参考，不构成投资建议。</span>`;
 }
 
 // ===== 下拉框初始化 =====
