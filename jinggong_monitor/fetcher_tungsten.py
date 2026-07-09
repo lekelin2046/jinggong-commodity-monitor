@@ -1,10 +1,10 @@
 """中钨在线数据抓取器
 
-实测结果：
-- news.chinatungsten.com（中文每日一文）→ 不可达（CONN_REFUSED）
-- www.chinatungsten.com（英文门户）→ 可达但无中文价格
-- www.ctia.com.cn（中国钨业协会）→ 可达但价格在图表中
-- 结论：钨系数据暂无法通过免费HTML提取，使用参考值兜底
+实测结果（2026-07-08 复核）：
+- www.chinatungsten.com（英文门户 HTTPS）→ TLS/证书已损坏，SSLError: record layer failure，不可用
+- news.chinatungsten.com（中文每日价栏目 HTTP）→ 可达，可解析「钨粉价格 X 元/千克」
+- 结论：钨粉价格走 http://news.chinatungsten.com/cn/tungsten-product-news.html 栏目页，
+  取最新含「钨」的文章正文解析即可（早期注释称 CONN_REFUSED 已过期，现已恢复）。
 """
 
 import logging

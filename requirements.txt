@@ -3,6 +3,11 @@
 ## 核心依赖
 openpyxl>=3.1.2
 playwright>=1.40.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+## 可选依赖
+# paddleocr>=2.7.0  # 亚洲金属网 HTML 表格解析失败时的本地 OCR 兜底（体积较大，按需安装）
 
 ## Python 内置库（无需 pip 安装）
 # sqlite3, urllib.request, subprocess, json, datetime, re, pathlib, typing, logging

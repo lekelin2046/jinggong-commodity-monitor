@@ -33,7 +33,7 @@ COL_MAP = {
     8:  ("SI_441",   "ccmn"), 9:  ("SI_3303",   "ccmn"),
     10: ("MG",       "ccmn"), 11: ("MN",        "ccmn"),
     12: ("SI_331",   "ccmn"),
-    13: ("Wenxi_MG", "smm"),  14: ("AM60B",     "smm"),
+    13: ("Wenxi_MG", "asianmetal"),  14: ("AM60B",     "smm"),
     15: ("AZ91D",    "smm"),
     16: ("W",        "web"),  17: ("WTI",       "wti"),
 }
@@ -88,22 +88,39 @@ async def fetch_smm() -> dict:
     return mapped
 
 
+# ===== 亚洲金属网闻喜镁锭 =====
+async def fetch_asianmetal() -> dict:
+    print("  亚洲金属网（闻喜镁锭）...", end="", flush=True)
+    try:
+        from jinggong_monitor.fetcher_asianmetal import fetch_async
+        prices = await fetch_async()
+        if prices and "Wenxi_MG" in prices:
+            print(f" {prices['Wenxi_MG']} 元/吨")
+            return prices
+        print(" 未获取")
+        return {}
+    except Exception as e:
+        print(f" 失败: {e}")
+        return {}
+
+
 # ===== 钨粉 =====
 def fetch_tungsten() -> dict:
+    """中钨在线钨粉价格（HTTP 抓取，规避 www.chinatungsten.com 的 HTTPS/SSL 故障）
+
+    说明：此前直接 requests.get("https://www.chinatungsten.com/price/")，但该站点
+    HTTPS 证书/TLS 已损坏（SSLError: record layer failure），稳定失败。
+    正确入口是 http://news.chinatungsten.com（英文门户的中文每日价栏目），由
+    ChinatungstenFetcher 解析「钨粉价格 X 元/千克」。2026-07-08 实测可正常返回。
+    """
     print("  中钨在线（钨粉）...", end="", flush=True)
     try:
-        import requests as rq
-        url = "https://www.chinatungsten.com/price/"
-        resp = rq.get(url, timeout=15, headers={
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
-        })
-        for line in resp.text.split("\n"):
-            if "钨粉" in line or "W" in line:
-                nums = re.findall(r"[\d,.]+", line)
-                if nums:
-                    v = float(nums[0].replace(",", ""))
-                    print(f" {v} 元/公斤")
-                    return {"W": v}
+        from jinggong_monitor.fetcher_tungsten import ChinatungstenFetcher
+        res = ChinatungstenFetcher().fetch()
+        if res and "W" in res:
+            v = float(res["W"])
+            print(f" {v} 元/千克")
+            return {"W": v}
         print(" 未匹配到")
         return {}
     except Exception as e:
@@ -196,6 +213,9 @@ async def main():
     all_prices.update(await fetch_ccmn())
     print()
     all_prices.update(await fetch_smm())
+    print()
+    # 亚洲金属网闻喜镁锭覆盖 SMM 的 Wenxi_MG（项目要求主源为亚洲金属网）
+    all_prices.update(await fetch_asianmetal())
     print()
     tungsten = fetch_tungsten()
     if tungsten: all_prices.update(tungsten)

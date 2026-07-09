@@ -74,6 +74,11 @@ def get_tungsten():
     r = ChinatungstenFetcher().fetch()
     return r.get("W")
 
+async def get_wenxi_mg():
+    from jinggong_monitor.fetcher_asianmetal import fetch_async
+    r = await fetch_async()
+    return r.get("Wenxi_MG")
+
 # ---------- 主流程 ----------
 async def main():
     print("=" * 75)
@@ -88,11 +93,15 @@ async def main():
     smm, err = await get_smm()
     print(f'{len([v for v in smm.values() if v])} 品种' + (f' | {err}' if err else ''))
 
-    print("[3/4] WTI 原油 ... ", end="", flush=True)
+    print("[3/4] 亚洲金属网闻喜镁锭 ... ", end="", flush=True)
+    wenxi_mg = await get_wenxi_mg()
+    print(f"{wenxi_mg} 元/吨" if wenxi_mg else "未获取")
+
+    print("[4/5] WTI 原油 ... ", end="", flush=True)
     wti = get_wti()
     print(f"{wti} USD/bbl")
 
-    print("[4/4] 中钨在线钨粉 ... ", end="", flush=True)
+    print("[5/5] 中钨在线钨粉 ... ", end="", flush=True)
     w = get_tungsten()
     print(f"{w} 元/千克" if w else "未获取")
 
@@ -109,7 +118,7 @@ async def main():
         ("Col10 镁",               ccmn.get("MG"),         "ccmn"),
         ("Col11 电解锰",           ccmn.get("MN"),         "ccmn"),
         ("Col12 金属硅中间价331",  ccmn.get("SI_553_331_MAX"),"ccmn"),
-        ("Col13 闻喜镁锭",         smm.get("Wenxi_MG"),    "SMM*"),
+        ("Col13 闻喜镁锭",         wenxi_mg,               "亚洲金属网"),
         ("Col14 AM60B",            smm.get("AM60B"),       "SMM"),
         ("Col15 AZ91D",            smm.get("AZ91D"),       "SMM"),
         ("Col16 钨粉",             w,                "中钨在线"),
@@ -126,8 +135,6 @@ async def main():
         else:
             print(f"  {label:20s}  {src:8s}  {'—':>8}  未获取")
 
-    print("-" * 75)
-    print("  * Col13 闻喜镁锭展示 SMM 值，SKILL 规则要求走亚洲金属网")
     print("=" * 75)
 
 asyncio.run(main())

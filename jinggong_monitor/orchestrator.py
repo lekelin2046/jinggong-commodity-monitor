@@ -30,7 +30,7 @@ _SOURCE_REGISTRY = {
     "bxg":        PlaywrightFetcher,   # 🆕 Playwright 替代 CDP
     "smm":        SmmFetcher,           # Cookie + Playwright 独立实例
     "cnfeol":     PlaywrightFetcher,   # 🆕 Playwright 替代 requests/BS4
-    "asianmetal":  AsianmetalFetcher,  # 亚洲金属网 CDP 抓取
+    "asianmetal":  AsianmetalFetcher,  # 亚洲金属网弹窗登录 + HTML 表格提取
     "100ppi":     None,               # 生意社暂未实现独立fetcher
     "mysteel":    None,               # 我的钢铁暂未实现
 }
