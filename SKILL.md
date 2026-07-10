@@ -12,7 +12,7 @@ changelog:
     - + 截图按数据源整页截（ccmn 改 full_page）
     - + 闻喜镁锭只走亚洲金属网（去掉 SMM 备源）
     - + 钨粉 fetcher 改遍历前 5 篇
-    - + sheet2 自动创建（共享(2).xlsx 删过那个 sheet）
+    - + sheet2 自动创建（历史上共享(2).xlsx 删过那个 sheet）
   v2.0 (2026-06-29):
     - + 17:00 主流程 cron
     - + 截图保存到 screenshots/YYYY-MM-DD/
@@ -25,7 +25,7 @@ changelog:
 
 ## 🎯 一句话总览
 
-每天 15:00（WTI 原油时点价）+ 17:00（其他 16 品种 + 填表 + 现场截图）自动抓价格填入 Excel。**ccmn + akshare + 中钨在线不需登录**，**SMM + 亚洲金属网需要主人在调试 Chrome 里保持登录态**。登录态过期时跑 `relogin_assistant.py` 自动引导主人重新登录。**每天 17:00 跑完后会把每个数据源的页面截图保存到 `screenshots/{日期}/`** 供后期追溯。
+每天 15:00 全品种自动抓价格填入 Excel（`daily_update_all.py`）。**ccmn + akshare + 中钨在线不需登录**，**SMM + 亚洲金属网需登录**——但登录态过期时抓取脚本会**自动重新登录**（内置于 `jinggong_monitor/fetcher_smm.py`，无需人工介入）。截图/证据保存到 `screenshots/{日期}/` 供后期追溯。
 
 ## 📊 16 个品种 × 4 类数据源（6/25 跑通版）
 
@@ -129,7 +129,7 @@ data:
 
 ## ⚠️ Excel 写入工具选择（2026-06-26 主人拍板 — 硬规则）
 
-**本项目 Excel 文件（`2026年有色金属市场价格共享(2).xlsx`）一律用 openpyxl 一次性写入，禁止用 officecli 写入。**
+**本项目 Excel 文件（`2026年有色金属市场价格.xlsx`）一律用 openpyxl 一次性写入，禁止用 officecli 写入。**
 
 **原因**：officecli 的 `set` 子命令会触发 watch session 持久化进程（持文件 + 后台监听）：
 - 第一次 `set` 写完 H115=10000，watch session 留着不释放
@@ -258,20 +258,15 @@ open -na "Google Chrome" --args --remote-debugging-port=9223 --user-data-dir=/Us
 PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 fill_and_verify.py
 ```
 
-### 登录态过期处理
+### 登录态过期处理（已自动化，无需人工）
 
-如果检测到 SMM / 亚洲金属网未登录：
+抓取脚本检测到 SMM / 亚洲金属网未登录（抓到零结果）时，会自动完成重登，无需手动跑任何脚本。
 
-```bash
-# 自动开登录页 + 轮询检测登录态
-PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 relogin_assistant.py
-```
-
-脚本行为：
-1. 自动开 SMM 登录页 → 主人在调试 Chrome 完成登录
-2. 每 5 秒检测登录态（最长 5 分钟）
-3. SMM 登录成功 → 自动开亚洲金属网登录页
-4. 两个都登录后 → 自动跑 `fill_and_verify.py`
+内置逻辑（`jinggong_monitor/fetcher_smm.py` 的 `_login_and_save_cookies`）：
+1. 检测到抓取零结果 → 判定登录态失效
+2. Playwright headless 自动打开登录页并提交账号密码（凭据取自 `.env`）
+3. 登录成功后刷新并保存 Cookie 到 `data/`
+4. 重试抓取 → 拿到当日数据（全程约 5 秒）
 
 ---
 
@@ -356,10 +351,10 @@ jinggong-commodity-monitor/
 ```
 jinggong-commodity-monitor/
 ├── SKILL.md                          ← 本文件（流程定义）
-├── fill_and_verify.py                ← 主流程（填 Sheet1 + Sheet2 + 历史核查）
-├── relogin_assistant.py              ← 登录态修复助手
+├── fill_and_verify.py                ← 采集+填表+校验+截图+OCR
+├── daily_update_all.py               ← 每日 3PM 全品种抓取主入口
 ├── run.sh                            ← 一键运行脚本
-├── 2026年有色金属市场价格共享(2).xlsx  ← Excel 数据源（每天更新）
+├── 2026年有色金属市场价格.xlsx        ← Excel 数据源（唯一，每天更新）
 ├── screenshots/                      ← 6/29 新增：每天 17:00 抓取现场截图/证据
 │   ├── 2026-06-29/                   ← 每天一个子文件夹（日期）
 │   │   ├── ccmn_长江现货_170003.png
@@ -530,7 +525,7 @@ elif source == "ASIANMETAL":
 ### 未来自动化方向
 1. **每日 cron 15:00 触发**：用 `openclaw cron` 加 `fill_and_verify.py`，自动跑
 2. **登录态持续保持**：把 SMM/亚洲金属网登录态作为「主人日常」流程，每日开机自动登录
-3. **登录态自动重试**：登录态过期时自动跑 `relogin_assistant.py` 引导主人重新登录
+3. ~~**登录态自动重试**~~：✅ 已实现——抓取脚本内置自动重登（`fetcher_smm.py`）
 4. **邮件/Slack 通知**：填表完成后自动发主人日报
 
 ### 历史回溯限制
@@ -545,7 +540,7 @@ elif source == "ASIANMETAL":
 
 ### ✅ 经验
 1. **多页抓取 → 找 AJAX 端点**（ccmn 首页 vs cjxh.shtml vs AJAX 端点）
-2. **登录态 → 引导助手**（relogin_assistant 自动开登录页 + 轮询）
+2. **登录态 → 内置自动重登**（`fetcher_smm.py` 检测零结果即自动登录，无需人工）
 3. **价格区间 → 中位值法**（所有 fetcher 都用 `_parse_price_range`）
 4. **多数据源对比**（akshare vs 英为财情 WTI = 69.83 vs 69.86 几乎一致）
 5. **黄底蓝字标注替代数据**（保证数据来源可追溯）
@@ -650,7 +645,7 @@ curl -s http://localhost:9223/json/version | head -3
 
 | 症状 | 根因 | 处置 |
 |------|------|------|
-| 表格行显示「未登录」 | 登录态过期 | 跑 `relogin_assistant.py` 引导主人重新登录 |
+| 表格行显示「未登录」 | 登录态过期 | 抓取脚本自动重登（`fetcher_smm.py`）；若仍失败，检查 `.env` 凭据 |
 | SMM 页跳转 `https://account.smm.cn/...` | 同上 | 同上 |
 | 价格表为空 | 同上 | 同上 |
 
@@ -746,11 +741,10 @@ for a in articles:
 ```
 /Users/siqi/Desktop/AI/jinggong-commodity-monitor/   ← 项目根
 ├── SKILL.md                                          ← 本文件
-├── fill_and_verify.py                                ← 主流程
-├── relogin_assistant.py                              ← 登录态修复
+├── fill_and_verify.py                                ← 采集+填表+校验+截图+OCR
+├── daily_update_all.py                               ← 每日 3PM 全品种抓取主入口
 ├── run.sh                                            ← 一键运行
-├── 2026年有色金属市场价格共享(2).xlsx                ← 主表
-├── 2026年有色金属市场价格共享.xlsx                    ← 旧表（已废弃，保留备查）
+├── 2026年有色金属市场价格.xlsx                        ← 唯一数据源 Excel
 ├── jinggong_monitor/                                 ← 代码目录
 │   ├── base.py                                       ← BaseFetcher
 │   ├── orchestrator.py                               ← 调度
@@ -828,7 +822,7 @@ pyyaml>=6.0
 
 ### P1 — 7/1 前
 - [ ] **每日 cron 15:00 触发**（中钨粉 9:00 补抓）
-- [ ] 登录态自动重试（relogin_assistant.py 接到 orchestrator）
+- [x] 登录态自动重试（已内置于 `fetcher_smm.py`，抓取零结果即自动重登）
 
 ### P2 — 7-8 月
 - [ ] 邮件/Slack 通知

@@ -1,6 +1,6 @@
 # 精工有色金属共享表自动化填写
 
-> 每天自动抓取 **16 个有色金属/原油品种价格** 填入 Excel「2026年有色金属市场价格共享(2).xlsx」
+> 每天自动抓取 **16 个有色金属/原油品种价格** 填入 Excel「2026年有色金属市场价格.xlsx」
 
 [![status](https://img.shields.io/badge/status-6%2F26%E8%B7%91%E9%80%9A16%2F16-brightgreen)]()
 [![python](https://img.shields.io/badge/python-3.13-blue)]()
@@ -73,25 +73,11 @@ export NO_PROXY="sci99.com,chinatungsten.com,51bxg.com,steelcn.cn,ccmn.cn,cnfeol
 PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 fill_and_verify.py
 ```
 
-### 4. 登录态过期
+### 4. 登录态过期（无需手动操作）
 
-```bash
-PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 relogin_assistant.py
-```
+SMM / 亚洲金属网登录态过期时，抓取脚本会**自动检测**（抓到零结果即判定失效）并**重新登录**，刷新后的 Cookie 自动保存到 `data/`。该逻辑内置于 `jinggong_monitor/fetcher_smm.py`（`_login_and_save_cookies`），无需人工介入。
 
-`relogin_assistant.py` 会自动在 Chrome 里打开 SMM / 亚洲金属网登录页，主人完成登录后自动检测并跑主流程。
-
-### 5. 每日 10:00 抓取长江有色日报
-
-```bash
-PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 capture_changjiang_daily.py
-```
-
-输出：
-- `长城有色日价格查询/YYYY-MM-DD_长江有色.md`（项目目录）
-- `~/Documents/Obsidian Vault/工作/大宗原材料监控/日报/YYYY-MM-DD-长江有色.md`（Obsidian 归档）
-
-**自动 cron**：每个工作日 10:00（Asia/Shanghai）自动触发。
+> 长江有色系列品种（A00 铝、铜、金属硅等）已并入主流程，通过 ccmn AJAX 公开接口抓取，不再需要独立的日报抓取脚本。
 
 ---
 
@@ -101,29 +87,36 @@ PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 ca
 jinggong-commodity-monitor/
 ├── README.md                       ← 本文件
 ├── SKILL.md                        ← 流程定义（最新 6/26 跑通版，30 KB）
-├── fill_and_verify.py              ← 主流程（填 Excel + 历史核查）
-├── relogin_assistant.py            ← 登录态修复助手
-├── capture_changjiang_daily.py     ← 每日 10:00 抓取长江有色
-├── run.sh                          ← 一键运行脚本
-├── 2026年有色金属市场价格共享(2).xlsx  ← Excel 共享表
+├── fill_and_verify.py              ← 采集+填表+校验+截图+OCR
+├── daily_update_all.py             ← 每日 3PM 全品种抓取主入口（16 品种）
+├── sync_from_web.py                ← 线上编辑回写 Excel
+├── excel_to_web.py                 ← 线下改 Excel 后推送看板
+├── export_excel_to_json.py         ← Excel → docs/data.json
+├── changelog.py                    ← 数据变更留痕
+├── git_helper.py                   ← 带代理的 git 推送封装
+├── run.sh                          ← 一键运行脚本（daily/wti/tungsten）
+├── 2026年有色金属市场价格.xlsx      ← 唯一数据源 Excel
 ├── jinggong_monitor/               ← 核心代码（18 个模块）
 │   ├── base.py                     ← BaseFetcher + _parse_price_range 价格解析
 │   ├── orchestrator.py             ← 多源调度
 │   ├── fetcher_ccmn.py             ← 长江有色 AJAX（公开 ⭐）
 │   ├── fetcher_akshare.py          ← WTI 原油
 │   ├── fetcher_asianmetal.py       ← 闻喜镁锭（CDP 登录）
-│   ├── fetcher_tungsten.py         ← 中钨在线
+│   ├── fetcher_smm.py              ← SMM 上海有色（自动登录）
+│   ├── fetcher_tungsten.py         ← 中钨在线钨粉
 │   ├── excel_filler.py             ← openpyxl 写表
 │   ├── validator.py                ← 数据校验
 │   └── ...
 ├── config/
 │   ├── varieties.yaml              ← 品种-数据源映射（17 个品种）
 │   └── sources.yaml                ← 数据源配置
-├── 长城有色日价格查询/             ← 每日长江有色 markdown 归档
-│   └── 2026-06-26_长江有色.md
-├── data/                           ← 历史数据
-├── output/                         ← 临时输出
-└── pipeline/                       ← pipeline 工具
+├── docs/                           ← GitHub Pages 看板
+│   ├── index.html                  ← 看板主页
+│   ├── editor.html                 ← 线上编辑页
+│   ├── changelog.html              ← 变更记录查询页
+│   ├── data.json                   ← 看板数据
+│   └── changelog.json              ← 变更留痕
+└── data/                           ← 运行时缓存（cookies 等）
 ```
 
 ---
@@ -200,12 +193,13 @@ data:
 
 ### 4. 登录态自动修复
 
-SMM / 亚洲金属网登录态过期时，`relogin_assistant.py` 会：
-1. 自动在 Chrome 调试模式里打开 SMM 登录页
-2. 主人完成登录（输入账号密码）
-3. 轮询检测登录态（每 5 秒，最长 5 分钟）
-4. 检测到登录成功 → 自动开亚洲金属网登录页 → 同样检测
-5. 两个站都登录后 → 自动跑 `fill_and_verify.py`
+SMM / 亚洲金属网登录态过期时，抓取脚本内置的自动登录（`jinggong_monitor/fetcher_smm.py` 的 `_login_and_save_cookies`）会：
+1. 检测到抓取零结果 → 判定登录态失效
+2. Playwright headless 自动打开登录页并提交账号密码（凭据取自 `.env`）
+3. 登录成功后刷新并保存 Cookie 到 `data/`
+4. 重试抓取 → 拿到当日数据
+
+全程无需人工介入（约 5 秒完成）。
 
 ### 5. 价格区间中位值法
 
@@ -297,8 +291,8 @@ price = df.iloc[0]['最新价']  # 实时价（每日 15:00 时点）
 |------|:--:|------|
 | **6/25** | ✅ 跑通 | 16/16 全填（手工触发）|
 | **6/26** | ✅ 跑通 | 金属硅新规则 + officecli 硬规则 + 6/26 数据 |
-| **6/27+** | 🟡 进行中 | 每日 10:00 长江有色 cron 已上线（capture_changjiang_daily.py）|
-| 7 月 | ⚪ 规划 | 每日 15:00 主流程 cron（fill_and_verify.py 自动化）|
+| **6/27+** | ✅ 跑通 | 长江有色系列并入主流程 ccmn AJAX 抓取 |
+| **7 月** | ✅ 跑通 | 每日 15:00 全品种自动抓取（daily_update_all.py）+ GitHub Pages 看板 |
 | 7 月 | ⚪ 规划 | 邮件/Slack 通知：填表完成后自动发日报 |
 | 8 月 | ⚪ 规划 | 历史回溯：ccmn AJAX 按 publishDate 回溯历史日期 |
 | 长期 | ⚪ 规划 | 多 Excel 表支持（兄弟公司共享表）|
