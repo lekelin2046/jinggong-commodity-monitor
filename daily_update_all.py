@@ -155,20 +155,42 @@ def fetch_wti() -> dict:
 
 # ===== 写 Excel =====
 def write_excel(all_prices: dict) -> int:
+    from changelog import record_changes, SOURCE_AUTO_CRON, norm_value, current_commit_sha
     wb = openpyxl.load_workbook(EXCEL_PATH)
     ws = wb[SHEET_NAME]
     row = get_row(ws)
     written, skipped = [], []
+    diffs = []
+
+    # 日期行标识（用于变更记录）
+    dv = ws.cell(row, 1).value
+    if isinstance(dv, datetime.datetime):
+        date_str = dv.strftime("%Y-%m-%d")
+    elif isinstance(dv, str):
+        date_str = dv.strip()
+    else:
+        date_str = TODAY
+
     for col, (code, src) in COL_MAP.items():
+        old_val = norm_value(ws.cell(row, col).value)
         if code in all_prices and all_prices[code] is not None:
-            ws.cell(row, col).value = all_prices[code]
+            new_val = float(all_prices[code])
+            ws.cell(row, col).value = new_val
             written.append(code)
+            if old_val != new_val:
+                diffs.append({"date_row": date_str, "code": code, "old": old_val, "new": new_val})
         else:
             skipped.append(code)
     wb.save(EXCEL_PATH)
     print(f"  行 {row}: 写入 {len(written)}/16 项")
     if skipped:
         print(f"  缺: {', '.join(skipped)}")
+
+    # 变更留痕（自动抓取覆盖）
+    if diffs:
+        sha = current_commit_sha(str(SCRIPT_DIR))
+        n = record_changes(diffs, source=SOURCE_AUTO_CRON, editor="—", commit=sha)
+        print(f"  📝 变更留痕 {n} 条（auto_cron）")
     return row
 
 

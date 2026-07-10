@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>变更记录 · 有色金属价格</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Microsoft YaHei',sans-serif;background:#f5f5f5;color:#333;min-height:100vh}
+.header{background:#1a1a2e;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:18px;font-weight:600}
+.header a{color:#8ab4f8;text-decoration:none;font-size:13px}
+.toolbar{background:#fff;padding:14px 24px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;border-bottom:1px solid #e0e0e0}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:#666;font-weight:600}
+.field select,.field input{padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;min-width:120px}
+.field input[type=date]{min-width:150px}
+.summary{padding:10px 24px;font-size:13px;color:#555}
+.summary b{color:#1a73e8}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}
+th,td{border-bottom:1px solid #eee;padding:9px 12px;text-align:left}
+th{background:#fafafa;font-weight:600;color:#444;position:sticky;top:0}
+tbody tr:hover{background:#f7faff}
+.val-old{color:#999;text-decoration:line-through;margin-right:6px}
+.val-new{color:#1a73e8;font-weight:600}
+.tag{display:inline-block;padding:2px 9px;border-radius:11px;font-size:11px;font-weight:600}
+.tag-editor{background:#e3f2fd;color:#1565c0}
+.tag-xlsx{background:#e8f5e9;color:#2e7d32}
+.tag-cron{background:#fff3e0;color:#e65100}
+.empty{text-align:center;color:#999;padding:48px}
+.wrap{overflow-x:auto;padding:0 24px 32px}
+.arrow{color:#bbb;margin:0 4px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>有色金属价格 · 数据变更记录</h1>
+  <a href="index.html">← 返回看板</a>
+</div>
+
+<div class="toolbar">
+  <div class="field">
+    <label>来源</label>
+    <select id="fSource">
+      <option value="">全部</option>
+      <option value="editor">线上编辑</option>
+      <option value="manual_xlsx">线下Excel</option>
+      <option value="auto_cron">自动抓取</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>品种</label>
+    <select id="fCode"><option value="">全部</option></select>
+  </div>
+  <div class="field">
+    <label>编辑者</label>
+    <input id="fEditor" type="text" placeholder="GitHub login / —">
+  </div>
+  <div class="field">
+    <label>起始日期</label>
+    <input id="fFrom" type="date">
+  </div>
+  <div class="field">
+    <label>结束日期</label>
+    <input id="fTo" type="date">
+  </div>
+  <div class="field">
+    <label>&nbsp;</label>
+    <button id="btnReset" style="padding:7px 16px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">重置</button>
+  </div>
+</div>
+
+<div class="summary" id="summary">加载中…</div>
+<div class="wrap">
+  <table>
+    <thead>
+      <tr><th>时间</th><th>日期行</th><th>品种</th><th>变更（旧 → 新）</th><th>来源</th><th>编辑者</th></tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+const VARIETY_NAMES = {
+  "ADC12":"ADC12","A380":"A380","AlSi9Cu3":"AlSi9Cu3","A356":"A356",
+  "A00_AL":"A00铝","CU":"铜","SI_441":"硅441","SI_3303":"硅3303",
+  "SI_331":"硅331","MG":"镁","MN":"电解锰","Wenxi_MG":"闻喜镁锭",
+  "AM60B":"AM60B","AZ91D":"AZ91D","W":"钨粉","WTI":"WTI原油"
+};
+const SOURCE_LABEL = {editor:"线上编辑", manual_xlsx:"线下Excel", auto_cron:"自动抓取"};
+const SOURCE_CLASS = {editor:"tag-editor", manual_xlsx:"tag-xlsx", auto_cron:"tag-cron"};
+
+let ALL_RECORDS = [];
+
+function fmtVal(v){ return (v === null || v === undefined || v === "") ? "—" : v; }
+function fmtTime(ts){
+  // 2026-07-10T15:30:12 → 2026-07-10 15:30:12
+  return (ts||"").replace("T"," ");
+}
+function esc(s){ return String(s).replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+function render(){
+  const fSource = document.getElementById('fSource').value;
+  const fCode = document.getElementById('fCode').value;
+  const fEditor = document.getElementById('fEditor').value.trim().toLowerCase();
+  const fFrom = document.getElementById('fFrom').value;
+  const fTo = document.getElementById('fTo').value;
+
+  const rows = ALL_RECORDS.filter(r=>{
+    if (fSource && r.source !== fSource) return false;
+    if (fCode && r.code !== fCode) return false;
+    if (fEditor && !(r.editor||"").toLowerCase().includes(fEditor)) return false;
+    if (fFrom && r.date_row < fFrom) return false;
+    if (fTo && r.date_row > fTo) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('tbody');
+  if (!rows.length){
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">没有匹配的变更记录</td></tr>`;
+  } else {
+    tbody.innerHTML = rows.map(r=>{
+      const vname = VARIETY_NAMES[r.code] || r.code;
+      return `<tr>
+        <td>${fmtTime(r.ts)}</td>
+        <td>${esc(r.date_row)}</td>
+        <td>${esc(vname)} <small style="color:#999">${esc(r.code)}</small></td>
+        <td><span class="val-old">${fmtVal(r.old)}</span><span class="arrow">→</span><span class="val-new">${fmtVal(r.new)}</span></td>
+        <td><span class="tag ${SOURCE_CLASS[r.source]||''}">${SOURCE_LABEL[r.source]||r.source}</span></td>
+        <td>${esc(r.editor||"—")}</td>
+      </tr>`;
+    }).join("");
+  }
+  document.getElementById('summary').innerHTML =
+    `共 <b>${rows.length}</b> 条记录（总 ${ALL_RECORDS.length} 条）`;
+}
+
+async function load(){
+  try{
+    const resp = await fetch('changelog.json?ts='+Date.now());
+    if (!resp.ok) throw new Error('HTTP '+resp.status);
+    const data = await resp.json();
+    ALL_RECORDS = (data.records || []).slice().sort((a,b)=> (b.ts||"").localeCompare(a.ts||""));
+  }catch(e){
+    document.getElementById('summary').textContent = '加载失败: '+e.message;
+    ALL_RECORDS = [];
+  }
+  // 填充品种下拉
+  const codes = Array.from(new Set(ALL_RECORDS.map(r=>r.code))).sort();
+  const sel = document.getElementById('fCode');
+  codes.forEach(c=>{
+    const o = document.createElement('option');
+    o.value = c; o.textContent = (VARIETY_NAMES[c]||c)+" ("+c+")";
+    sel.appendChild(o);
+  });
+  render();
+}
+
+['fSource','fCode','fEditor','fFrom','fTo'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', render);
+  document.getElementById(id).addEventListener('change', render);
+});
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  ['fSource','fCode','fEditor','fFrom','fTo'].forEach(id=>document.getElementById(id).value="");
+  render();
+});
+
+load();
+</script>
+</body>
+</html>
