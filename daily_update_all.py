@@ -80,7 +80,11 @@ async def fetch_ccmn() -> dict:
 async def fetch_smm() -> dict:
     print("  SMM 上海有色...", end="", flush=True)
     from jinggong_monitor.fetcher_smm import _fetch_smm_raw
-    prices = await _fetch_smm_raw()
+    try:
+        prices = await asyncio.wait_for(_fetch_smm_raw(), timeout=90)
+    except asyncio.TimeoutError:
+        print(" 超时（90s）")
+        return {}
     mapped = {}
     for k, v in prices.items():
         mapped["Wenxi_MG" if k == "WenxiMG" else k] = v
@@ -93,11 +97,14 @@ async def fetch_asianmetal() -> dict:
     print("  亚洲金属网（闻喜镁锭）...", end="", flush=True)
     try:
         from jinggong_monitor.fetcher_asianmetal import fetch_async
-        prices = await fetch_async()
+        prices = await asyncio.wait_for(fetch_async(), timeout=120)
         if prices and "Wenxi_MG" in prices:
             print(f" {prices['Wenxi_MG']} 元/吨")
             return prices
         print(" 未获取")
+        return {}
+    except asyncio.TimeoutError:
+        print(f" 超时（120s）")
         return {}
     except Exception as e:
         print(f" 失败: {e}")

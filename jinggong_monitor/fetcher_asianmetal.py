@@ -110,16 +110,54 @@ async def _login_in_popup(page) -> bool:
         await asyncio.sleep(1)
 
         # 等待登录成功提示出现，最多 20 秒
+        login_success = False
         for i in range(20):
             await asyncio.sleep(1)
             try:
                 body = await page.inner_text("body", timeout=2000)
                 if _LOGIN_SUCCESS_TEXT in body:
                     logger.info("登录成功提示出现")
+                    login_success = True
                     break
             except Exception:
                 continue
-        else:
+
+        # 如果未成功，尝试强制下线后重试一次（处理"此用户已在线"等冲突）
+        if not login_success:
+            logger.info("首次登录未成功，尝试强制下线后重试...")
+            try:
+                # 先尝试点击弹窗里的"登录"按钮（网站提供的强制重新登录入口）
+                try:
+                    force_btn = page.locator("#loginWin input[type='button']").filter(has_text="登录")
+                    if await force_btn.count():
+                        await force_btn.click(timeout=5000)
+                        await asyncio.sleep(3)
+                except Exception:
+                    pass
+                # 再执行 logout -> 重新登录
+                await page.goto("https://www.asianmetal.cn/login/logout.am", timeout=15000, wait_until="domcontentloaded")
+                await page.wait_for_timeout(5000)
+                await page.goto(BASE_URL, timeout=30000, wait_until="domcontentloaded")
+                await page.wait_for_timeout(2000)
+                await page.locator(_LOGIN_TOP_LINK).first.click(timeout=5000)
+                await page.wait_for_selector(_LOGIN_POPUP, state="visible", timeout=10000)
+                await page.locator(_LOGIN_USER).fill(am_user, timeout=5000)
+                await page.locator(_LOGIN_PWD).fill(am_pass, timeout=5000)
+                await page.locator(_LOGIN_BTN).click(timeout=5000)
+                for _ in range(20):
+                    await asyncio.sleep(1)
+                    try:
+                        body = await page.inner_text("body", timeout=2000)
+                        if _LOGIN_SUCCESS_TEXT in body:
+                            logger.info("强制下线后重新登录成功")
+                            login_success = True
+                            break
+                    except Exception:
+                        continue
+            except Exception as e:
+                logger.debug(f"强制下线重试失败: {e}")
+
+        if not login_success:
             logger.warning("未看到登录成功提示，继续等待页面刷新")
 
         # 登录成功后 cookies 已设置，无需点击确定按钮。
