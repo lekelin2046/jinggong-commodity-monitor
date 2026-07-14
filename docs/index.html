@@ -7,13 +7,13 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f1f5f9;color:#1e293b;padding:16px}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f1f5f9;color:#1e293b;padding:16px;overflow-x:hidden}
 .header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .header h1{font-size:18px;white-space:nowrap}
 .header .updated{color:#64748b;font-size:12px;margin-left:auto}
 .controls{display:flex;gap:8px;align-items:center;margin-bottom:14px}
 .controls select{padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer}
-.card{background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:14px}
+.card{background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:14px;min-width:0}
 .card h3{font-size:14px;font-weight:600;margin-bottom:8px;color:#334155}
 
 /* ===== 分区系统 ===== */
@@ -38,7 +38,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 
 .chart-wrap{position:relative;height:240px}
 .chart-wrap.annual{height:300px}
-.chart-wrap.compact{height:200px}
+.chart-wrap.compact{height:168px}
 
 /* 日价格明细表：自适应容器宽度，取消左右横拉 */
 .table-wrap{margin-top:4px}
@@ -82,8 +82,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 /* ===== 双列图表 ===== */
 .dual-charts{display:flex;gap:14px;flex-wrap:wrap}
 .dual-charts .card{flex:1;min-width:300px;margin-bottom:14px}
-/* 日趋势 2×2 网格 */
-.trend-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* 日趋势 2×2 网格（用 minmax(0,1fr) 防止 Chart.js 画布撑出横向滚动条） */
+.trend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(max-width:768px){.trend-grid{grid-template-columns:1fr}}
 
 /* ===== 月度均价明细表 ===== */
@@ -144,7 +144,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
   .chart-wrap, .chart-wrap.compact, .chart-wrap.annual { height: 180px !important; }
   .kpi-card { box-shadow: none; border: 1px solid #e2e8f0; }
   .table-wrap { overflow: visible; max-height: none; }
-  .trend-grid { grid-template-columns: 1fr 1fr; }
+  .trend-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>
 </head>
