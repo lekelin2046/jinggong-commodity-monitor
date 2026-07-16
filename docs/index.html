@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>有色金属每日价格看板</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="vendor/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f1f5f9;color:#1e293b;padding:16px;overflow-x:hidden}
@@ -47,7 +47,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .table-wrap thead th{background:#f8fafc;position:sticky;top:0;z-index:2;font-weight:600}
 .table-wrap tbody td{min-width:0}
 .table-wrap .sticky-col{position:sticky;left:0;background:#f8fafc;z-index:1;text-align:left;font-weight:600;width:110px;min-width:0}
-.table-wrap .sticky-unit{position:sticky;left:110px;background:#f8fafc;z-index:1;text-align:center;font-weight:600;width:52px;font-size:10px;white-space:nowrap;padding:2px 2px}
+.table-wrap .sticky-unit{position:sticky;left:110px;background:#f8fafc;z-index:1;text-align:center;font-weight:600;width:46px;font-size:10px;white-space:nowrap;padding:2px 1px}
 .table-wrap thead .sticky-col{z-index:3}
 .table-wrap thead .sticky-unit{z-index:3;background:#f8fafc}
 .table-wrap .cat-row td{background:#e2e8f0;font-weight:700;text-align:left;font-size:12px;padding:3px 8px;position:sticky;left:0;z-index:1}
@@ -94,7 +94,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .avg-table-wrap th,.avg-table-wrap td{padding:6px 10px;border:1px solid #e2e8f0;text-align:center}
 .avg-table-wrap thead th{background:#f1f5f9;font-weight:600;position:sticky;top:0;z-index:2}
 .avg-table-wrap .sticky-col{position:sticky;left:0;background:#fff;z-index:1;text-align:left;font-weight:600;width:110px;min-width:0}
-.avg-table-wrap .sticky-unit{position:sticky;left:110px;background:#fff;z-index:1;text-align:center;font-weight:600;width:52px;font-size:10px;white-space:nowrap;padding:2px 2px}
+.avg-table-wrap .sticky-unit{position:sticky;left:110px;background:#fff;z-index:1;text-align:center;font-weight:600;width:46px;font-size:10px;white-space:nowrap;padding:2px 1px}
 .avg-table-wrap thead .sticky-col{z-index:3;background:#f1f5f9}
 .avg-table-wrap thead .sticky-unit{z-index:3;background:#f1f5f9}
 .avg-table-wrap .cat-row td{background:#e0e7ff;font-weight:700;text-align:left;font-size:11px;padding:3px 10px;position:sticky;left:0;z-index:1}
@@ -808,7 +808,9 @@ function destroyCharts() {
     if (window[name]) { window[name].destroy(); window[name] = null; }
   });
   // Destroy category/annual charts (created dynamically)
-  Object.values(Chart.instances || {}).forEach(c => c.destroy());
+  if (typeof Chart !== "undefined" && Chart.instances) {
+    Object.values(Chart.instances || {}).forEach(c => c.destroy());
+  }
 }
 
 // ===== 可折叠均价表 =====
