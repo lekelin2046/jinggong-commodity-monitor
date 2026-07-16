@@ -53,7 +53,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .table-wrap .cat-row td{background:#e2e8f0;font-weight:700;text-align:left;font-size:12px;padding:3px 8px;position:sticky;left:0;z-index:1}
 .table-wrap .cat-row td:first-child{z-index:3}
 .no-data{color:#94a3b8}
-.avg-col{background:#fefce8;font-weight:600}
+.avg-col{background:#fefce8;font-weight:600;white-space:nowrap;width:88px;text-align:right;padding-right:8px}
 /* 月均价列冻结右侧 */
 .table-wrap td.sticky-right,.table-wrap th.sticky-right{position:sticky;right:0;z-index:1}
 .table-wrap thead th.sticky-right{z-index:3}
@@ -414,7 +414,7 @@ function renderTable(year, month) {
         else html += `<td${isToday ? ' class="today-col no-data"' : ' class="no-data"'}>—</td>`;
       });
       const avg = cnt > 0 ? Math.round(sum/cnt * 100) / 100 : null;
-      html += `<td class="avg-col sticky-right">${avg != null ? (Number.isInteger(avg) ? avg.toLocaleString() : avg.toFixed(2)) : "—"}</td></tr>`;
+      html += `<td class="avg-col sticky-right">${avg != null ? (Number.isInteger(avg) ? avg : avg.toFixed(2)) : "—"}</td></tr>`;
     });
   });
   
@@ -558,7 +558,7 @@ function renderMonthlyAvgTable(year) {
         const s = stats[m][code];
         const avg = s && s.avg != null ? Math.round(s.avg * 100) / 100 : null;
         html += avg != null
-          ? `<td${m === latestMonth ? ' class="latest-month"' : ''}>${Number.isInteger(avg) ? avg.toLocaleString() : avg.toFixed(2)}</td>`
+          ? `<td${m === latestMonth ? ' class="latest-month"' : ''}>${Number.isInteger(avg) ? avg : avg.toFixed(2)}</td>`
           : `<td${m === latestMonth ? ' class="latest-month"' : ''} class="no-data">—</td>`;
       });
       // MoM: latest vs previous
