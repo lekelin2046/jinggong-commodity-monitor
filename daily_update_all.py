@@ -36,6 +36,7 @@ COL_MAP = {
     13: ("Wenxi_MG", "asianmetal"),  14: ("AM60B",     "smm"),
     15: ("AZ91D",    "smm"),
     16: ("W",        "web"),  17: ("WTI",       "wti"),
+    18: ("IRON_ORE", "steel"), 19: ("COKE",     "steel"),
 }
 
 # CCMN 返回 key → 品种代码
@@ -160,6 +161,26 @@ def fetch_wti() -> dict:
         return {}
 
 
+# ===== 钢铁（铁矿石 / 冶金焦）=====
+def fetch_steel() -> dict:
+    """SMM 钢铁频道：进口铁矿石卡粉65%京唐港、一级冶金焦 MT<7 全国均价
+
+    无需登录；Playwright 渲染 + 正则提取（见 jinggong_monitor.fetcher_steel）。
+    """
+    print("  钢铁（铁矿石/冶金焦）...", end="", flush=True)
+    try:
+        from jinggong_monitor.fetcher_steel import fetch
+        res = fetch()
+        if res:
+            print(f" 铁矿石={res.get('IRON_ORE')} 冶金焦={res.get('COKE')}")
+            return res
+        print(" 未匹配到")
+        return {}
+    except Exception as e:
+        print(f" 失败: {e}")
+        return {}
+
+
 # ===== 写 Excel =====
 def write_excel(all_prices: dict) -> int:
     from changelog import record_changes, SOURCE_AUTO_CRON, norm_value, current_commit_sha
@@ -189,7 +210,7 @@ def write_excel(all_prices: dict) -> int:
         else:
             skipped.append(code)
     wb.save(EXCEL_PATH)
-    print(f"  行 {row}: 写入 {len(written)}/16 项")
+    print(f"  行 {row}: 写入 {len(written)}/{len(COL_MAP)} 项")
     if skipped:
         print(f"  缺: {', '.join(skipped)}")
 
@@ -250,6 +271,8 @@ async def main():
     if tungsten: all_prices.update(tungsten)
     wti = fetch_wti()
     if wti: all_prices.update(wti)
+    steel = fetch_steel()
+    if steel: all_prices.update(steel)
     print()
 
     print(f"[写表] ", end="")
@@ -258,7 +281,7 @@ async def main():
     print(f"[发布] ", end="")
     export_and_push(row)
 
-    print(f"\n  已更新 {len(all_prices)}/16 品种")
+    print(f"\n  已更新 {len(all_prices)}/{len(COL_MAP)} 品种")
     print(f"  看板: https://lekelin2046.github.io/jinggong-commodity-monitor/\n")
 
 

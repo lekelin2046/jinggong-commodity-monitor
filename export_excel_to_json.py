@@ -45,6 +45,8 @@ COLUMN_MAP = {
     15: "AZ91D",
     16: "W",
     17: "WTI",
+    18: "IRON_ORE",
+    19: "COKE",
 }
 
 
