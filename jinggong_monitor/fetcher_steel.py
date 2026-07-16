@@ -164,6 +164,11 @@ async def _run() -> dict:
     return result
 
 
+async def fetch_async() -> dict:
+    """异步入口：在已运行的事件循环中调用（避免 asyncio.run 嵌套）。"""
+    return await _run()
+
+
 def fetch() -> dict:
     """同步入口：返回 {IRON_ORE: ..., COKE: ...}；异常时返回 {}。"""
     try:

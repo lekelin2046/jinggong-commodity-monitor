@@ -247,7 +247,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 let ALL_DATA = {};
 const VARIETY_NAMES = {"ADC12": "ADC12", "A380": "A380", "AlSi9Cu3": "AlSi9Cu3", "A356": "A356", "A00_AL": "A00铝", "CU": "铜", "SI_441": "硅441", "SI_3303": "硅3303", "SI_331": "硅331", "MG": "镁", "MN": "电解锰", "Wenxi_MG": "闻喜镁锭", "AM60B": "AM60B", "AZ91D": "AZ91D", "W": "钨粉", "WTI": "WTI原油", "IRON_ORE": "铁矿石卡粉65%京唐港", "COKE": "一级冶金焦MT<7"};
 const VARIETY_UNITS = {"W": "元/千克", "WTI": "USD/bbl", "IRON_ORE": "元/湿吨", "COKE": "元/吨"};
-const CATEGORIES = [{"name": "铝及铝合金", "codes": ["ADC12", "A380", "AlSi9Cu3", "A356", "A00_AL"]}, {"name": "铜硅镁锰", "codes": ["CU", "SI_441", "SI_3303", "SI_331", "MG", "MN"]}, {"name": "镁合金", "codes": ["Wenxi_MG", "AM60B", "AZ91D"]}, {"name": "钨粉及原油", "codes": ["W", "WTI"]}, {"name": "钢铁原料", "codes": ["IRON_ORE", "COKE"]}];
+const CATEGORIES = [{"name": "铝及铝合金", "codes": ["ADC12", "A380", "AlSi9Cu3", "A356", "A00_AL"]}, {"name": "铜硅镁锰", "codes": ["CU", "SI_441", "SI_3303", "SI_331", "MG", "MN"]}, {"name": "镁合金", "codes": ["Wenxi_MG", "AM60B", "AZ91D"]}, {"name": "钨粉及原油", "codes": ["W", "WTI"]}, {"name": "钢铁原料", "codes": ["IRON_ORE", "COKE"], "noTrend": true}];
 const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#9333ea", "#0891b2", "#ea580c", "#4f46e5", "#be123c", "#0d9488", "#d97706", "#7c3aed"];
 const CHART_IDS = [];
 
@@ -317,7 +317,8 @@ function renderMonthlyTrends(container, year, month) {
   const days = getMonthDays(year, month).filter(d => isWorkingDay(d));
   const labels = days.map(d => d.getDate());
   
-  CATEGORIES.forEach(cat => {
+  // 跳过标记 noTrend 的分类（如钢铁原料）：本阶段只进日价格明细表，暂不生成日趋势图
+  CATEGORIES.filter(cat => !cat.noTrend).forEach(cat => {
     const card = document.createElement("div");
     card.className = "card";
     card.style.marginBottom = "0";

@@ -162,15 +162,16 @@ def fetch_wti() -> dict:
 
 
 # ===== 钢铁（铁矿石 / 冶金焦）=====
-def fetch_steel() -> dict:
+async def fetch_steel() -> dict:
     """SMM 钢铁频道：进口铁矿石卡粉65%京唐港、一级冶金焦 MT<7 全国均价
 
     无需登录；Playwright 渲染 + 正则提取（见 jinggong_monitor.fetcher_steel）。
+    在本脚本已运行的事件循环中执行，必须走 fetch_async() 避免 asyncio.run 嵌套。
     """
     print("  钢铁（铁矿石/冶金焦）...", end="", flush=True)
     try:
-        from jinggong_monitor.fetcher_steel import fetch
-        res = fetch()
+        from jinggong_monitor.fetcher_steel import fetch_async
+        res = await fetch_async()
         if res:
             print(f" 铁矿石={res.get('IRON_ORE')} 冶金焦={res.get('COKE')}")
             return res
@@ -271,7 +272,7 @@ async def main():
     if tungsten: all_prices.update(tungsten)
     wti = fetch_wti()
     if wti: all_prices.update(wti)
-    steel = fetch_steel()
+    steel = await fetch_steel()
     if steel: all_prices.update(steel)
     print()
 
