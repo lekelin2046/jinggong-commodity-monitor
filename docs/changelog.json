@@ -15,7 +15,7 @@
       "date_row": "2026-07-12",
       "code": "ADC12",
       "old": null,
-      "new": 24100.0,
+      "new": 24100,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -25,7 +25,7 @@
       "date_row": "2026-07-12",
       "code": "A380",
       "old": null,
-      "new": 26000.0,
+      "new": 26000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -35,7 +35,7 @@
       "date_row": "2026-07-12",
       "code": "AlSi9Cu3",
       "old": null,
-      "new": 25000.0,
+      "new": 25000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -45,7 +45,7 @@
       "date_row": "2026-07-12",
       "code": "A356",
       "old": null,
-      "new": 23400.0,
+      "new": 23400,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -55,7 +55,7 @@
       "date_row": "2026-07-12",
       "code": "A00_AL",
       "old": null,
-      "new": 23120.0,
+      "new": 23120,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -65,7 +65,7 @@
       "date_row": "2026-07-12",
       "code": "CU",
       "old": null,
-      "new": 104290.0,
+      "new": 104290,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -75,7 +75,7 @@
       "date_row": "2026-07-12",
       "code": "SI_441",
       "old": null,
-      "new": 10000.0,
+      "new": 10000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -85,7 +85,7 @@
       "date_row": "2026-07-12",
       "code": "SI_3303",
       "old": null,
-      "new": 10300.0,
+      "new": 10300,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -95,7 +95,7 @@
       "date_row": "2026-07-12",
       "code": "MG",
       "old": null,
-      "new": 17500.0,
+      "new": 17500,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -105,7 +105,7 @@
       "date_row": "2026-07-12",
       "code": "MN",
       "old": null,
-      "new": 19000.0,
+      "new": 19000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -115,7 +115,7 @@
       "date_row": "2026-07-12",
       "code": "SI_331",
       "old": null,
-      "new": 10700.0,
+      "new": 10700,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -125,7 +125,7 @@
       "date_row": "2026-07-12",
       "code": "Wenxi_MG",
       "old": null,
-      "new": 16000.0,
+      "new": 16000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -135,7 +135,7 @@
       "date_row": "2026-07-12",
       "code": "W",
       "old": null,
-      "new": 1000.0,
+      "new": 1000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "1d2ba33e8587931feeaa2f5a990d89f068584196"
@@ -155,7 +155,7 @@
       "date_row": "2026-07-13",
       "code": "ADC12",
       "old": null,
-      "new": 24000.0,
+      "new": 24000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -165,7 +165,7 @@
       "date_row": "2026-07-13",
       "code": "A380",
       "old": null,
-      "new": 25900.0,
+      "new": 25900,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -175,7 +175,7 @@
       "date_row": "2026-07-13",
       "code": "AlSi9Cu3",
       "old": null,
-      "new": 24900.0,
+      "new": 24900,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -185,7 +185,7 @@
       "date_row": "2026-07-13",
       "code": "A356",
       "old": null,
-      "new": 23300.0,
+      "new": 23300,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -195,7 +195,7 @@
       "date_row": "2026-07-13",
       "code": "A00_AL",
       "old": null,
-      "new": 23000.0,
+      "new": 23000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -205,7 +205,7 @@
       "date_row": "2026-07-13",
       "code": "CU",
       "old": null,
-      "new": 103430.0,
+      "new": 103430,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -215,7 +215,7 @@
       "date_row": "2026-07-13",
       "code": "SI_441",
       "old": null,
-      "new": 10000.0,
+      "new": 10000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -225,7 +225,7 @@
       "date_row": "2026-07-13",
       "code": "SI_3303",
       "old": null,
-      "new": 10300.0,
+      "new": 10300,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -235,7 +235,7 @@
       "date_row": "2026-07-13",
       "code": "MG",
       "old": null,
-      "new": 17500.0,
+      "new": 17500,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -245,7 +245,7 @@
       "date_row": "2026-07-13",
       "code": "MN",
       "old": null,
-      "new": 19000.0,
+      "new": 19000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -255,7 +255,7 @@
       "date_row": "2026-07-13",
       "code": "SI_331",
       "old": null,
-      "new": 10700.0,
+      "new": 10700,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -265,7 +265,7 @@
       "date_row": "2026-07-13",
       "code": "Wenxi_MG",
       "old": null,
-      "new": 15950.0,
+      "new": 15950,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -275,7 +275,7 @@
       "date_row": "2026-07-13",
       "code": "AM60B",
       "old": null,
-      "new": 17900.0,
+      "new": 17900,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -285,7 +285,7 @@
       "date_row": "2026-07-13",
       "code": "AZ91D",
       "old": null,
-      "new": 18100.0,
+      "new": 18100,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -295,7 +295,7 @@
       "date_row": "2026-07-13",
       "code": "W",
       "old": null,
-      "new": 1000.0,
+      "new": 1000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "3043f2450c79ca9df68736321b52f396e973549e"
@@ -315,7 +315,7 @@
       "date_row": "2026-07-14",
       "code": "ADC12",
       "old": null,
-      "new": 24100.0,
+      "new": 24100,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -325,7 +325,7 @@
       "date_row": "2026-07-14",
       "code": "A380",
       "old": null,
-      "new": 26000.0,
+      "new": 26000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -335,7 +335,7 @@
       "date_row": "2026-07-14",
       "code": "AlSi9Cu3",
       "old": null,
-      "new": 25000.0,
+      "new": 25000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -345,7 +345,7 @@
       "date_row": "2026-07-14",
       "code": "A356",
       "old": null,
-      "new": 23600.0,
+      "new": 23600,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -355,7 +355,7 @@
       "date_row": "2026-07-14",
       "code": "A00_AL",
       "old": null,
-      "new": 23270.0,
+      "new": 23270,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -365,7 +365,7 @@
       "date_row": "2026-07-14",
       "code": "CU",
       "old": null,
-      "new": 104460.0,
+      "new": 104460,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -375,7 +375,7 @@
       "date_row": "2026-07-14",
       "code": "SI_441",
       "old": null,
-      "new": 10100.0,
+      "new": 10100,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -385,7 +385,7 @@
       "date_row": "2026-07-14",
       "code": "SI_3303",
       "old": null,
-      "new": 10400.0,
+      "new": 10400,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -395,7 +395,7 @@
       "date_row": "2026-07-14",
       "code": "MG",
       "old": null,
-      "new": 17500.0,
+      "new": 17500,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -405,7 +405,7 @@
       "date_row": "2026-07-14",
       "code": "MN",
       "old": null,
-      "new": 19000.0,
+      "new": 19000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -415,7 +415,7 @@
       "date_row": "2026-07-14",
       "code": "SI_331",
       "old": null,
-      "new": 10800.0,
+      "new": 10800,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -425,7 +425,7 @@
       "date_row": "2026-07-14",
       "code": "Wenxi_MG",
       "old": null,
-      "new": 15900.0,
+      "new": 15900,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -435,7 +435,7 @@
       "date_row": "2026-07-14",
       "code": "AM60B",
       "old": null,
-      "new": 17800.0,
+      "new": 17800,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -445,7 +445,7 @@
       "date_row": "2026-07-14",
       "code": "AZ91D",
       "old": null,
-      "new": 18000.0,
+      "new": 18000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -455,7 +455,7 @@
       "date_row": "2026-07-14",
       "code": "W",
       "old": null,
-      "new": 970.0,
+      "new": 970,
       "source": "auto_cron",
       "editor": "—",
       "commit": "45964fee5f2c2b1c537688682325fefd3abcee45"
@@ -495,7 +495,7 @@
       "date_row": "2026-07-15",
       "code": "ADC12",
       "old": null,
-      "new": 24100.0,
+      "new": 24100,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -505,7 +505,7 @@
       "date_row": "2026-07-15",
       "code": "A380",
       "old": null,
-      "new": 26000.0,
+      "new": 26000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -515,7 +515,7 @@
       "date_row": "2026-07-15",
       "code": "AlSi9Cu3",
       "old": null,
-      "new": 25000.0,
+      "new": 25000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -525,7 +525,7 @@
       "date_row": "2026-07-15",
       "code": "A356",
       "old": null,
-      "new": 23500.0,
+      "new": 23500,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -535,7 +535,7 @@
       "date_row": "2026-07-15",
       "code": "A00_AL",
       "old": null,
-      "new": 23180.0,
+      "new": 23180,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -545,7 +545,7 @@
       "date_row": "2026-07-15",
       "code": "CU",
       "old": null,
-      "new": 105230.0,
+      "new": 105230,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -555,7 +555,7 @@
       "date_row": "2026-07-15",
       "code": "SI_441",
       "old": null,
-      "new": 10100.0,
+      "new": 10100,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -565,7 +565,7 @@
       "date_row": "2026-07-15",
       "code": "SI_3303",
       "old": null,
-      "new": 10400.0,
+      "new": 10400,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -575,7 +575,7 @@
       "date_row": "2026-07-15",
       "code": "MG",
       "old": null,
-      "new": 17300.0,
+      "new": 17300,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -585,7 +585,7 @@
       "date_row": "2026-07-15",
       "code": "MN",
       "old": null,
-      "new": 19000.0,
+      "new": 19000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -595,7 +595,7 @@
       "date_row": "2026-07-15",
       "code": "SI_331",
       "old": null,
-      "new": 10800.0,
+      "new": 10800,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -605,7 +605,7 @@
       "date_row": "2026-07-15",
       "code": "Wenxi_MG",
       "old": null,
-      "new": 15900.0,
+      "new": 15900,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -615,7 +615,7 @@
       "date_row": "2026-07-15",
       "code": "AM60B",
       "old": null,
-      "new": 17800.0,
+      "new": 17800,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -625,7 +625,7 @@
       "date_row": "2026-07-15",
       "code": "AZ91D",
       "old": null,
-      "new": 18000.0,
+      "new": 18000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -635,7 +635,7 @@
       "date_row": "2026-07-15",
       "code": "W",
       "old": null,
-      "new": 970.0,
+      "new": 970,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a4dd3c6c1aa02bb451377cf0f32cfaecdc796173"
@@ -655,7 +655,7 @@
       "date_row": "2026-07-16",
       "code": "ADC12",
       "old": null,
-      "new": 24100.0,
+      "new": 24100,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -665,7 +665,7 @@
       "date_row": "2026-07-16",
       "code": "A380",
       "old": null,
-      "new": 26000.0,
+      "new": 26000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -675,7 +675,7 @@
       "date_row": "2026-07-16",
       "code": "AlSi9Cu3",
       "old": null,
-      "new": 25000.0,
+      "new": 25000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -685,7 +685,7 @@
       "date_row": "2026-07-16",
       "code": "A356",
       "old": null,
-      "new": 23500.0,
+      "new": 23500,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -695,7 +695,7 @@
       "date_row": "2026-07-16",
       "code": "A00_AL",
       "old": null,
-      "new": 23170.0,
+      "new": 23170,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -705,7 +705,7 @@
       "date_row": "2026-07-16",
       "code": "CU",
       "old": null,
-      "new": 104580.0,
+      "new": 104580,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -715,7 +715,7 @@
       "date_row": "2026-07-16",
       "code": "SI_441",
       "old": null,
-      "new": 10100.0,
+      "new": 10100,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -725,7 +725,7 @@
       "date_row": "2026-07-16",
       "code": "SI_3303",
       "old": null,
-      "new": 10400.0,
+      "new": 10400,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -735,7 +735,7 @@
       "date_row": "2026-07-16",
       "code": "MG",
       "old": null,
-      "new": 17300.0,
+      "new": 17300,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -745,7 +745,7 @@
       "date_row": "2026-07-16",
       "code": "MN",
       "old": null,
-      "new": 19000.0,
+      "new": 19000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -755,7 +755,7 @@
       "date_row": "2026-07-16",
       "code": "SI_331",
       "old": null,
-      "new": 10800.0,
+      "new": 10800,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -765,7 +765,7 @@
       "date_row": "2026-07-16",
       "code": "Wenxi_MG",
       "old": null,
-      "new": 15900.0,
+      "new": 15900,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -775,7 +775,7 @@
       "date_row": "2026-07-16",
       "code": "AM60B",
       "old": null,
-      "new": 17800.0,
+      "new": 17800,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -785,7 +785,7 @@
       "date_row": "2026-07-16",
       "code": "AZ91D",
       "old": null,
-      "new": 18000.0,
+      "new": 18000,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -795,7 +795,7 @@
       "date_row": "2026-07-16",
       "code": "W",
       "old": null,
-      "new": 920.0,
+      "new": 920,
       "source": "auto_cron",
       "editor": "—",
       "commit": "a9aba3d9bf0dd80cdda68189a851e4fefac16f66"
@@ -825,7 +825,7 @@
       "date_row": "2026-07-16",
       "code": "IRON_ORE",
       "old": null,
-      "new": 855.0,
+      "new": 855,
       "source": "auto_cron",
       "editor": "—",
       "commit": "236360b697d974db6a49191ac692fc70107e41af"
@@ -835,10 +835,20 @@
       "date_row": "2026-07-16",
       "code": "COKE",
       "old": null,
-      "new": 1840.0,
+      "new": 1840,
       "source": "auto_cron",
       "editor": "—",
       "commit": "236360b697d974db6a49191ac692fc70107e41af"
+    },
+    {
+      "ts": "2026-07-16T07:32:42.166Z",
+      "date_row": "2026-07-16",
+      "code": "W",
+      "old": 920,
+      "new": 970,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
     }
   ]
 }
