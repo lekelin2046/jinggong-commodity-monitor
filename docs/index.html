@@ -388,8 +388,8 @@ function renderTable(year, month) {
   }
   
   const lastIdx = activeDays.length - 1;
-  // 标记"今天"的列索引（用于高亮）
-  const todayStr = new Date().toISOString().substring(0, 10);
+  // 标记"今天"的列索引（用于高亮），使用本地日期避免 UTC 误差
+  const todayStr = formatDateLocal(new Date());
   const todayIdx = activeDays.findIndex(d => formatDateLocal(d) === todayStr);
   
   let html = '<table><thead><tr><th class="sticky-col">品种</th><th class="sticky-unit">单位</th>';
@@ -462,12 +462,15 @@ function renderKPIs(year, month) {
   const prevMonthKey = String(month - 1).padStart(2, "0");
   const prevMonthData = stats[prevMonthKey] || {};
 
-  // Latest date with data in this month
+  // 今日更新品种：明确以当地日期为准，避免 UTC 跨天误差
+  const todayLocalStr = formatDateLocal(new Date());
+  const todayData = ALL_DATA[todayLocalStr] || {};
+  const varietyCount = Object.keys(todayData).filter(k => todayData[k] != null).length;
+
+  // 该月最新有数据日期（用于副行显示）
   const prefix = `${year}-${monthKey}`;
   const dates = Object.keys(ALL_DATA).filter(d => d.startsWith(prefix)).sort();
   const latestDate = dates.length > 0 ? dates[dates.length - 1] : null;
-  const latestData = latestDate ? ALL_DATA[latestDate] : {};
-  const varietyCount = Object.keys(latestData).filter(k => latestData[k] != null).length;
 
   // MoM average across all varieties
   let momChanges = [];
@@ -513,7 +516,7 @@ function renderKPIs(year, month) {
     <div class="kpi-card accent-al">
       <div class="kpi-label">今日更新品种</div>
       <div class="kpi-value">${varietyCount}<span class="unit">/ ${CATEGORIES.flatMap(c => c.codes).length}</span></div>
-      <div class="kpi-sub">${latestDate || "暂无数据"}</div>
+      <div class="kpi-sub">${todayLocalStr} · 最新: ${latestDate || "暂无数据"}</div>
     </div>
     <div class="kpi-card accent-cu">
       <div class="kpi-label">铜 (CU) · 最新</div>
