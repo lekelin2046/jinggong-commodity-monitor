@@ -93,14 +93,20 @@ const VARIETY_NAMES = {
   "ADC12":"ADC12","A380":"A380","AlSi9Cu3":"AlSi9Cu3","A356":"A356",
   "A00_AL":"A00铝","CU":"铜","SI_441":"硅441","SI_3303":"硅3303",
   "SI_331":"硅331","MG":"镁","MN":"电解锰","Wenxi_MG":"闻喜镁锭",
-  "AM60B":"AM60B","AZ91D":"AZ91D","W":"钨粉","WTI":"WTI原油"
+  "AM60B":"AM60B","AZ91D":"AZ91D","W":"钨粉","WTI":"WTI原油",
+  "IRON_ORE":"卡粉65%京唐港","COKE":"一级冶金焦MT<7",
+  "SS_304":"304不锈钢","SS_409":"409不锈钢","SS_439":"439不锈钢",
+  "SS_441":"441不锈钢","NICKEL_IRON":"镍铁","HIGH_CARBON_FECR":"高碳铬铁",
+  "ADC12_JAPAN_CIF":"ADC12日本CIF"
 };
-const VARIETY_UNITS = {"W":"元/千克","WTI":"USD/bbl","MN":"元/吨"};
+const VARIETY_UNITS = {"W":"元/千克","WTI":"USD/bbl","MN":"元/吨","IRON_ORE":"元/湿吨","COKE":"元/吨","ADC12_JAPAN_CIF":"USD/吨"};
 const CATEGORIES = [
   {name:"铝及铝合金",codes:["ADC12","A380","AlSi9Cu3","A356","A00_AL"]},
   {name:"铜硅镁锰",codes:["CU","SI_441","SI_3303","SI_331","MG","MN"]},
   {name:"镁合金",codes:["Wenxi_MG","AM60B","AZ91D"]},
   {name:"钨粉及原油",codes:["W","WTI"]},
+  {name:"钢铁原料",codes:["IRON_ORE","COKE"]},
+  {name:"钢材及铁合金",codes:["SS_304","SS_409","SS_439","SS_441","NICKEL_IRON","HIGH_CARBON_FECR","ADC12_JAPAN_CIF"]},
 ];
 const MONTHS = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 
@@ -266,7 +272,7 @@ async function saveData() {
     last_updated: new Date().toISOString().substring(0,10),
     total_days: Object.keys(ALL_DATA).length,
     // 2026-07-07 修复：保留 varieties 字段，避免数据格式不一致
-    varieties: ALL_VARIETIES || ["ADC12","A380","AlSi9Cu3","A356","A00_AL","CU","SI_441","SI_3303","SI_331","MG","MN","Wenxi_MG","AM60B","AZ91D","W","WTI"],
+    varieties: ALL_VARIETIES || ["ADC12","A380","AlSi9Cu3","A356","A00_AL","CU","SI_441","SI_3303","SI_331","MG","MN","Wenxi_MG","AM60B","AZ91D","W","WTI","IRON_ORE","COKE","SS_304","SS_409","SS_439","SS_441","NICKEL_IRON","HIGH_CARBON_FECR","ADC12_JAPAN_CIF"],
     data: ALL_DATA
   }, null, 2);
 
