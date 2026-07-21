@@ -51,6 +51,9 @@ credentials.json
 
 # 浏览器调试缓存（可能含登录态/cookie，严禁入 git）
 .chrome-debug-profile/
+
+# 导出的第三方站点 cookie（含卓创会员会话凭证，严禁入 git）
+cookies/
 .workbuddy/
 .codebuddy/
 .trae-html-share-packages/
