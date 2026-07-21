@@ -249,9 +249,9 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <script>
 // ===== DATA =====
 let ALL_DATA = {};
-const VARIETY_NAMES = {"ADC12": "ADC12", "A380": "A380", "AlSi9Cu3": "AlSi9Cu3", "A356": "A356", "A00_AL": "A00铝", "CU": "铜", "SI_441": "硅441", "SI_3303": "硅3303", "SI_331": "硅331", "MG": "镁", "MN": "电解锰", "Wenxi_MG": "闻喜镁锭", "AM60B": "AM60B", "AZ91D": "AZ91D", "W": "钨粉", "WTI": "WTI原油", "IRON_ORE": "卡粉65%京唐港", "COKE": "一级冶金焦MT<7"};
-const VARIETY_UNITS = {"W": "元/千克", "WTI": "USD/bbl", "IRON_ORE": "元/湿吨", "COKE": "元/吨"};
-const CATEGORIES = [{"name": "铝及铝合金", "codes": ["ADC12", "A380", "AlSi9Cu3", "A356", "A00_AL"]}, {"name": "铜硅镁锰", "codes": ["CU", "SI_441", "SI_3303", "SI_331", "MG", "MN"]}, {"name": "镁合金", "codes": ["Wenxi_MG", "AM60B", "AZ91D"]}, {"name": "钨粉及原油", "codes": ["W", "WTI"]}, {"name": "钢铁原料", "codes": ["IRON_ORE", "COKE"], "noTrend": true}];
+const VARIETY_NAMES = {"ADC12": "ADC12", "A380": "A380", "AlSi9Cu3": "AlSi9Cu3", "A356": "A356", "A00_AL": "A00铝", "CU": "铜", "SI_441": "硅441", "SI_3303": "硅3303", "SI_331": "硅331", "MG": "镁", "MN": "电解锰", "Wenxi_MG": "闻喜镁锭", "AM60B": "AM60B", "AZ91D": "AZ91D", "W": "钨粉", "WTI": "WTI原油", "IRON_ORE": "卡粉65%京唐港", "COKE": "一级冶金焦MT<7", "SS_304": "304不锈钢", "SS_409": "409不锈钢", "SS_439": "439不锈钢", "SS_441": "441不锈钢", "NICKEL_IRON": "镍铁", "HIGH_CARBON_FECR": "高碳铬铁", "ADC12_JAPAN_CIF": "ADC12日本CIF"};
+const VARIETY_UNITS = {"W": "元/千克", "WTI": "USD/bbl", "IRON_ORE": "元/湿吨", "COKE": "元/吨", "ADC12_JAPAN_CIF": "美元/吨"};
+const CATEGORIES = [{"name": "铝及铝合金", "codes": ["ADC12", "A380", "AlSi9Cu3", "A356", "A00_AL"]}, {"name": "铜硅镁锰", "codes": ["CU", "SI_441", "SI_3303", "SI_331", "MG", "MN"]}, {"name": "镁合金", "codes": ["Wenxi_MG", "AM60B", "AZ91D"]}, {"name": "钢材及铁合金", "codes": ["SS_304", "SS_409", "SS_439", "SS_441", "NICKEL_IRON", "HIGH_CARBON_FECR"], "noTrend": true}, {"name": "钨粉及原油", "codes": ["W", "WTI"]}, {"name": "钢铁原料", "codes": ["IRON_ORE", "COKE", "ADC12_JAPAN_CIF"], "noTrend": true}];
 const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#9333ea", "#0891b2", "#ea580c", "#4f46e5", "#be123c", "#0d9488", "#d97706", "#7c3aed"];
 const CHART_IDS = [];
 

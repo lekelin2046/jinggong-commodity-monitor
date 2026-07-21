@@ -37,6 +37,11 @@ COL_MAP = {
     15: ("AZ91D",    "smm"),
     16: ("W",        "web"),  17: ("WTI",       "wti"),
     18: ("IRON_ORE", "steel"), 19: ("COKE",     "steel"),
+    # 2026-07-21 新增：卓创 6 品种 + SMM ADC12日本CIF
+    20: ("SS_304",   "sci99"), 21: ("SS_409",     "sci99"),
+    22: ("SS_439",   "sci99"), 23: ("SS_441",     "sci99"),
+    24: ("NICKEL_IRON", "sci99"), 25: ("HIGH_CARBON_FECR", "sci99"),
+    26: ("ADC12_JAPAN_CIF", "smm"),
 }
 
 # CCMN 返回 key → 品种代码
@@ -89,6 +94,9 @@ async def fetch_smm() -> dict:
     mapped = {}
     for k, v in prices.items():
         mapped["Wenxi_MG" if k == "WenxiMG" else k] = v
+    # ADC12_JAPAN_CIF 直接透传
+    if "ADC12_JAPAN_CIF" in prices:
+        mapped["ADC12_JAPAN_CIF"] = prices["ADC12_JAPAN_CIF"]
     print(f" {len(mapped)} 品种")
     return mapped
 
@@ -179,6 +187,32 @@ async def fetch_steel() -> dict:
         return {}
     except Exception as e:
         print(f" 失败: {e}")
+        return {}
+
+
+# ===== 卓创资讯（6 品种）=====
+async def fetch_sci99() -> dict:
+    """卓创资讯：Playwright 加载 cookie 抓取 6 个品种平均价
+    依赖 cookies/sci99.json，cookie 失效时跳过（不估算，守铁律）
+    """
+    print("  卓创资讯（6品种）...", end="", flush=True)
+    try:
+        from jinggong_monitor.fetcher_sci99 import fetch_sci99_async
+        prices = await asyncio.wait_for(fetch_sci99_async(), timeout=120)
+        if prices:
+            names = {"SS_304": "304", "SS_409": "409", "SS_439": "439",
+                     "SS_441": "441", "NICKEL_IRON": "镍铁", "HIGH_CARBON_FECR": "铬铁"}
+            summary = " ".join(f"{names.get(k,k)}={v}" for k,v in sorted(prices.items()))
+            print(f" {summary}")
+            return prices
+        print(" 无结果（cookie 可能过期）")
+        return {}
+    except asyncio.TimeoutError:
+        print(f" 超时（120s）")
+        return {}
+    except Exception as e:
+        print(f" 失败: {e}")
+        import traceback; traceback.print_exc()
         return {}
 
 
@@ -274,6 +308,8 @@ async def main():
     if wti: all_prices.update(wti)
     steel = await fetch_steel()
     if steel: all_prices.update(steel)
+    sci99 = await fetch_sci99()
+    if sci99: all_prices.update(sci99)
     print()
 
     print(f"[写表] ", end="")

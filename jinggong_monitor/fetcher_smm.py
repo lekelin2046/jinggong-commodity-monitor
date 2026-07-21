@@ -43,6 +43,7 @@ _SHOT_DIR = Path(__file__).parent.parent / "screenshots" / datetime.now().strfti
 SMM_PAGES = {
     "aluminum": "https://hq.smm.cn/aluminum",
     "magnesium": "https://hq.smm.cn/magnesium",
+    "alloy_chart": "https://hq.smm.cn/h5/aluminum-alloy-price-chart",
 }
 
 # 品种 → 页面 → 正则模式
@@ -75,6 +76,10 @@ SMM_VARIETIES = {
     "WenxiMG": {
         "page": "magnesium",
         "pattern": r"镁锭9990（闻喜）\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
+    },
+    "ADC12_JAPAN_CIF": {
+        "page": "alloy_chart",
+        "pattern": r"日本进口ADC12铝合金价格\s+(\d{4})\s*-\s*(\d{4})\s+(\d{4})",
     },
 }
 

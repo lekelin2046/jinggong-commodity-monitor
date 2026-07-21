@@ -47,6 +47,14 @@ COLUMN_MAP = {
     17: "WTI",
     18: "IRON_ORE",
     19: "COKE",
+    # 2026-07-21 新增
+    20: "SS_304",
+    21: "SS_409",
+    22: "SS_439",
+    23: "SS_441",
+    24: "NICKEL_IRON",
+    25: "HIGH_CARBON_FECR",
+    26: "ADC12_JAPAN_CIF",
 }
 
 
