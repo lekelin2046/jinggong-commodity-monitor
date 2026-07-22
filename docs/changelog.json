@@ -2471,6 +2471,846 @@
       "commit": ""
     },
     {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-01",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-01",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-01",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-01",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-01",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1158,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-01",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-02",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-02",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-02",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-02",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-02",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1158,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-02",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-03",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-03",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-03",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-03",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-03",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1158,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-03",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-06",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-06",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-06",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-06",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-06",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1155,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-06",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-07",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-07",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-07",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-07",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-07",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1155,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-07",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-08",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-08",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-08",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-08",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-08",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1153,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-08",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-09",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-09",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-09",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-09",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-09",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1153,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-09",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-10",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-10",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-10",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-10",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-10",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-10",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-13",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-13",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-13",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-13",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-13",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-13",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-14",
+      "code": "SS_304",
+      "old": null,
+      "new": 15800,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-14",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-14",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-14",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-14",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-14",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-15",
+      "code": "SS_304",
+      "old": null,
+      "new": 15800,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-15",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-15",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-15",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-15",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-15",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-16",
+      "code": "SS_304",
+      "old": null,
+      "new": 15800,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-16",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-16",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-16",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-16",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-16",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-17",
+      "code": "SS_304",
+      "old": null,
+      "new": 15800,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-17",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-17",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-17",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-17",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-17",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-20",
+      "code": "SS_304",
+      "old": null,
+      "new": 15800,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-20",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-20",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-20",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-20",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-22T07:54:08.616Z",
+      "date_row": "2026-07-20",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150,
+      "source": "editor",
+      "editor": "lekelin2046",
+      "commit": ""
+    },
+    {
       "ts": "2026-07-22T15:43:01",
       "date_row": "2026-07-22",
       "code": "ADC12",
@@ -2696,6 +3536,226 @@
       "code": "ADC12_JAPAN_CIF",
       "old": null,
       "new": 3070.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "ADC12",
+      "old": null,
+      "new": 24000,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "A380",
+      "old": null,
+      "new": 25900,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "AlSi9Cu3",
+      "old": null,
+      "new": 24900,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "A356",
+      "old": null,
+      "new": 23500,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "A00_AL",
+      "old": null,
+      "new": 23170,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "CU",
+      "old": null,
+      "new": 106770,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "SI_441",
+      "old": null,
+      "new": 10000,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "SI_3303",
+      "old": null,
+      "new": 10400,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "MG",
+      "old": null,
+      "new": 17400,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "MN",
+      "old": null,
+      "new": 18900,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "SI_331",
+      "old": null,
+      "new": 10700,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "Wenxi_MG",
+      "old": null,
+      "new": 15950,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "AM60B",
+      "old": null,
+      "new": 17850,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "AZ91D",
+      "old": null,
+      "new": 18050,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "W",
+      "old": null,
+      "new": 975,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "SS_304",
+      "old": null,
+      "new": 15700,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8100,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
+    },
+    {
+      "ts": "2026-07-22T15:43:01",
+      "date_row": "2026-07-22",
+      "code": "ADC12_JAPAN_CIF",
+      "old": null,
+      "new": 3070,
       "source": "auto_cron",
       "editor": "—",
       "commit": "bc5bf3fe3cf95fcf8ea85bae08632295cb83278a"
