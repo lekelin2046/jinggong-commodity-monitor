@@ -6,7 +6,7 @@
 用法: python3 daily_update_all.py
 """
 
-import sys, os, json, datetime, asyncio, re, subprocess
+import sys, os, json, datetime, asyncio, re, subprocess, time
 from pathlib import Path
 from typing import Optional
 
@@ -258,21 +258,43 @@ def write_excel(all_prices: dict) -> int:
 
 
 # ===== 导出 + Push =====
+def run_git(args, timeout=60, retries=3):
+    """带超时与重试的 git 调用，规避沙箱网络 github.com 偶发挂起。"""
+    last = None
+    for i in range(retries):
+        try:
+            r = subprocess.run(["git"] + args, cwd=str(SCRIPT_DIR),
+                               capture_output=True, text=True, timeout=timeout)
+            if r.returncode == 0:
+                return r
+            msg = (r.stdout + r.stderr).lower()
+            if any(k in msg for k in ("timed out", "timeout", "could not resolve",
+                                      "connection", "403", "502", "503", "non-fast-forward")):
+                print(f"  git {' '.join(args)} 可重试({msg.strip()[:100]}) 重试 {i+1}/{retries}")
+                time.sleep(3); last = r; continue
+            return r
+        except subprocess.TimeoutExpired:
+            print(f"  git {' '.join(args)} 超时({timeout}s) 重试 {i+1}/{retries}")
+            last = None; time.sleep(3)
+    return last
+
+
 def export_and_push(row: int):
     print("  导出 data.json...")
     subprocess.run([sys.executable, str(SCRIPT_DIR / "export_excel_to_json.py")],
         cwd=str(SCRIPT_DIR), capture_output=True, text=True)
-    cmds = [
-        ["git", "add", "docs/data.json"],
-        ["git", "commit", "-m", f"全品种更新 {TODAY} row={row}"],
-        ["git", "push"],
-    ]
-    for cmd in cmds:
-        r = subprocess.run(cmd, cwd=str(SCRIPT_DIR), capture_output=True, text=True)
-        msg = r.stdout.strip() or r.stderr.strip()
-        if r.returncode != 0 and "nothing to commit" not in msg.lower():
-            print(f"  ⚠️ {' '.join(cmd[:2])}: {msg}")
-            return False
+    r = run_git(["add", "docs/data.json"])
+    if r.returncode != 0:
+        print(f"  ⚠️ git add: {(r.stdout + r.stderr).strip()}")
+        return False
+    r = run_git(["commit", "-m", f"全品种更新 {TODAY} row={row}"])
+    if r.returncode != 0 and "nothing to commit" not in (r.stdout + r.stderr).lower():
+        print(f"  ⚠️ git commit: {(r.stdout + r.stderr).strip()}")
+        return False
+    r = run_git(["push"], timeout=90, retries=4)
+    if r is None or (r.returncode != 0 and "nothing to commit" not in (r.stdout + r.stderr).lower()):
+        print(f"  ⚠️ git push 失败: {((r.stdout + r.stderr).strip() if r else 'timeout')}")
+        return False
     print("  ✅ 推送成功")
     return True
 
@@ -285,7 +307,7 @@ async def main():
     # 第一步: git pull + 同步在线编辑到 Excel
     print("[0/4] 同步在线编辑...")
     try:
-        subprocess.run(["git", "pull"], cwd=str(SCRIPT_DIR), capture_output=True, text=True)
+        run_git(["pull"], timeout=60, retries=2)
         print("  git pull 完成")
         # 将 data.json 中的在线编辑回写到 Excel
         from sync_from_web import sync_to_excel

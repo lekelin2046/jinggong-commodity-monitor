@@ -20,6 +20,7 @@
 
 import asyncio
 import base64
+import os
 import re
 import sys
 from datetime import date
@@ -27,6 +28,10 @@ from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
+
+# 绕过全局代理直连 steel.smm.cn（与其他 SMM 子域 fetcher_smm 保持一致）
+os.environ.setdefault("NO_PROXY", "steel.smm.cn")
+os.environ.setdefault("no_proxy", os.environ["NO_PROXY"])
 
 IRON_URL = "https://steel.smm.cn/steel/090?city=1195"
 COKE_URL = "https://steel.smm.cn/steel/106"
