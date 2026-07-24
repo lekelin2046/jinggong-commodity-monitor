@@ -1,0 +1,35 @@
+<view class="page">
+  <view class="bar">
+    <text class="hint">{{year}}年 月度均价（点击品种名看来源）</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="card no-data">加载中…</view>
+  <scroll-view wx:else scroll-x="true" class="hscroll">
+    <view class="tbl">
+      <view class="tr head">
+        <view class="td sticky w-name">品种</view>
+        <view class="td sticky w-unit">单位</view>
+        <view wx:for="{{months}}" wx:key="*this" class="td {{item===latest?'latest':''}}">{{item}}月</view>
+        <view class="td avg">环比</view>
+      </view>
+      <block wx:for="{{table}}" wx:for-item="cat" wx:key="name">
+        <view class="tr cat"><view class="td catname">{{cat.name}}</view></view>
+        <view wx:for="{{cat.items}}" wx:for-item="row" wx:key="code" class="tr">
+          <view class="td sticky w-name tap" bindtap="onTapVariety" data-name="{{row.name}}" data-source="{{row.source}}" data-unit="{{row.unit}}">{{row.name}}</view>
+          <view class="td sticky w-unit">{{row.unit}}</view>
+          <view wx:for="{{row.cells}}" wx:for-item="c" wx:key="index" class="td {{c.latest?'latest':''}}">{{c.v}}</view>
+          <view class="td avg {{row.momUp ? 'up' : (row.mom ? 'down' : '')}}">{{row.mom}}</view>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{sheet.show}}" class="mask" bindtap="closeSheet"></view>
+  <view class="sheet {{sheet.show ? 'show' : ''}}">
+    <view class="sheet-title">{{sheet.name}}</view>
+    <view class="sheet-sub">数据来源</view>
+    <view class="sheet-row"><text class="k">来源</text><text class="v">{{sheet.source}}</text></view>
+    <view wx:if="{{sheet.unit}}" class="sheet-row"><text class="k">单位</text><text class="v">{{sheet.unit}}</text></view>
+    <view class="sheet-close" bindtap="closeSheet">关闭</view>
+  </view>
+</view>

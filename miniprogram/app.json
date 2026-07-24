@@ -1,0 +1,26 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/daily/daily",
+    "pages/monthly/monthly"
+  ],
+  "window": {
+    "navigationBarTitleText": "有色金属价格看板",
+    "navigationBarBackgroundColor": "#1e293b",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f1f5f9"
+  },
+  "tabBar": {
+    "color": "#64748b",
+    "selectedColor": "#1e293b",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "概览" },
+      { "pagePath": "pages/daily/daily", "text": "日价格" },
+      { "pagePath": "pages/monthly/monthly", "text": "月均价" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

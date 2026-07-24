@@ -1,0 +1,39 @@
+<view class="page">
+  <view class="bar">
+    <picker mode="date" fields="month" value="{{monthValue}}" bindchange="onMonthChange">
+      <view class="picker">{{monthLabel}} ▾</view>
+    </picker>
+    <text class="hint">点击品种名看来源</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="card no-data">加载中…</view>
+  <view wx:elif="{{empty}}" class="card no-data">该月份暂无数据</view>
+  <scroll-view wx:else scroll-x="true" class="hscroll">
+    <view class="tbl">
+      <view class="tr head">
+        <view class="td sticky w-name">品种</view>
+        <view class="td sticky w-unit">单位</view>
+        <view wx:for="{{headers}}" wx:key="*this" class="td {{todayIdx===index?'today':''}}">{{item}}</view>
+        <view class="td avg">月均价</view>
+      </view>
+      <block wx:for="{{table}}" wx:for-item="cat" wx:key="name">
+        <view class="tr cat"><view class="td catname">{{cat.name}}</view></view>
+        <view wx:for="{{cat.items}}" wx:for-item="row" wx:key="code" class="tr">
+          <view class="td sticky w-name tap" bindtap="onTapVariety" data-name="{{row.name}}" data-source="{{row.source}}" data-unit="{{row.unit}}">{{row.name}}</view>
+          <view class="td sticky w-unit">{{row.unit}}</view>
+          <view wx:for="{{row.cells}}" wx:for-item="c" wx:key="index" class="td {{c.today?'today':''}} {{c.empty?'empty':''}}">{{c.v}}</view>
+          <view class="td avg">{{row.avg}}</view>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{sheet.show}}" class="mask" bindtap="closeSheet"></view>
+  <view class="sheet {{sheet.show ? 'show' : ''}}">
+    <view class="sheet-title">{{sheet.name}}</view>
+    <view class="sheet-sub">数据来源</view>
+    <view class="sheet-row"><text class="k">来源</text><text class="v">{{sheet.source}}</text></view>
+    <view wx:if="{{sheet.unit}}" class="sheet-row"><text class="k">单位</text><text class="v">{{sheet.unit}}</text></view>
+    <view class="sheet-close" bindtap="closeSheet">关闭</view>
+  </view>
+</view>

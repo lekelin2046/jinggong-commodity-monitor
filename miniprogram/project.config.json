@@ -1,0 +1,17 @@
+{
+  "description": "精工有色金属价格监控看板小程序",
+  "packOptions": { "ignore": [], "include": [] },
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "urlCheck": false,
+    "newFeature": true
+  },
+  "compileType": "miniprogram",
+  "libVersion": "latest",
+  "appid": "touristappid",
+  "projectname": "jinggong-commodity-miniprogram",
+  "condition": {}
+}
