@@ -66,6 +66,10 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .table-wrap thead th.latest-day{background:#bfdbfe;color:#1e3a8a}
 .unit-tag{font-size:10px;color:#94a3b8;margin-left:2px}
 
+/* ===== 品种数据来源提示 ===== */
+.variety-name{text-decoration:underline dotted #94a3b8;text-underline-offset:3px}
+#sourceTooltip{position:fixed;background:#1e293b;color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:400;white-space:nowrap;pointer-events:none;z-index:9999;opacity:0;transform:translateY(0);transition:opacity .15s ease,transform .15s ease;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+
 /* ===== KPI 摘要行 ===== */
 .kpi-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
 .kpi-card{flex:1;min-width:150px;background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:3px solid #2563eb}
@@ -250,7 +254,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 // ===== DATA =====
 let ALL_DATA = {};
 const VARIETY_NAMES = {"ADC12": "ADC12", "A380": "A380", "AlSi9Cu3": "AlSi9Cu3", "A356": "A356", "A00_AL": "A00铝", "CU": "铜", "SI_441": "硅441", "SI_3303": "硅3303", "SI_331": "硅331", "MG": "镁", "MN": "电解锰", "Wenxi_MG": "闻喜镁锭", "AM60B": "AM60B", "AZ91D": "AZ91D", "W": "钨粉", "WTI": "WTI原油", "IRON_ORE": "卡粉65%京唐港", "COKE": "一级冶金焦MT<7", "SS_304": "304不锈钢", "SS_409": "409不锈钢", "SS_439": "439不锈钢", "SS_441": "441不锈钢", "NICKEL_IRON": "镍铁", "HIGH_CARBON_FECR": "高碳铬铁", "ADC12_JAPAN_CIF": "ADC12日本CIF"};
-const VARIETY_UNITS = {"W": "元/千克", "WTI": "USD/bbl", "IRON_ORE": "元/湿吨", "COKE": "元/吨", "ADC12_JAPAN_CIF": "美元/吨"};
+const VARIETY_UNITS = {"W": "元/千克", "WTI": "美元/桶", "IRON_ORE": "元/湿吨", "COKE": "元/吨", "ADC12_JAPAN_CIF": "美元/吨"};
+const VARIETY_SOURCES = {"ADC12": "上海有色", "A380": "上海有色", "AlSi9Cu3": "上海有色", "A356": "上海有色", "A00_AL": "长江现货", "CU": "长江现货", "SI_441": "长江现货", "SI_3303": "长江现货", "MG": "长江现货", "MN": "长江现货", "SI_331": "长江现货", "Wenxi_MG": "亚洲金属网", "AM60B": "上海有色", "AZ91D": "上海有色", "W": "中钨在线", "WTI": "NYMEX CL", "IRON_ORE": "上海有色", "COKE": "上海有色", "SS_304": "卓创资讯", "SS_409": "卓创资讯", "SS_439": "卓创资讯", "SS_441": "卓创资讯", "NICKEL_IRON": "卓创资讯", "HIGH_CARBON_FECR": "卓创资讯", "ADC12_JAPAN_CIF": "上海有色"};
 const CATEGORIES = [{"name": "铝及铝合金", "codes": ["ADC12", "A380", "AlSi9Cu3", "A356", "A00_AL"]}, {"name": "铜硅镁锰", "codes": ["CU", "SI_441", "SI_3303", "SI_331", "MG", "MN"]}, {"name": "镁合金", "codes": ["Wenxi_MG", "AM60B", "AZ91D"]}, {"name": "钢材及铁合金", "codes": ["SS_304", "SS_409", "SS_439", "SS_441", "NICKEL_IRON", "HIGH_CARBON_FECR"], "noTrend": true}, {"name": "钨粉及原油", "codes": ["W", "WTI"]}, {"name": "钢铁原料", "codes": ["IRON_ORE", "COKE", "ADC12_JAPAN_CIF"], "noTrend": true}];
 const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#9333ea", "#0891b2", "#ea580c", "#4f46e5", "#be123c", "#0d9488", "#d97706", "#7c3aed"];
 const CHART_IDS = [];
@@ -404,7 +409,7 @@ function renderTable(year, month) {
     // 分类行
     html += `<tr class="cat-row"><td colspan="${activeDays.length+3}">${cat.name}</td></tr>`;
     cat.codes.forEach(code => {
-      html += `<tr><td class="sticky-col">${VARIETY_NAMES[code]}</td><td class="sticky-unit">${VARIETY_UNITS[code] || DEFAULT_UNIT}</td>`;
+      html += `<tr><td class="sticky-col"><span class="variety-name" data-source="${VARIETY_SOURCES[code] || ''}">${VARIETY_NAMES[code]}</span></td><td class="sticky-unit">${VARIETY_UNITS[code] || DEFAULT_UNIT}</td>`;
       let sum=0, cnt=0;
       activeDays.forEach((d, i) => {
         const ds = formatDateLocal(d);
@@ -556,7 +561,7 @@ function renderMonthlyAvgTable(year) {
   CATEGORIES.forEach(cat => {
     html += `<tr class="cat-row"><td colspan="${months.length + 3}">${cat.name}</td></tr>`;
     cat.codes.forEach(code => {
-      html += `<tr><td class="sticky-col">${VARIETY_NAMES[code]}</td><td class="sticky-unit">${VARIETY_UNITS[code] || DEFAULT_UNIT}</td>`;
+      html += `<tr><td class="sticky-col"><span class="variety-name" data-source="${VARIETY_SOURCES[code] || ''}">${VARIETY_NAMES[code]}</span></td><td class="sticky-unit">${VARIETY_UNITS[code] || DEFAULT_UNIT}</td>`;
       months.forEach(m => {
         const s = stats[m][code];
         const avg = s && s.avg != null ? Math.round(s.avg * 100) / 100 : null;
@@ -873,6 +878,63 @@ document.addEventListener("DOMContentLoaded", async () => {
   const sel = getSelected();
   renderAll(sel.year, sel.month);
 });
+
+// ===== 品种数据来源浮层（只触发于文字，切换有动效）=====
+(function initSourceTooltip(){
+  const tip = document.createElement("div");
+  tip.id = "sourceTooltip";
+  document.body.appendChild(tip);
+  let currentSource = "";
+  let swapToken = 0;
+  function placeAt(x, y){
+    const r = tip.getBoundingClientRect();
+    let px = x + 14, py = y + 14;
+    if (px + r.width > window.innerWidth) px = x - r.width - 14;
+    if (py + r.height > window.innerHeight) py = y - r.height - 14;
+    tip.style.left = px + "px";
+    tip.style.top = py + "px";
+  }
+  function show(text, x, y){
+    tip.textContent = text;
+    tip.style.opacity = "1";
+    tip.style.transform = "translateY(0)";
+    placeAt(x, y);
+  }
+  function swapTo(text, x, y){
+    const my = ++swapToken;
+    tip.style.opacity = "0";
+    tip.style.transform = "translateY(4px)";
+    setTimeout(() => {
+      if (my !== swapToken) return;
+      show(text, x, y);
+    }, 160);
+  }
+  document.addEventListener("mouseover", e => {
+    const name = e.target.closest(".variety-name");
+    if (!name || !name.dataset.source) return;
+    const prev = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".variety-name");
+    const switchingFromAnother = prev && prev !== name && prev.dataset.source && prev.dataset.source !== name.dataset.source;
+    if (switchingFromAnother) {
+      swapTo(name.dataset.source, e.clientX, e.clientY);
+    } else {
+      show(name.dataset.source, e.clientX, e.clientY);
+    }
+    currentSource = name.dataset.source;
+  });
+  document.addEventListener("mousemove", e => {
+    if (tip.style.opacity === "1") placeAt(e.clientX, e.clientY);
+  });
+  document.addEventListener("mouseout", e => {
+    const name = e.target.closest(".variety-name");
+    if (!name) return;
+    const next = e.relatedTarget;
+    const nextOnName = next && next.closest && next.closest(".variety-name");
+    if (!nextOnName) {
+      tip.style.opacity = "0";
+      currentSource = "";
+    }
+  });
+})();
 
 // ===== 导出功能 =====
 function toggleExportMenu(e) {
