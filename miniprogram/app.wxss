@@ -49,15 +49,40 @@ page {
 .tbl { display: inline-block; min-width: 100%; }
 .tr { display: flex; align-items: stretch; }
 .tr.head { background: #f8fafc; }
-.tr.cat { background: #eef2f7; }
-.tr.cat .catname { flex: 1; font-weight: 700; color: #334155; padding: 12rpx 16rpx; font-size: 24rpx; }
 .td { flex: 0 0 auto; width: 120rpx; padding: 14rpx 10rpx; text-align: center; border-bottom: 1rpx solid #f1f5f9; font-size: 22rpx; box-sizing: border-box; }
-.td.sticky { position: sticky; left: 0; z-index: 2; background: #fff; }
-.td.w-name { width: 160rpx; text-align: left; padding-left: 16rpx; font-weight: 600; }
-.td.w-unit { width: 90rpx; color: #94a3b8; left: 160rpx; }
+.td.sticky { position: sticky; z-index: 2; background: #fff; }
+.td.w-cat { width: 170rpx; left: 0; text-align: left; padding-left: 16rpx; font-weight: 700; color: #475569; font-size: 20rpx; }
+.td.w-name { width: 150rpx; left: 170rpx; text-align: left; padding-left: 16rpx; font-weight: 600; }
+.td.w-unit { width: 90rpx; color: #94a3b8; left: 320rpx; }
 .td.tap { border-bottom: 1rpx dotted #94a3b8; }
 .tr.head .td { font-weight: 700; color: #475569; }
+.tr.head .td.sticky { background: #f8fafc; }
 .td.today { background: #fff7ed; }
 .td.latest { background: #eff6ff; font-weight: 700; }
 .td.avg { width: 130rpx; background: #f8fafc; font-weight: 600; }
 .td.empty { color: #cbd5e1; }
+
+/* ===== 大类分组背景色（协调 pastel；吸左大类列深一档、数据行/品种列浅一档） ===== */
+.tr.cat-0 .td.sticky, .tr.cat-0 .td.avg { background: #eaf2fb; }   /* 铝及铝合金 · 浅蓝 */
+.tr.cat-0 .w-cat { background: #cfe3fb; }                         /* 大类列 · 深蓝 */
+.tr.cat-1 .td.sticky, .tr.cat-1 .td.avg { background: #eaf5f2; }   /* 铜硅镁锰 · 浅青 */
+.tr.cat-1 .w-cat { background: #cfe9e2; }
+.tr.cat-2 .td.sticky, .tr.cat-2 .td.avg { background: #fbf7e8; }   /* 镁合金 · 浅黄 */
+.tr.cat-2 .w-cat { background: #f3ecc8; }
+.tr.cat-3 .td.sticky, .tr.cat-3 .td.avg { background: #fbeef1; }   /* 钢材及铁合金 · 浅粉 */
+.tr.cat-3 .w-cat { background: #f6d5db; }
+.tr.cat-4 .td.sticky, .tr.cat-4 .td.avg { background: #f4eefb; }   /* 钨粉及原油 · 浅紫 */
+.tr.cat-4 .w-cat { background: #e6d9f5; }
+.tr.cat-5 .td.sticky, .tr.cat-5 .td.avg { background: #fbf1e8; }   /* 钢铁原料 · 浅橙 */
+.tr.cat-5 .w-cat { background: #f6e0cc; }
+
+/* ===== 概览卡片（合并自原「概览」页） ===== */
+.ov-head { padding: 16rpx 32rpx 4rpx; }
+.ov-head .t { display: block; font-size: 34rpx; font-weight: 800; color: #1e293b; }
+.ov-head .s { display: block; font-size: 22rpx; color: #94a3b8; margin-top: 6rpx; }
+.ov-grid { display: flex; flex-wrap: wrap; }
+.ov-card { width: calc(50% - 40rpx); margin: 10rpx 20rpx; background: #fff; border-radius: 16rpx; padding: 22rpx 24rpx; box-shadow: 0 2rpx 12rpx rgba(15,23,42,.06); box-sizing: border-box; }
+.ov-label { font-size: 22rpx; color: #64748b; }
+.ov-value { font-size: 42rpx; font-weight: 800; color: #1e293b; margin: 6rpx 0; }
+.ov-value .u { font-size: 20rpx; font-weight: 500; color: #94a3b8; margin-left: 6rpx; }
+.ov-sub { font-size: 20rpx; }

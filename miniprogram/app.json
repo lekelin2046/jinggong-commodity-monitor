@@ -1,6 +1,5 @@
 {
   "pages": [
-    "pages/index/index",
     "pages/daily/daily",
     "pages/monthly/monthly"
   ],
@@ -16,11 +15,11 @@
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [
-      { "pagePath": "pages/index/index", "text": "概览" },
       { "pagePath": "pages/daily/daily", "text": "日价格" },
       { "pagePath": "pages/monthly/monthly", "text": "月均价" }
     ]
   },
   "sitemapLocation": "sitemap.json",
-  "style": "v2"
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
 }
