@@ -4089,6 +4089,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "e8ec2a82b997cca0010a7255727581e57226e14b"
+    },
+    {
+      "ts": "2026-07-27T15:41:03",
+      "date_row": "2026-07-27",
+      "code": "Wenxi_MG",
+      "old": 16100.0,
+      "new": 16150.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "57ae3808d53b4fe7923ff5308350b3f5d8dc5cd6"
     }
   ]
 }
