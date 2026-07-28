@@ -4339,6 +4339,26 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "57ae3808d53b4fe7923ff5308350b3f5d8dc5cd6"
+    },
+    {
+      "ts": "2026-07-28T16:58:04",
+      "date_row": "2026-07-28",
+      "code": "W",
+      "old": null,
+      "new": 925.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "04855ed1c3ea18ae75a45149cba51d3e226d30a8"
+    },
+    {
+      "ts": "2026-07-28T16:58:04",
+      "date_row": "2026-07-28",
+      "code": "WTI",
+      "old": 80.66,
+      "new": 80.23,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "04855ed1c3ea18ae75a45149cba51d3e226d30a8"
     }
   ]
 }

@@ -55,6 +55,27 @@ class ChinatungstenFetcher(BaseFetcher):
             "Accept-Language": "zh-CN,zh;q=0.9",
         })
 
+    def _get(self, url: str, timeout: int = 15, _retry: bool = True):
+        """带代理容错的 GET。
+
+        环境里设了 HTTP_PROXY/HTTPS_PROXY=127.0.0.1:7890（本机代理）。
+        若代理临时不可用（连不上/超时），自动改用直连重试，避免「钨粉」因
+        代理抖动而整列缺失（2026-07-28 即因此超时失败）。
+        """
+        try:
+            return self._session.get(url, timeout=timeout)
+        except requests.exceptions.RequestException as e:
+            if not _retry:
+                raise
+            logger.warning("代理请求失败(%s)，改用直连重试: %s", type(e).__name__, e)
+            try:
+                return self._session.get(
+                    url, timeout=timeout, proxies={"http": None, "https": None}
+                )
+            except requests.exceptions.RequestException as e2:
+                logger.warning("直连也失败: %s", e2)
+                raise
+
     def _find_daily_article_url(self) -> Optional[str]:
         """从栏目页找到最新钨价文章 URL
 
@@ -62,7 +83,7 @@ class ChinatungstenFetcher(BaseFetcher):
         取第一条 tungsten-product-news/xxx.html 链接（隔日补抓：可能拿到昨日文章）
         """
         try:
-            resp = self._session.get(_SECTION_URL, timeout=15)
+            resp = self._get(_SECTION_URL, timeout=15)
             resp.encoding = "utf-8"
             html = resp.text
 
@@ -80,7 +101,7 @@ class ChinatungstenFetcher(BaseFetcher):
         有些文章是铟/铂/钼等，不是钨系。遍历到含「钨粉价格」为止。
         """
         try:
-            resp = self._session.get(_SECTION_URL, timeout=15)
+            resp = self._get(_SECTION_URL, timeout=15)
             resp.encoding = "utf-8"
             html = resp.text
             pattern = re.compile(r'href="(/cn/tungsten-product-news/[^"]+\.html)"')
@@ -112,7 +133,7 @@ class ChinatungstenFetcher(BaseFetcher):
             for ds in date_strs:
                 test_url = f"http://news.chinatungsten.com/cn/tungsten-product-news/175170-tpn-15286.html"
                 try:
-                    r = self._session.get(test_url, timeout=10)
+                    r = self._get(test_url, timeout=10)
                     if r.status_code == 200 and "钨" in r.text:
                         candidate_urls = [test_url]
                         break
@@ -127,7 +148,7 @@ class ChinatungstenFetcher(BaseFetcher):
         # 2. 遍历候选文章，钨粉价格取到就停
         for article_url in candidate_urls:
             try:
-                resp = self._session.get(article_url, timeout=15)
+                resp = self._get(article_url, timeout=15)
                 resp.encoding = "utf-8"
                 text = resp.text
             except Exception as e:
@@ -164,13 +185,13 @@ class ChinatungstenFetcher(BaseFetcher):
         try:
             url = self._find_daily_article_url()
             if url:
-                resp = self._session.get(url, timeout=10)
+                resp = self._get(url, timeout=10)
                 return resp.status_code == 200 and "钨" in resp.text
         except Exception:
             pass
         # 降级：检查首页可访问
         try:
-            resp = self._session.get(_BASE_URL, timeout=10)
+            resp = self._get(_BASE_URL, timeout=10)
             return resp.status_code == 200
         except Exception:
             return False
