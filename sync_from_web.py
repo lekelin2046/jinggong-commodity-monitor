@@ -36,6 +36,10 @@ COLUMN_MAP = {
     10: "MG", 11: "MN", 12: "SI_331",
     13: "Wenxi_MG", 14: "AM60B", 15: "AZ91D",
     16: "W", 17: "WTI",
+    # 2026-07-21 新增：钢铁 2 + 卓创 6 + SMM ADC12日本CIF
+    18: "IRON_ORE", 19: "COKE",
+    20: "SS_304", 21: "SS_409", 22: "SS_439", 23: "SS_441",
+    24: "NICKEL_IRON", 25: "HIGH_CARBON_FECR", 26: "ADC12_JAPAN_CIF",
 }
 CODE_TO_COL = {v: k for k, v in COLUMN_MAP.items()}
 

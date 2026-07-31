@@ -5069,6 +5069,1116 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "5abb70eb32ca67c54873ad21f24f19702db10303"
+    },
+    {
+      "ts": "2026-07-31T16:01:00",
+      "date_row": "2026-07-31",
+      "code": "ADC12",
+      "old": null,
+      "new": 24200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "4dbd2307279380c5d8928fe2cef82a091b5285b9"
+    },
+    {
+      "ts": "2026-07-31T16:01:00",
+      "date_row": "2026-07-31",
+      "code": "A380",
+      "old": null,
+      "new": 26100.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "4dbd2307279380c5d8928fe2cef82a091b5285b9"
+    },
+    {
+      "ts": "2026-07-31T16:01:00",
+      "date_row": "2026-07-31",
+      "code": "AlSi9Cu3",
+      "old": null,
+      "new": 25100.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "4dbd2307279380c5d8928fe2cef82a091b5285b9"
+    },
+    {
+      "ts": "2026-07-31T16:01:00",
+      "date_row": "2026-07-31",
+      "code": "A356",
+      "old": null,
+      "new": 24100.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "4dbd2307279380c5d8928fe2cef82a091b5285b9"
+    },
+    {
+      "ts": "2026-07-31T16:01:00",
+      "date_row": "2026-07-31",
+      "code": "WTI",
+      "old": 82.33,
+      "new": 82.08,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "4dbd2307279380c5d8928fe2cef82a091b5285b9"
+    },
+    {
+      "ts": "2026-07-31T08:30:32.521Z",
+      "date_row": "2026-07-01",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 853.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.521Z",
+      "date_row": "2026-07-01",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.521Z",
+      "date_row": "2026-07-01",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.521Z",
+      "date_row": "2026-07-01",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.521Z",
+      "date_row": "2026-07-01",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.521Z",
+      "date_row": "2026-07-01",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.521Z",
+      "date_row": "2026-07-01",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1158.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-01",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-02",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 848.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-02",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-02",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-02",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-02",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-02",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-02",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1158.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-02",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-03",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 848.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-03",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-03",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-03",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-03",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-03",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-03",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1158.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-03",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-06",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-06",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-06",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-06",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-06",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-06",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-06",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1158.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-06",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-07",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 842.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-07",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-07",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-07",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-07",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-07",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-07",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1155.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-07",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-08",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 847.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-08",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-08",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-08",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-08",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-08",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-08",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1155.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-08",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-09",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 851.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-09",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-09",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-09",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-09",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-09",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-09",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1153.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-09",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-10",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-10",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-10",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-10",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-10",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-10",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-10",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1153.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-10",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-13",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-13",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-13",
+      "code": "SS_304",
+      "old": null,
+      "new": 15850.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-13",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-13",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-13",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-13",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-13",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-14",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 860.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-14",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-14",
+      "code": "SS_304",
+      "old": null,
+      "new": 15800.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-14",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-14",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-14",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-14",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-14",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-15",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 860.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-15",
+      "code": "COKE",
+      "old": null,
+      "new": 1840.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-15",
+      "code": "SS_304",
+      "old": null,
+      "new": 15800.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-15",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-15",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-15",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-15",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-15",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-16",
+      "code": "SS_304",
+      "old": null,
+      "new": 15800.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-16",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-16",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-16",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-16",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-16",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-17",
+      "code": "SS_304",
+      "old": null,
+      "new": 15800.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-17",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-17",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-17",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-17",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-17",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-20",
+      "code": "SS_304",
+      "old": null,
+      "new": 15800.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-20",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-20",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-20",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-20",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
+    },
+    {
+      "ts": "2026-07-31T08:30:32.522Z",
+      "date_row": "2026-07-20",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8150.0,
+      "source": "restore",
+      "editor": "—",
+      "commit": ""
     }
   ]
 }
