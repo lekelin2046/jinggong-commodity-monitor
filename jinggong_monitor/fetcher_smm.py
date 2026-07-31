@@ -111,12 +111,17 @@ async def _login_and_save_cookies(ctx) -> bool:
         await page.close()
 
 
-async def _fetch_page_text(ctx, page_url: str) -> str:
-    """用 cookies 访问页面，返回 body innerText"""
+async def _fetch_page_text(ctx, page_url: str, wait_ms: int = 9000) -> str:
+    """用 cookies 访问页面，返回 body innerText
+
+    Args:
+        wait_ms: 等待 SSR 渲染的毫秒数。SMM aluminum 页偶发渲染较慢，
+        5s 不足以让全部牌号进入 DOM，故默认提到 9s。
+    """
     page = await ctx.new_page()
     try:
         await page.goto(page_url, timeout=30000, wait_until="domcontentloaded")
-        await page.wait_for_timeout(5000)  # 等 SSR 渲染
+        await page.wait_for_timeout(wait_ms)  # 等 SSR 渲染
         return await page.inner_text("body")
     finally:
         await page.close()
@@ -153,6 +158,14 @@ async def _fetch_smm_raw(target_date: Optional[str] = None) -> dict:
 
             # 解析价格
             results = _parse_prices(texts)
+
+            # aluminum 页关键铝合金品种（ADC12/A380/A356/AlSi9Cu3）偶发 SSR 渲染慢，
+            # 若缺失则对 aluminum 页单独重试一次（更长等待），避免整日留空
+            alum_keys = {"ADC12", "A380", "A356", "AlSi9Cu3"}
+            if not alum_keys.issubset(results.keys()) and texts.get("aluminum"):
+                logger.warning("铝合金关键品种缺失，重试 aluminum 页(更长等待)...")
+                texts["aluminum"] = await _fetch_page_text(ctx, SMM_PAGES["aluminum"], wait_ms=12000)
+                results.update(_parse_prices({"aluminum": texts["aluminum"]}))
 
             # 若一个都没拿到，可能 cookies 过期，重新登录
             if not results:

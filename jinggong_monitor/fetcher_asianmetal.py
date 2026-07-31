@@ -48,10 +48,6 @@ _LOGIN_PWD = "#cnopenloginpwd"
 _LOGIN_BTN = "#openloginbutn"
 _LOGIN_TOP_LINK = "#loginbox a, #loginbox span"
 
-# 弹窗中的成功提示
-_LOGIN_SUCCESS_TEXT = "您已经成功登陆"
-
-
 async def _save_cookies(ctx) -> None:
     """将当前 context 的 cookies 保存到文件。"""
     try:
@@ -75,11 +71,46 @@ async def _load_cookies(ctx) -> None:
         logger.warning(f"加载 cookies 失败: {e}")
 
 
+async def _is_logged_in(page) -> bool:
+    """判断当前是否已登录：已登录页头含"注销"入口，未登录为"登录"链接。
+
+    2026-07-27 修正：不再依赖转瞬即逝的"成功登陆"提示文案（实测该文案常匹配不到），
+    改用稳定出现的"注销"按钮作为已登录态判据。
+    """
+    try:
+        body = await page.inner_text("body", timeout=2000)
+    except Exception:
+        return False
+    return "注销" in body
+
+
+async def _handle_already_online(page) -> bool:
+    """处理"此账号在线中"：点击强制进入按钮 #outlinebutn（value=登 陆）。
+
+    2026-07-02 实测：亚洲金属网在账号已在线时会弹此提示，必须点它才能进主站。
+    """
+    try:
+        btn = page.locator("#outlinebutn")
+        if await btn.count():
+            await btn.click(timeout=5000)
+            await asyncio.sleep(3)
+            return True
+    except Exception:
+        pass
+    return False
+
+
 async def _login_in_popup(page) -> bool:
-    """在当前页面触发登录弹窗并登录。
+    """在当前页面触发登录弹窗并登录，返回是否真正登录成功。
 
     适用于文章页被重定向到首页并弹出登录框的场景。
-    登录成功后页面会自动刷新，当前 page 对象即代表登录后的页面。
+
+    2026-07-27 修正（根因修复）：
+    1. 用页面"注销"入口判断真实登录态，不再依赖"成功登陆"提示文案。
+    2. 检测到"账号在线"时点击 #outlinebutn 强制进入，而非盲目 logout+重登
+       （重登会打断正在建立的会话，是此前偶发失败的主因之一）。
+    3. 登录成功后轮询等待会话生效，最长 60s，避免重访文章时抢跑
+       （实测一次登录约需 26s 才真正生效，原代码仅 sleep(5) 必抢跑）。
     """
     am_user, am_pass = require_asianmetal()
     try:
@@ -105,65 +136,31 @@ async def _login_in_popup(page) -> bool:
         await page.wait_for_selector(_LOGIN_POPUP, state="visible", timeout=10000)
         await page.locator(_LOGIN_USER).fill(am_user, timeout=5000)
         await page.locator(_LOGIN_PWD).fill(am_pass, timeout=5000)
-
         await page.locator(_LOGIN_BTN).click(timeout=5000)
-        await asyncio.sleep(1)
+        logger.info("已点击登录按钮，轮询等待会话生效...")
 
-        # 等待登录成功提示出现，最多 20 秒
-        login_success = False
-        for i in range(20):
+        # 轮询登录态，最长 60s（实测一次登录约 26s 才真正生效）
+        for i in range(60):
             await asyncio.sleep(1)
+            if await _is_logged_in(page):
+                logger.info(f"登录成功（第 {i+1}s 检测到已登录态）")
+                await asyncio.sleep(3)  # 等会话 cookie 完全生效后再交还调用方
+                return True
+            # 账号在线提示 → 强制进入（不盲目重登）
             try:
                 body = await page.inner_text("body", timeout=2000)
-                if _LOGIN_SUCCESS_TEXT in body:
-                    logger.info("登录成功提示出现")
-                    login_success = True
-                    break
-            except Exception:
-                continue
-
-        # 如果未成功，尝试强制下线后重试一次（处理"此用户已在线"等冲突）
-        if not login_success:
-            logger.info("首次登录未成功，尝试强制下线后重试...")
-            try:
-                # 先尝试点击弹窗里的"登录"按钮（网站提供的强制重新登录入口）
-                try:
-                    force_btn = page.locator("#loginWin input[type='button']").filter(has_text="登录")
-                    if await force_btn.count():
-                        await force_btn.click(timeout=5000)
+                if "在线" in body or "此账号" in body:
+                    logger.info("检测到账号在线提示，点击强制进入")
+                    if await _handle_already_online(page):
                         await asyncio.sleep(3)
-                except Exception:
-                    pass
-                # 再执行 logout -> 重新登录
-                await page.goto("https://www.asianmetal.cn/login/logout.am", timeout=15000, wait_until="domcontentloaded")
-                await page.wait_for_timeout(5000)
-                await page.goto(BASE_URL, timeout=30000, wait_until="domcontentloaded")
-                await page.wait_for_timeout(2000)
-                await page.locator(_LOGIN_TOP_LINK).first.click(timeout=5000)
-                await page.wait_for_selector(_LOGIN_POPUP, state="visible", timeout=10000)
-                await page.locator(_LOGIN_USER).fill(am_user, timeout=5000)
-                await page.locator(_LOGIN_PWD).fill(am_pass, timeout=5000)
-                await page.locator(_LOGIN_BTN).click(timeout=5000)
-                for _ in range(20):
-                    await asyncio.sleep(1)
-                    try:
-                        body = await page.inner_text("body", timeout=2000)
-                        if _LOGIN_SUCCESS_TEXT in body:
-                            logger.info("强制下线后重新登录成功")
-                            login_success = True
-                            break
-                    except Exception:
-                        continue
-            except Exception as e:
-                logger.debug(f"强制下线重试失败: {e}")
+                        if await _is_logged_in(page):
+                            logger.info("强制进入后登录成功")
+                            return True
+            except Exception:
+                pass
 
-        if not login_success:
-            logger.warning("未看到登录成功提示，继续等待页面刷新")
-
-        # 登录成功后 cookies 已设置，无需点击确定按钮。
-        # 直接返回，由调用方重新访问文章页。
-        await asyncio.sleep(5)
-        return True
+        logger.warning("60s 内未检测到登录态，登录失败")
+        return False
     except Exception as e:
         logger.error(f"弹窗登录失败: {e}")
         return False
@@ -311,18 +308,32 @@ async def _fetch_asianmetal_raw() -> dict:
                 logger.info("需要登录，尝试弹窗登录...")
                 ok = await _login_in_popup(page)
                 if not ok:
+                    logger.error("登录失败，放弃抓取")
+                    _SHOT_DIR.mkdir(parents=True, exist_ok=True)
+                    try:
+                        await page.screenshot(path=str(_SHOT_DIR / f"asianmetal_login_fail_{datetime.now().strftime('%H%M%S')}.png"), full_page=True)
+                    except Exception:
+                        pass
                     return {}
                 logger.info(f"登录后 URL: {page.url}")
-                # 如果登录后不在文章页，重新访问（注意 r=/news/xxx 参数会误匹配，所以用路径判断）
-                url_path = page.url.replace(BASE_URL, "").split("?")[0]
-                if not url_path.startswith("/news/"):
+                # 轮询重访文章页，直到真正进入 /news/（最多 3 次，避免抢跑）
+                reached = False
+                for attempt in range(3):
+                    url_path = page.url.replace(BASE_URL, "").split("?")[0]
+                    if url_path.startswith("/news/"):
+                        reached = True
+                        break
                     await page.goto(article_url, timeout=30000, wait_until="domcontentloaded")
                     await page.wait_for_timeout(3000)
-                    logger.info(f"重新访问后 URL: {page.url}")
-                    url_path2 = page.url.replace(BASE_URL, "").split("?")[0]
-                    if not url_path2.startswith("/news/"):
-                        logger.error("登录后仍无法访问文章页")
-                        return {}
+                    logger.info(f"重访文章(第{attempt+1}次) URL={page.url}")
+                if not reached:
+                    logger.error("登录后仍无法访问文章页")
+                    _SHOT_DIR.mkdir(parents=True, exist_ok=True)
+                    try:
+                        await page.screenshot(path=str(_SHOT_DIR / f"asianmetal_no_article_{datetime.now().strftime('%H%M%S')}.png"), full_page=True)
+                    except Exception:
+                        pass
+                    return {}
 
             # 保存 cookies（无论是否刚登录，都更新一次）
             await _save_cookies(ctx)
