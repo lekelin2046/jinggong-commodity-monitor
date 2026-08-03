@@ -40,9 +40,9 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .chart-wrap.annual{height:300px}
 .chart-wrap.compact{height:168px}
 
-/* 日价格明细表：自适应容器宽度，取消左右横拉 */
-.table-wrap{margin-top:4px}
-.table-wrap table{border-collapse:collapse;font-size:12px;width:100%;table-layout:fixed;min-width:0}
+/* 日价格明细表：固定列宽，整月工作日齐列；列少不拉伸、列多横向滚动 */
+.table-wrap{margin-top:4px;overflow-x:auto}
+.table-wrap table{border-collapse:collapse;font-size:12px;width:auto;table-layout:fixed;min-width:0}
 .table-wrap th,.table-wrap td{padding:5px 4px;border:1px solid #e2e8f0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .table-wrap thead th{background:#f8fafc;position:sticky;top:0;z-index:2;font-weight:600}
 .table-wrap tbody td{min-width:0}
@@ -376,53 +376,57 @@ function renderMonthlyTrends(container, year, month) {
 // 月度横拉表
 function renderTable(year, month) {
   const container = document.getElementById("tableContainer");
-  const prefix = `${year}-${String(month).padStart(2,"0")}`;
+  const prefix = year + "-" + String(month).padStart(2,"0");
   const days = getMonthDays(year, month);
   const allCodes = CATEGORIES.flatMap(c => c.codes);
-  
-  // 收集该月工作日（有数据）
-  const activeDays = days.filter(d => {
-    if (!isWorkingDay(d)) return false;
-    const ds = formatDateLocal(d);
-    return ALL_DATA[ds] && Object.values(ALL_DATA[ds]).some(v => v !== null);
-  });
-  
-  if(activeDays.length === 0) {
-    container.innerHTML = '<p class="no-data" style="padding:20px">该月份暂无数据</p>';
+
+  // 该月所有工作日（整月齐列，列宽固定；无数据格子显示 "-"，不随列数拉伸）
+  const workDays = days.filter(d => isWorkingDay(d));
+  if(workDays.length === 0) {
+    container.innerHTML = '<p class="no-data" style="padding:20px">该月份无工作日</p>';
     return;
   }
-  
-  const lastIdx = activeDays.length - 1;
-  // 标记"今天"的列索引（用于高亮），使用本地日期避免 UTC 误差
+
   const todayStr = formatDateLocal(new Date());
-  const todayIdx = activeDays.findIndex(d => formatDateLocal(d) === todayStr);
-  
-  let html = '<table><thead><tr><th class="sticky-col">品种</th><th class="sticky-unit">单位</th>';
-  activeDays.forEach((d, i) => {
+  const todayIdx = workDays.findIndex(d => formatDateLocal(d) === todayStr);
+
+  // 固定列宽：品种列较宽，日期列统一，列多时容器横向滚动
+  let colgroup = '<colgroup>';
+  colgroup += '<col style="width:110px">';
+  colgroup += '<col style="width:46px">';
+  workDays.forEach(function(){ colgroup += '<col style="width:60px">'; });
+  colgroup += '<col style="width:88px">';
+  colgroup += '</colgroup>';
+
+  let html = '<table>' + colgroup + '<thead><tr><th class="sticky-col">品种</th><th class="sticky-unit">单位</th>';
+  workDays.forEach(function(d, i) {
     const isToday = i === todayIdx;
     const cls = isToday ? ' class="today-col"' : '';
-    html += `<th${cls}>${d.getMonth()+1}/${d.getDate()}${isToday ? '<br><span style="font-size:9px;font-weight:700">今日</span>' : ''}</th>`;
+    html += '<th' + cls + '>' + (d.getMonth()+1) + '/' + d.getDate() + (isToday ? '<br><span style="font-size:9px;font-weight:700">今日</span>' : '') + '</th>';
   });
   html += '<th class="avg-col sticky-right">月均价</th></tr></thead><tbody>';
-  
-  CATEGORIES.forEach(cat => {
-    // 分类行
-    html += `<tr class="cat-row"><td colspan="${activeDays.length+3}">${cat.name}</td></tr>`;
-    cat.codes.forEach(code => {
-      html += `<tr><td class="sticky-col"><span class="variety-name" data-source="${VARIETY_SOURCES[code] || ''}">${VARIETY_NAMES[code]}</span></td><td class="sticky-unit">${VARIETY_UNITS[code] || DEFAULT_UNIT}</td>`;
+
+  CATEGORIES.forEach(function(cat) {
+    html += '<tr class="cat-row"><td colspan="' + (workDays.length+3) + '">' + cat.name + '</td></tr>';
+    cat.codes.forEach(function(code) {
+      html += '<tr><td class="sticky-col"><span class="variety-name" data-source="' + (VARIETY_SOURCES[code] || '') + '">' + VARIETY_NAMES[code] + '</span></td><td class="sticky-unit">' + (VARIETY_UNITS[code] || DEFAULT_UNIT) + '</td>';
       let sum=0, cnt=0;
-      activeDays.forEach((d, i) => {
+      workDays.forEach(function(d, i) {
         const ds = formatDateLocal(d);
         const v = ALL_DATA[ds] && ALL_DATA[ds][code] != null ? ALL_DATA[ds][code] : null;
         const isToday = i === todayIdx;
-        if(v != null) { sum += v; cnt++; html += `<td${isToday ? ' class="today-col"' : ''}>${Number.isInteger(v) ? v : v.toFixed(2)}</td>`; }
-        else html += `<td${isToday ? ' class="today-col no-data"' : ' class="no-data"'}>—</td>`;
+        if(v != null) {
+          sum += v; cnt++;
+          html += '<td' + (isToday ? ' class="today-col"' : '') + '>' + (Number.isInteger(v) ? v : v.toFixed(2)) + '</td>';
+        } else {
+          html += '<td' + (isToday ? ' class="today-col no-data"' : ' class="no-data"') + '>-</td>';
+        }
       });
       const avg = cnt > 0 ? Math.round(sum/cnt * 100) / 100 : null;
-      html += `<td class="avg-col sticky-right">${avg != null ? (Number.isInteger(avg) ? avg : avg.toFixed(2)) : "—"}</td></tr>`;
+      html += '<td class="avg-col sticky-right">' + (avg != null ? (Number.isInteger(avg) ? avg : avg.toFixed(2)) : '-') + '</td></tr>';
     });
   });
-  
+
   html += '</tbody></table>';
   container.innerHTML = html;
 }
