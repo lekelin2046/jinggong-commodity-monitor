@@ -18,16 +18,15 @@ from jinggong_monitor.base import BaseFetcher, FetchError
 logger = logging.getLogger("jinggong.fetcher.chinatungsten")
 
 # 钨品种价格正则模式
+# ⚠️ 只保留「钨粉」本体写法。钨精矿/APT 是另一品种、计价单位「万元/吨」，
+# 绝不能拿来当钨粉价（2026-08-04 事故：兜底正则误抓黑钨精矿 → 落 26.0 离谱值）。
 _PRICE_PATTERNS = {
     "W": [
         # 6/26 主人拍板：取「钨粉价格 X 元/千克」这个表达（不是表里的「钨粉 X」）
-        re.compile(r"钨粉价格\s*[:：]?\s*(\d+)\s*元[／/]\s*千克"),
-        re.compile(r"钨粉价格\s*(\d+)\s*元[／/]\s*千克"),
+        re.compile(r"钨粉价格\s*[:：]?\s*([\d,]+)\s*元[／/]\s*千克"),
         # 兑底：表里只写「钨粉」也行
         re.compile(r"钨粉[^\d]{0,30}?([\d,]+)\s*元[／/]\s*千克"),
         re.compile(r"钨粉\s*(?:≥?99\.?7%)?\s*[:：]?\s*([\d,]+)\s*元[／/]\s*千克"),
-        re.compile(r"(?:黑钨|钨)\s*精矿.*?([\d,]+)\s*元[／/]\s*(?:吨|千克)"),
-        re.compile(r"APT\s*[:：]?\s*([\d,]+)\s*元[／/]\s*吨"),
     ],
 }
 
@@ -96,17 +95,29 @@ class ChinatungstenFetcher(BaseFetcher):
             logger.warning("获取中钨在线栏目页失败: %s", e)
         return None
 
-    def _find_candidate_article_urls(self, limit: int = 5) -> list[str]:
+    def _find_candidate_article_urls(self, limit: int = 8) -> list[str]:
         """6/29 主人拍板：题目含「钨」的都要试。取栏目页前 limit 篇。
         有些文章是铟/铂/钼等，不是钨系。遍历到含「钨粉价格」为止。
+
+        ⚠️ 必须去重：栏目页同一链接会在「列表区」和「翻页/相关区」各出现一次，
+        findall 会把重复 URL 各算一条，白白吃掉 limit 预算，把真正含「钨粉价格」
+        的文章挤出前 N 条（2026-08-04 事故根因）。
         """
         try:
             resp = self._get(_SECTION_URL, timeout=15)
             resp.encoding = "utf-8"
             html = resp.text
             pattern = re.compile(r'href="(/cn/tungsten-product-news/[^"]+\.html)"')
-            matches = pattern.findall(html)[:limit]
-            return ["http://news.chinatungsten.com" + m for m in matches]
+            seen: set[str] = set()
+            unique: list[str] = []
+            for m in pattern.findall(html):
+                if m in seen:
+                    continue
+                seen.add(m)
+                unique.append("http://news.chinatungsten.com" + m)
+                if len(unique) >= limit:
+                    break
+            return unique
         except Exception as e:
             logger.warning("获取中钨在线栏目页失败: %s", e)
             return []

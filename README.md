@@ -1,8 +1,8 @@
 # 精工有色金属共享表自动化填写
 
-> 每天自动抓取 **16 个有色金属/原油品种价格** 填入 Excel「2026年有色金属市场价格.xlsx」
+> 每天自动抓取 **25 个有色金属/钢铁/原油品种价格** 填入 Excel「2026年有色金属市场价格.xlsx」（26 列：日期 + 25 品种）
 
-[![status](https://img.shields.io/badge/status-6%2F26%E8%B7%91%E9%80%9A16%2F16-brightgreen)]()
+[![status](https://img.shields.io/badge/status-25%E5%93%81%E7%A7%8D%E6%AF%8F%E6%97%A5%E8%87%AA%E5%8A%A8-brightgreen)]()
 [![python](https://img.shields.io/badge/python-3.13-blue)]()
 [![platform](https://img.shields.io/badge/platform-macOS-lightgrey)]()
 
@@ -10,21 +10,21 @@
 
 ## 🎯 项目背景
 
-长城汽车·长城保理公司**精工板块**每天下午需要把**长江现货、SMM、亚洲金属网、中钨在线、akshare** 等 5 个数据源的 16 个品种价格，填入一张 16 列的 Excel 共享表。
+长城汽车·长城保理公司**精工板块**每天下午需要把**长江现货（ccmn）、SMM、亚洲金属网、中钨在线、akshare、卓创、SMM 钢铁** 共 7 类数据源的 25 个品种价格，填入一张 26 列的 Excel 共享表。
 
 **之前**：纯人工 + Excel 操作员手工填表，每天 1-2 小时。
 **现在**：阿奇（OpenClaw AI 助手）自动抓取 + 一次性写入 Excel，**主人在 Chrome 里保持 SMM/亚洲金属网登录态即可**，每天 < 10 分钟人工介入。
 
 ---
 
-## 📊 16 个品种 × 5 个数据源
+## 📊 25 个品种 × 7 类数据源（Excel 列 2–26）
 
 | Col | 品种 | 数据源 | 抓取方式 | 登录态 |
 |:--:|------|--------|--------|:--:|
-| 2 | 上海有色 ADC12 | SMM | CDP 页面价格表 | 需登录 |
-| 3 | 上海有色 A380 | SMM | CDP 页面价格表 | 需登录 |
-| 4 | 上海有色 AlSi9Cu3 | SMM | CDP 页面价格表 | 需登录 |
-| 5 | 上海有色 A356 | SMM | CDP 页面价格表 | 需登录 |
+| 2 | 上海有色 ADC12 | SMM | CDP/SSR 价格表 | 需登录 |
+| 3 | 上海有色 A380 | SMM | CDP/SSR 价格表 | 需登录 |
+| 4 | 上海有色 AlSi9Cu3 | SMM | CDP/SSR 价格表 | 需登录 |
+| 5 | 上海有色 A356 | SMM | CDP/SSR 价格表 | 需登录 |
 | 6 | 长江现货 A00 铝 | **ccmn** | 公开 AJAX | 公开 ✅ |
 | 7 | 长江现货 铜 | **ccmn** | 公开 AJAX | 公开 ✅ |
 | 8 | 长江现货 金属硅中间价**441** | **ccmn** | `金属硅553#-331#` 的 **avgPrice** | 公开 ✅ |
@@ -33,12 +33,23 @@
 | 11 | 长江现货 电解锰 | **ccmn** | 公开 AJAX | 公开 ✅ |
 | 12 | 长江现货 金属硅中间价**331** | **ccmn** | `金属硅553#-331#` 的 **maxPrice** | 公开 ✅ |
 | 13 | 亚洲金属网 闻喜镁锭 | 亚洲金属网 | CDP 文章抓取 | 需登录 |
-| 14 | 上海有色 AM60B | SMM | CDP 页面价格表 | 需登录 |
-| 15 | 上海有色 AZ91D | SMM | CDP 页面价格表 | 需登录 |
-| 16 | 中钨在线 钨粉 | 中钨在线 | Playwright + 正则 | 公开 ✅ |
+| 14 | 上海有色 AM60B | SMM | CDP/SSR 价格表 | 需登录 |
+| 15 | 上海有色 AZ91D | SMM | CDP/SSR 价格表 | 需登录 |
+| 16 | 中钨在线 钨粉 | 中钨在线 | HTTP 栏目页 + 正则 | 公开 ✅ |
 | 17 | WTI 原油 | akshare | realtime API | 公开 ✅ |
+| 18 | 铁矿石 卡粉65%京唐港 | SMM 钢铁 | CDP/SSR 价格表 | 需登录 |
+| 19 | 一级冶金焦 MT<7 全国均价 | SMM 钢铁 | CDP/SSR 价格表 | 需登录 |
+| 20 | 304 不锈钢板材 | 卓创 | Cookie + Playwright | 需 Cookie |
+| 21 | 409 不锈钢板材 | 卓创 | Cookie + Playwright | 需 Cookie |
+| 22 | 439 不锈钢板材 | 卓创 | Cookie + Playwright | 需 Cookie |
+| 23 | 441 不锈钢板材 | 卓创 | Cookie + Playwright | 需 Cookie |
+| 24 | 镍铁 | 卓创 | Cookie + Playwright | 需 Cookie |
+| 25 | 高碳铬铁 | 卓创 | Cookie + Playwright | 需 Cookie |
+| 26 | ADC12 日本 CIF | SMM | CDP/SSR 价格表 | 需登录 |
 
-**登录依赖统计**：8 项公开（ccmn 7 + akshare 1）+ 8 项需登录（SMM 6 + 亚洲金属网 1 + 中钨在线 1）。
+**登录依赖统计**：9 项公开（ccmn 7 + 中钨在线 1 + akshare 1）+ 16 项需凭据（SMM 7 + 亚洲金属网 1 + 钢铁 2 + 卓创 6）。
+
+> 列映射三处必须同步：`daily_update_all.py` 的 `COL_MAP`、`export_excel_to_json.py` 的 `COLUMN_MAP`、`sync_from_web.py` 的 `COLUMN_MAP`。漏任一处的列在「发布」或「线上编辑回写」环节会失效。
 
 ---
 
@@ -96,7 +107,7 @@ jinggong-commodity-monitor/
 ├── git_helper.py                   ← 带代理的 git 推送封装
 ├── run.sh                          ← 一键运行脚本（daily/wti/tungsten）
 ├── 2026年有色金属市场价格.xlsx      ← 唯一数据源 Excel
-├── jinggong_monitor/               ← 核心代码（18 个模块）
+├── jinggong_monitor/               ← 核心代码（20+ 个模块）
 │   ├── base.py                     ← BaseFetcher + _parse_price_range 价格解析
 │   ├── orchestrator.py             ← 多源调度
 │   ├── fetcher_ccmn.py             ← 长江有色 AJAX（公开 ⭐）
@@ -108,7 +119,7 @@ jinggong-commodity-monitor/
 │   ├── validator.py                ← 数据校验
 │   └── ...
 ├── config/
-│   ├── varieties.yaml              ← 品种-数据源映射（17 个品种）
+│   ├── varieties.yaml              ← 品种-数据源映射（25 个品种）
 │   └── sources.yaml                ← 数据源配置
 ├── docs/                           ← GitHub Pages 看板
 │   ├── index.html                  ← 看板主页
@@ -246,11 +257,37 @@ SMM / 亚洲金属网登录态过期时，抓取脚本内置的自动登录（`j
 
 ⚠️ **必须 HTTP，不能 HTTPS** — `https://news.chinatungsten.com` 会 `WRONG_VERSION_NUMBER`
 
-**正则**：`r'钨粉价格\s*(\d+)\s*元[／/]\s*千克'`
+**权威正则（只取「钨粉价格 X 元/千克」）**：
+```python
+re.compile(r"钨粉价格\s*[:：]?\s*([\d,]+)\s*元[／/]\s*千克")
+# 兑底：表里只写「钨粉」也行
+re.compile(r"钨粉[^\d]{0,30}?([\d,]+)\s*元[／/]\s*千克")
+re.compile(r"钨粉\s*(?:≥?99\.?7%)?\s*[:：]?\s*([\d,]+)\s*元[／/]\s*千克")
+```
 
-**6/26 摸清规律**：
-- ⚠️ 文章可能隔天发（6/25 文章标题里有 6/25 内容，但栏目页刷新可能滞后；6/26 抓到的是 6/25 文章，**正常现象**）
-- ⚠️ 当日无新文时**保留空 + 标黄**（不动其他列）
+**抓取流程（2026-08-04 修正版）**：
+1. 抓栏目页 → 取前 N 篇含「钨」的文章链接（**必须去重**：列表区与翻页区会重复出现同一 URL，否则重复项挤掉真正含「钨粉价格」的那篇）。
+2. 逐篇进正文，命中上述任一正则即取数，命中即停。
+3. 写入 Excel 第 16 列。
+
+**6/26 摸清规律（仍有效）**：
+- ⚠️ 文章可能隔天发（栏目页刷新滞后，**正常现象**）
+- ⚠️ 当日无新文时**保留空**（不编造、不照搬昨日单元格）
+
+### ⚠️ 中钨在线 8/4 抓取事故 + 根治（重要）
+
+**现象**：2026-08-04 初抓落 `W = 26.0`（历史区间 ~920–925，差约 35 倍）。
+
+**根因（两处）**：
+1. `_find_candidate_article_urls` 用 `findall` 未去重 → 重复 URL 占满前 5 槽位，真正含「钨粉价格 925 元/千克」的报价文被挤出，脚本没抓到权威写法。
+2. `_PRICE_PATTERNS["W"]` 含越界兜底正则（`#钨精矿…元/吨`、`APT…元/吨`）→ 误把**钨精矿**（计价单位「万元/吨」，是另一品种）当钨粉。
+
+**根治**（`fetcher_tungsten.py`）：
+- 候选链接去重 + 候选数提到 8；
+- **删除精矿/APT 兜底正则**，W 只保留「钨粉价格 X 元/千克」三类写法；
+- 验证：修复后复现返回 `925.0`。
+
+**铁律重申**：抓不到就留空，绝不编造；绝不盲目沿用前一天数据。8/4 的 925 取自已发布的最新每日报价文（文日期 8/3，当日暂无新文），属「重新实抓源站最新值」，合规。
 
 ### akshare WTI（公开 1 项）
 
@@ -322,4 +359,4 @@ price = df.iloc[0]['最新价']  # 实时价（每日 15:00 时点）
 
 ---
 
-_最后更新：2026-06-26 17:01_
+_最后更新：2026-08-04 15:55_
