@@ -149,6 +149,22 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
   .kpi-card .kpi-value{font-size:18px}
   .dual-charts{flex-direction:column}
 }
+
+/* ===== 多选下拉（具体单品 + 多选） ===== */
+.ms{position:relative;display:inline-block;margin-bottom:10px;width:100%}
+.ms-trigger{display:inline-flex;align-items:center;justify-content:space-between;gap:6px;min-width:210px;padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;font-size:13px;color:#334155;cursor:pointer}
+.ms-trigger:hover{border-color:#94a3b8}
+.ms-caret{color:#94a3b8;font-size:11px}
+.ms-panel{position:absolute;z-index:50;top:calc(100% + 4px);left:0;width:280px;max-height:320px;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,.12);padding:8px}
+.ms-search{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;margin-bottom:6px}
+.ms-list{display:flex;flex-direction:column;gap:2px}
+.ms-item{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:13px;color:#334155;cursor:pointer}
+.ms-item:hover{background:#f1f5f9}
+.ms-item input{accent-color:#2563eb;cursor:pointer;margin:0}
+.ms-unit{color:#94a3b8;font-size:11px}
+.ms-foot{display:flex;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9}
+.ms-foot button{flex:1;padding:5px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;font-size:12px;color:#475569;cursor:pointer}
+.ms-foot button:hover{background:#eef2f7}
 </style>
 
 <!-- Print 样式：PDF 导出时隐藏控件，只保留表格和图表 -->
@@ -157,6 +173,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .header, .controls, .export-wrap, .section-label, .section-divider,
   .collapsible-header .toggle-icon { display: none !important; }
+  .ms { display: none !important; }
   .collapsible-body { display: block !important; max-height: none !important; }
   .card { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; page-break-inside: avoid; }
   .chart-wrap, .chart-wrap.compact, .chart-wrap.annual { height: 180px !important; }
@@ -240,6 +257,14 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       <span class="toggle-icon" id="avgToggleIcon">▶ 点击展开</span>
     </div>
     <div class="collapsible-body" id="avgTableBody" style="display:none">
+      <div class="ms" id="msAvgWrap">
+        <button class="ms-trigger" type="button" onclick="toggleMs('msAvg')"><span id="msAvgLabel">选择品种（可多选）</span><span class="ms-caret">▾</span></button>
+        <div class="ms-panel" id="msAvg" style="display:none">
+          <input class="ms-search" placeholder="搜索品种" oninput="filterMs('msAvg', this.value)">
+          <div class="ms-list" id="msAvgList"></div>
+          <div class="ms-foot"><button type="button" onclick="msAll('msAvg')">全选</button><button type="button" onclick="msClear('msAvg')">清空</button></div>
+        </div>
+      </div>
       <div class="avg-table-wrap" id="avgTableContainer"></div>
     </div>
   </div>
@@ -255,8 +280,13 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
   <div class="dual-charts">
     <div class="card">
       <h3>📊 月度波动趋势 <span class="badge badge-monthly">区间</span></h3>
-      <div style="margin-bottom:8px">
-        <select id="volCategory" onchange="renderVolatilityTrend()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer"></select>
+      <div class="ms" id="msVolWrap">
+        <button class="ms-trigger" type="button" onclick="toggleMs('msVol')"><span id="msVolLabel">选择品种（可多选）</span><span class="ms-caret">▾</span></button>
+        <div class="ms-panel" id="msVol" style="display:none">
+          <input class="ms-search" placeholder="搜索品种" oninput="filterMs('msVol', this.value)">
+          <div class="ms-list" id="msVolList"></div>
+          <div class="ms-foot"><button type="button" onclick="msAll('msVol')">全选</button><button type="button" onclick="msClear('msVol')">清空</button></div>
+        </div>
       </div>
       <div class="chart-wrap compact" style="height:280px"><canvas id="volatilityChart"></canvas></div>
     </div>
@@ -278,9 +308,11 @@ let ALL_DATA = {};
 const VARIETY_NAMES = {"ADC12": "ADC12", "A380": "A380", "AlSi9Cu3": "AlSi9Cu3", "A356": "A356", "A00_AL": "A00铝", "CU": "铜", "SI_441": "硅441", "SI_3303": "硅3303", "SI_331": "硅331", "MG": "镁", "MN": "电解锰", "Wenxi_MG": "闻喜镁锭", "AM60B": "AM60B", "AZ91D": "AZ91D", "W": "钨粉", "WTI": "WTI原油", "IRON_ORE": "卡粉65%京唐港", "COKE": "一级冶金焦MT<7", "SS_304": "304不锈钢", "SS_409": "409不锈钢", "SS_439": "439不锈钢", "SS_441": "441不锈钢", "NICKEL_IRON": "镍铁", "HIGH_CARBON_FECR": "高碳铬铁", "ADC12_JAPAN_CIF": "ADC12日本CIF"};
 const VARIETY_UNITS = {"W": "元/千克", "WTI": "美元/桶", "IRON_ORE": "元/湿吨", "COKE": "元/吨", "ADC12_JAPAN_CIF": "美元/吨"};
 const VARIETY_SOURCES = {"ADC12": "上海有色", "A380": "上海有色", "AlSi9Cu3": "上海有色", "A356": "上海有色", "A00_AL": "长江现货", "CU": "长江现货", "SI_441": "长江现货", "SI_3303": "长江现货", "MG": "长江现货", "MN": "长江现货", "SI_331": "长江现货", "Wenxi_MG": "亚洲金属网", "AM60B": "上海有色", "AZ91D": "上海有色", "W": "中钨在线", "WTI": "NYMEX CL", "IRON_ORE": "上海有色", "COKE": "上海有色", "SS_304": "卓创资讯", "SS_409": "卓创资讯", "SS_439": "卓创资讯", "SS_441": "卓创资讯", "NICKEL_IRON": "卓创资讯", "HIGH_CARBON_FECR": "卓创资讯", "ADC12_JAPAN_CIF": "上海有色"};
-const CATEGORIES = [{"name": "铝及铝合金", "codes": ["ADC12", "A380", "AlSi9Cu3", "A356", "A00_AL"]}, {"name": "铜硅镁锰", "codes": ["CU", "SI_441", "SI_3303", "SI_331", "MG", "MN"]}, {"name": "镁合金", "codes": ["Wenxi_MG", "AM60B", "AZ91D"]}, {"name": "钢材及铁合金", "codes": ["SS_304", "SS_409", "SS_439", "SS_441", "NICKEL_IRON", "HIGH_CARBON_FECR"], "noTrend": true}, {"name": "钨粉及原油", "codes": ["W", "WTI"]}, {"name": "钢铁原料", "codes": ["IRON_ORE", "COKE", "ADC12_JAPAN_CIF"], "noTrend": true}];
+const CATEGORIES = [{"name": "铝及铝合金", "codes": ["ADC12", "A380", "AlSi9Cu3", "A356", "A00_AL"]}, {"name": "铜硅镁锰", "codes": ["CU", "SI_441", "SI_3303", "SI_331", "MG", "MN"]}, {"name": "镁合金", "codes": ["Wenxi_MG", "AM60B", "AZ91D"]}, {"name": "钢材及铁合金", "codes": ["SS_304", "SS_409", "SS_439", "SS_441", "NICKEL_IRON", "HIGH_CARBON_FECR"]}, {"name": "钨粉及原油", "codes": ["W", "WTI"]}, {"name": "钢铁原料", "codes": ["IRON_ORE", "COKE", "ADC12_JAPAN_CIF"]}];
 const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#9333ea", "#0891b2", "#ea580c", "#4f46e5", "#be123c", "#0d9488", "#d97706", "#7c3aed"];
 const CHART_IDS = [];
+const MS_STATE = { msAvg: null, msVol: null };
+const MS_ONCHANGE = {};
 let singleTrendRange = "month";
 
 const DEFAULT_UNIT = "元/吨";
@@ -423,6 +455,82 @@ function selectSingleTrend(code) {
   renderSingleTrend();
   const card = document.getElementById("singleTrendCard");
   if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ===== 多选下拉组件（具体单品 + 多选） =====
+function setupMultiSelect(panelId, listId, defaultCodes, onChange) {
+  MS_STATE[panelId] = new Set(defaultCodes);
+  MS_ONCHANGE[panelId] = onChange;
+  renderMsList(panelId, listId);
+  updateMsLabel(panelId);
+}
+
+function renderMsList(panelId, listId) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+  const allCodes = CATEGORIES.flatMap(c => c.codes);
+  const sel = MS_STATE[panelId] || new Set();
+  list.innerHTML = allCodes.map(code => {
+    const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
+    const checked = sel.has(code) ? "checked" : "";
+    return `<label class="ms-item"><input type="checkbox" value="${code}" ${checked} onchange="onMsChange('${panelId}', '${code}', this.checked)">${VARIETY_NAMES[code]}<span class="ms-unit">(${unit})</span></label>`;
+  }).join("");
+}
+
+function toggleMs(panelId) {
+  Object.keys(MS_STATE).forEach(id => {
+    const p = document.getElementById(id);
+    if (p && id !== panelId) p.style.display = "none";
+  });
+  const p = document.getElementById(panelId);
+  if (p) p.style.display = p.style.display === "none" ? "block" : "none";
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest || !e.target.closest(".ms")) {
+    Object.keys(MS_STATE).forEach(id => { const p = document.getElementById(id); if (p) p.style.display = "none"; });
+  }
+});
+
+function onMsChange(panelId, code, checked) {
+  const set = MS_STATE[panelId];
+  if (checked) set.add(code); else set.delete(code);
+  updateMsLabel(panelId);
+  if (MS_ONCHANGE[panelId]) MS_ONCHANGE[panelId]();
+}
+
+function filterMs(panelId, q) {
+  const list = document.getElementById(panelId + "List");
+  if (!list) return;
+  q = (q || "").trim().toLowerCase();
+  list.querySelectorAll(".ms-item").forEach(el => {
+    el.style.display = !q || el.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+}
+
+function msAll(panelId) {
+  const allCodes = CATEGORIES.flatMap(c => c.codes);
+  MS_STATE[panelId] = new Set(allCodes);
+  renderMsList(panelId, panelId + "List");
+  updateMsLabel(panelId);
+  if (MS_ONCHANGE[panelId]) MS_ONCHANGE[panelId]();
+}
+
+function msClear(panelId) {
+  MS_STATE[panelId] = new Set();
+  renderMsList(panelId, panelId + "List");
+  updateMsLabel(panelId);
+  if (MS_ONCHANGE[panelId]) MS_ONCHANGE[panelId]();
+}
+
+function updateMsLabel(panelId) {
+  const set = MS_STATE[panelId];
+  const total = CATEGORIES.flatMap(c => c.codes).length;
+  const label = document.getElementById(panelId + "Label");
+  if (!label) return;
+  if (!set || set.size === 0) label.textContent = "未选择品种";
+  else if (set.size === total) label.textContent = "全部品种 (" + total + ")";
+  else label.textContent = "已选 " + set.size + " 个品种";
 }
 
 // 月度横拉表
@@ -602,30 +710,31 @@ function renderKPIs(year, month) {
   `;
 }
 
-// ===== 月度均价明细表 =====
-function renderMonthlyAvgTable(year) {
+// ===== 月度均价明细表（具体单品多选） =====
+function renderMonthlyAvgTable(year, codesArg) {
   const stats = computeMonthlyStats(year);
   const months = Object.keys(stats).sort();
   const container = document.getElementById("avgTableContainer");
   if (months.length === 0) { container.innerHTML = '<p class="no-data" style="padding:20px">该年度暂无数据</p>'; return; }
   const latestMonth = months[months.length - 1];
+  const selected = codesArg || (MS_STATE.msAvg ? Array.from(MS_STATE.msAvg) : []);
 
   let html = '<table><thead><tr><th class="sticky-col">品种</th><th class="sticky-unit">单位</th>';
   months.forEach(m => { html += `<th${m === latestMonth ? ' class="latest-month"' : ''}>${parseInt(m)}月均价</th>`; });
   html += '<th>环比</th></tr></thead><tbody>';
 
-  CATEGORIES.forEach(cat => {
-    html += `<tr class="cat-row"><td colspan="${months.length + 3}">${cat.name}</td></tr>`;
-    cat.codes.forEach(code => {
+  if (selected.length === 0) {
+    html += `<tr><td colspan="${months.length + 3}" class="no-data" style="padding:20px;text-align:center">请在上方选择品种</td></tr>`;
+  } else {
+    selected.forEach(code => {
       html += `<tr><td class="sticky-col"><span class="variety-name" data-code="${code}" data-source="${VARIETY_SOURCES[code] || ''}" onclick="selectSingleTrend('${code}')" title="点击查看日趋势">${VARIETY_NAMES[code]}</span></td><td class="sticky-unit">${VARIETY_UNITS[code] || DEFAULT_UNIT}</td>`;
       months.forEach(m => {
         const s = stats[m][code];
         const avg = s && s.avg != null ? Math.round(s.avg * 100) / 100 : null;
         html += avg != null
           ? `<td${m === latestMonth ? ' class="latest-month"' : ''}>${Number.isInteger(avg) ? avg : avg.toFixed(2)}</td>`
-          : `<td${m === latestMonth ? ' class="latest-month"' : ''} class="no-data">—</td>`;
+          : `<td class="no-data">—</td>`;
       });
-      // MoM: latest vs previous
       const latestAvg = stats[latestMonth][code] ? stats[latestMonth][code].avg : null;
       const prevAvg = months.length >= 2 ? (stats[months[months.length-2]][code] ? stats[months[months.length-2]][code].avg : null) : null;
       if (latestAvg != null && prevAvg != null) {
@@ -635,7 +744,7 @@ function renderMonthlyAvgTable(year) {
       } else { html += '<td class="chg-flat">—</td>'; }
       html += '</tr>';
     });
-  });
+  }
   html += '</tbody></table>';
   container.innerHTML = html;
 }
@@ -675,22 +784,18 @@ function renderMonthlyAvgComparison() {
   });
 }
 
-// ===== 月度波动趋势图 =====
-function renderVolatilityTrend() {
+// ===== 月度波动趋势图（具体单品多选） =====
+function renderVolatilityTrend(codesArg) {
   const year = parseInt(document.getElementById("yearSelect").value);
   const stats = computeMonthlyStats(year);
   const months = Object.keys(stats).sort();
   if (months.length === 0) return;
 
-  const sel = document.getElementById("volCategory");
-  const catName = sel ? sel.value : "all";
-  let codes = catName === "all"
-    ? ["A00_AL", "CU", "ADC12", "MG"]
-    : (CATEGORIES.find(c => c.name === catName) || {}).codes || [];
+  const selected = codesArg || (MS_STATE.msVol ? Array.from(MS_STATE.msVol) : []);
 
   const labels = months.map(m => parseInt(m) + "月");
   const datasets = [];
-  codes.forEach((code, i) => {
+  selected.forEach((code, i) => {
     const color = COLORS[i % COLORS.length];
     const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
     const rangeData = months.map(m => {
@@ -842,7 +947,6 @@ function renderPrediction() {
 function initNewDropdowns() {
   const catOptions = ["<option value='all'>全部品种(代表)</option>", ...CATEGORIES.map(c => `<option value='${c.name}'>${c.name}</option>`)];
   document.getElementById("avgTrendCategory").innerHTML = catOptions.join("");
-  document.getElementById("volCategory").innerHTML = catOptions.join("");
 
   const allCodes = CATEGORIES.flatMap(c => c.codes);
   document.getElementById("predVariety").innerHTML = allCodes.map(code =>
@@ -858,6 +962,13 @@ function initNewDropdowns() {
     ).join("");
     stSel.value = "CU";
   }
+
+  // 多选下拉：月度均价明细表（默认全选）+ 月度波动趋势（默认主品种）
+  setupMultiSelect("msAvg", "msAvgList", allCodes, () => {
+    const { year } = getSelected();
+    renderMonthlyAvgTable(year);
+  });
+  setupMultiSelect("msVol", "msVolList", ["A00_AL", "CU", "ADC12", "MG"], () => renderVolatilityTrend());
 }
 
 // ===== HELPERS =====
