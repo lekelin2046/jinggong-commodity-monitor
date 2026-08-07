@@ -8069,6 +8069,17 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "02be3fa486acafbdbbe7e318fe9869290b094ccf"
+    },
+    {
+      "ts": "2026-08-07T16:34:49",
+      "date_row": "2026-08-06",
+      "code": "W",
+      "old": 1200.0,
+      "new": 975.0,
+      "source": "manual_correct",
+      "editor": "—",
+      "commit": "",
+      "note": "自动化误抓异常值(正则命中8/6钼文含钨粉价1200)，主人核对源文后修正为当日真实价975"
     }
   ]
 }
