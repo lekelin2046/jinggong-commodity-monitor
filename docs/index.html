@@ -269,14 +269,6 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
     </div>
   </div>
 
-  <div class="card">
-    <h3>📈 月度均价趋势对比 <span class="badge badge-monthly">跨月</span></h3>
-    <div style="margin-bottom:8px">
-      <select id="avgTrendCategory" onchange="renderMonthlyAvgComparison()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer"></select>
-    </div>
-    <div class="chart-wrap" style="height:300px"><canvas id="avgTrendChart"></canvas></div>
-  </div>
-
   <div class="dual-charts">
     <div class="card">
       <h3>📊 月度波动趋势 <span class="badge badge-monthly">区间</span></h3>
@@ -369,7 +361,6 @@ function renderAll(year, month) {
   renderMonthlyAvgTable(year);
   renderTable(year, month);
   renderSingleTrend();
-  renderMonthlyAvgComparison();
   renderVolatilityTrend();
   renderPrediction();
 }
@@ -749,41 +740,6 @@ function renderMonthlyAvgTable(year, codesArg) {
   container.innerHTML = html;
 }
 
-// ===== 月度均价趋势对比图 =====
-function renderMonthlyAvgComparison() {
-  const year = parseInt(document.getElementById("yearSelect").value);
-  const stats = computeMonthlyStats(year);
-  const months = Object.keys(stats).sort();
-  if (months.length === 0) return;
-
-  const sel = document.getElementById("avgTrendCategory");
-  const catName = sel ? sel.value : "all";
-  let codes = catName === "all"
-    ? ["A00_AL", "CU", "ADC12", "MG", "SI_441", "MN"]
-    : (CATEGORIES.find(c => c.name === catName) || {}).codes || [];
-
-  const labels = months.map(m => parseInt(m) + "月");
-  const datasets = codes.map((code, i) => {
-    const color = COLORS[i % COLORS.length];
-    const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
-    return {
-      label: VARIETY_NAMES[code] + " (" + unit + ")",
-      data: months.map(m => { const s = stats[m][code]; return s && s.avg != null ? Math.round(s.avg) : null; }),
-      borderColor: color, backgroundColor: color + "15", tension: 0.3,
-      pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, spanGaps: false,
-    };
-  }).filter(ds => ds.data.some(v => v !== null));
-
-  if (window._avgTrendChart) window._avgTrendChart.destroy();
-  window._avgTrendChart = new Chart(document.getElementById("avgTrendChart"), {
-    type: "line", data: { labels, datasets },
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { tooltip: { mode: "index", intersect: false }, legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } } },
-      scales: { x: { title: { display: true, text: "月份" } }, y: { title: { display: true, text: "均价" }, beginAtZero: false } }
-    }
-  });
-}
-
 // ===== 月度波动趋势图（具体单品多选） =====
 function renderVolatilityTrend(codesArg) {
   const year = parseInt(document.getElementById("yearSelect").value);
@@ -945,9 +901,6 @@ function renderPrediction() {
 
 // ===== 下拉框初始化 =====
 function initNewDropdowns() {
-  const catOptions = ["<option value='all'>全部品种(代表)</option>", ...CATEGORIES.map(c => `<option value='${c.name}'>${c.name}</option>`)];
-  document.getElementById("avgTrendCategory").innerHTML = catOptions.join("");
-
   const allCodes = CATEGORIES.flatMap(c => c.codes);
   document.getElementById("predVariety").innerHTML = allCodes.map(code =>
     `<option value='${code}'>${VARIETY_NAMES[code]} (${VARIETY_UNITS[code] || DEFAULT_UNIT})</option>`
@@ -988,7 +941,7 @@ function formatDateLocal(d) {
 
 function destroyCharts() {
   // Destroy named chart instances
-  ["_avgTrendChart", "_volChart", "_predChart", "_singleTrendChart"].forEach(name => {
+  ["_volChart", "_predChart", "_singleTrendChart"].forEach(name => {
     if (window[name]) { window[name].destroy(); window[name] = null; }
   });
   // Destroy category/annual charts (created dynamically)
