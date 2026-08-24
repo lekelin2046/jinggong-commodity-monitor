@@ -148,18 +148,31 @@ def fetch_tungsten() -> dict:
 def fetch_wti() -> dict:
     """获取WTI估算（CL实时价 or SC原油/7.15）"""
     print("  WTI 原油...", end="", flush=True)
-    try:
-        import akshare as ak
-        df = ak.futures_foreign_commodity_realtime(symbol="CL")
-        price = round(float(df.iloc[0]["最新价"]), 2)
-        print(f" {price} USD (CL)")
-        return {"WTI": price}
-    except Exception:
-        pass
+    # 首选 CL（NYMEX 外盘实时），akshare 上游偶发空返回，重试 3 次
+    import time as _time
+    for attempt in range(1, 4):
+        try:
+            import akshare as ak
+            df = ak.futures_foreign_commodity_realtime(symbol="CL")
+            if df is not None and len(df) > 0:
+                price = round(float(df.iloc[0]["最新价"]), 2)
+                print(f" {price} USD (CL)")
+                return {"WTI": price}
+            print(f"(CL 空返回, 第{attempt}次)", end="", flush=True)
+        except Exception as e:
+            print(f"(CL 失败: {type(e).__name__}, 第{attempt}次)", end="", flush=True)
+        if attempt < 3:
+            _time.sleep(2)
+    print()
+    # 兜底 SC0（国内 SC 原油主力 /7.15）。注意：SC 日盘 15:00 收盘，
+    # 15:00 定时任务运行时新浪当日 K 线往往尚未收录 → 空 df，勿填旧值（守铁律）
     try:
         import akshare as ak
         dt = TODAY.replace("-", "")
         df = ak.futures_main_sina(symbol="SC0", start_date=dt, end_date=dt)
+        if df is None or len(df) == 0:
+            print(" 失败: SC0 当日数据未收录（新浪延迟，通常收盘后数小时才有）")
+            return {}
         close = float(df.iloc[-1]["收盘价"])
         price = round(close / 7.15, 2)
         print(f" {price} USD (SC/7.15)")
