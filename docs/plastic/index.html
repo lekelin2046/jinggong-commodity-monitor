@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>诺博大宗原材料价格看板</title>
+<script src="../vendor/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f1f5f9;color:#1e293b;padding:16px;overflow-x:hidden}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.header h1{font-size:18px;white-space:nowrap}
+.header .updated{color:#64748b;font-size:12px;margin-left:auto}
+.controls{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.controls select{padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer}
+.card{background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:14px;min-width:0}
+.card h3{font-size:14px;font-weight:600;margin-bottom:8px;color:#334155}
+
+/* ===== 分区系统 ===== */
+.section{margin-bottom:16px}
+.section-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+.section-label .bar{width:3px;height:14px;border-radius:2px}
+.section-label.daily .bar{background:#2563eb}
+.section-label.monthly .bar{background:#ea580c}
+.section-label.trend .bar{background:#9333ea}
+.section-divider{border:none;border-top:1px dashed #cbd5e1;margin:20px 0 4px}
+/* 分区卡片左边框色 */
+.section.daily .card{border-left:3px solid #2563eb}
+.section.monthly .card{border-left:3px solid #ea580c}
+.section.trend .card{border-left:3px solid #9333ea}
+/* 分区 badge 颜色 */
+.badge{font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px;margin-left:4px}
+.badge-daily{background:#dbeafe;color:#1d4ed8}
+.badge-monthly{background:#ffedd5;color:#c2410c}
+.badge-trend{background:#f3e8ff;color:#7e22ce}
+.badge-cross{background:#fef3c7;color:#a16207}
+.badge-predict{background:#ede9fe;color:#6d28d9}
+
+.chart-wrap{position:relative;height:240px}
+.chart-wrap.annual{height:300px}
+.chart-wrap.compact{height:168px}
+
+/* 日价格明细表：固定列宽，整月工作日齐列；列少不拉伸、列多横向滚动 */
+.table-wrap{margin-top:4px;overflow-x:auto}
+.table-wrap table{border-collapse:collapse;font-size:12px;width:auto;table-layout:fixed;min-width:0}
+.table-wrap th,.table-wrap td{padding:5px 4px;border:1px solid #e2e8f0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.table-wrap thead th{background:#f8fafc;position:sticky;top:0;z-index:2;font-weight:600}
+.table-wrap tbody td{min-width:0}
+.table-wrap .sticky-col{position:sticky;left:0;background:#f8fafc;z-index:1;text-align:left;font-weight:600;width:110px;min-width:0}
+.table-wrap .sticky-unit{position:sticky;left:110px;background:#f8fafc;z-index:1;text-align:center;font-weight:600;width:46px;font-size:10px;white-space:nowrap;padding:2px 1px}
+.table-wrap thead .sticky-col{z-index:3}
+.table-wrap thead .sticky-unit{z-index:3;background:#f8fafc}
+.table-wrap .cat-row td{background:#e2e8f0;font-weight:700;text-align:left;font-size:12px;padding:3px 8px;position:sticky;left:0;z-index:1}
+.table-wrap .cat-row td:first-child{z-index:3}
+.no-data{color:#94a3b8}
+.avg-col{background:#fefce8;font-weight:600;white-space:nowrap;width:88px;text-align:right;padding-right:8px}
+/* 月均价列冻结右侧 */
+.table-wrap td.sticky-right,.table-wrap th.sticky-right{position:sticky;right:0;z-index:1}
+.table-wrap thead th.sticky-right{z-index:3}
+.no-data{color:#94a3b8}
+/* 今日列绿色高亮 */
+.table-wrap td.today-col{background:#dcfce7;font-weight:600;color:#14532d}
+.table-wrap thead th.today-col{background:#bbf7d0;color:#14532d}
+/* 最新一天蓝色高亮（年度趋势等场景） */
+.table-wrap td.latest-day{background:#dbeafe;font-weight:700;color:#1e40af}
+.table-wrap thead th.latest-day{background:#bfdbfe;color:#1e3a8a}
+.unit-tag{font-size:10px;color:#94a3b8;margin-left:2px}
+
+/* ===== 品种数据来源提示 ===== */
+.variety-name{text-decoration:underline dotted #94a3b8;text-underline-offset:3px}
+#sourceTooltip{position:fixed;background:#1e293b;color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:400;white-space:nowrap;pointer-events:none;z-index:9999;opacity:0;transform:translateY(0);transition:opacity .15s ease,transform .15s ease;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+
+/* ===== KPI 摘要行 ===== */
+.kpi-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.kpi-card{flex:1;min-width:150px;background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:3px solid #2563eb}
+.kpi-card .kpi-label{font-size:11px;color:#64748b;margin-bottom:4px}
+.kpi-card .kpi-value{font-size:22px;font-weight:700;color:#1e293b;line-height:1.2}
+.kpi-card .kpi-value .unit{font-size:11px;font-weight:400;color:#94a3b8;margin-left:2px}
+.kpi-card .kpi-sub{font-size:10px;color:#94a3b8;margin-top:2px}
+.kpi-change{font-size:13px;font-weight:600;margin-left:6px}
+.kpi-up{color:#dc2626}
+.kpi-down{color:#16a34a}
+.kpi-card.accent-cu{border-left-color:#0891b2}
+.kpi-card.accent-al{border-left-color:#2563eb}
+.kpi-card.accent-adc{border-left-color:#ea580c}
+.kpi-card.accent-mom{border-left-color:#9333ea}
+
+/* ===== 双列图表 ===== */
+.dual-charts{display:flex;gap:14px;flex-wrap:wrap}
+.dual-charts .card{flex:1;min-width:300px;margin-bottom:14px}
+/* 日趋势 2×2 网格（用 minmax(0,1fr) 防止 Chart.js 画布撑出横向滚动条） */
+.trend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:768px){.trend-grid{grid-template-columns:1fr}}
+/* 单品日趋势：控件 + 分段按钮 */
+.trend-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.trend-controls select{padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;min-width:240px}
+.seg{display:inline-flex;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden}
+.seg-btn{appearance:none;border:0;background:#fff;padding:6px 12px;font-size:13px;cursor:pointer;color:#475569;border-right:1px solid #e2e8f0}
+.seg-btn:last-child{border-right:0}
+.seg-btn.active{background:#2563eb;color:#fff;font-weight:600}
+.trend-meta{font-size:12px;color:#64748b}
+.variety-name{cursor:pointer}
+.variety-name:hover{text-decoration:underline;color:#2563eb}
+
+/* ===== 月度均价明细表 ===== */
+.avg-table-wrap{overflow-x:auto;margin-top:4px;-webkit-overflow-scrolling:touch}
+.avg-table-wrap table{border-collapse:collapse;font-size:12px;white-space:nowrap;min-width:100%}
+.avg-table-wrap th,.avg-table-wrap td{padding:6px 10px;border:1px solid #e2e8f0;text-align:center}
+.avg-table-wrap thead th{background:#f1f5f9;font-weight:600;position:sticky;top:0;z-index:2}
+.avg-table-wrap .sticky-col{position:sticky;left:0;background:#fff;z-index:1;text-align:left;font-weight:600;width:110px;min-width:0}
+.avg-table-wrap .sticky-unit{position:sticky;left:110px;background:#fff;z-index:1;text-align:center;font-weight:600;width:46px;font-size:10px;white-space:nowrap;padding:2px 1px}
+.avg-table-wrap thead .sticky-col{z-index:3;background:#f1f5f9}
+.avg-table-wrap thead .sticky-unit{z-index:3;background:#f1f5f9}
+.avg-table-wrap .cat-row td{background:#e0e7ff;font-weight:700;text-align:left;font-size:11px;padding:3px 10px;position:sticky;left:0;z-index:1}
+.avg-table-wrap .cat-row td:first-child{z-index:3}
+.avg-table-wrap .latest-month{background:#fef3c7;font-weight:600}
+.avg-table-wrap .chg-up{color:#dc2626;font-weight:600}
+.avg-table-wrap .chg-down{color:#16a34a;font-weight:600}
+.avg-table-wrap .chg-flat{color:#94a3b8}
+.avg-table-wrap .unit-tag{font-size:10px;color:#94a3b8;margin-left:2px}
+
+/* ===== 预测置信区间标签 ===== */
+.prediction-note{font-size:11px;color:#64748b;margin-top:6px;line-height:1.5}
+.prediction-note .ci-band{display:inline-block;width:12px;height:8px;background:rgba(147,51,234,.2);border:1px dashed #9333ea;border-radius:2px;vertical-align:middle;margin:0 2px}
+
+/* ===== 可折叠区块 ===== */
+.collapsible-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.collapsible-header h3{margin:0}
+.toggle-icon{font-size:12px;color:#64748b;font-weight:400;transition:transform .2s}
+.toggle-icon.expanded{transform:rotate(0deg)}
+.collapsible-body{overflow:hidden;transition:max-height .3s ease}
+
+/* ===== 导出按钮 ===== */
+.export-wrap{position:relative;display:inline-block}
+.export-toggle{padding:5px 14px;border:1px solid #cbd5e1;border-radius:7px;font-size:12px;background:#fff;color:#334155;cursor:pointer;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.export-toggle:hover{background:#f8fafc;border-color:#94a3b8}
+.export-toggle svg{flex-shrink:0}
+.export-menu{position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);padding:4px;min-width:150px;display:none;z-index:100}
+.export-menu.open{display:block}
+.export-menu-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;font-size:13px;color:#334155;cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .12s}
+.export-menu-item:hover{background:#f1f5f9}
+.export-menu-item svg{color:#64748b;flex-shrink:0}
+
+@media (max-width:768px){
+  body{padding:8px}
+  .card{padding:10px}
+  .chart-wrap{height:200px}
+  .kpi-card{min-width:120px}
+  .kpi-card .kpi-value{font-size:18px}
+  .dual-charts{flex-direction:column}
+}
+
+/* ===== 多选下拉（具体单品 + 多选） ===== */
+.ms{position:relative;display:inline-block;margin-bottom:10px;width:100%}
+.ms-trigger{display:inline-flex;align-items:center;justify-content:space-between;gap:6px;min-width:210px;padding:6px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;font-size:13px;color:#334155;cursor:pointer}
+.ms-trigger:hover{border-color:#94a3b8}
+.ms-caret{color:#94a3b8;font-size:11px}
+.ms-panel{position:absolute;z-index:50;top:calc(100% + 4px);left:0;width:280px;max-height:320px;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,.12);padding:8px}
+.ms-search{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;margin-bottom:6px}
+.ms-list{display:flex;flex-direction:column;gap:2px}
+.ms-item{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:13px;color:#334155;cursor:pointer}
+.ms-item:hover{background:#f1f5f9}
+.ms-item input{accent-color:#2563eb;cursor:pointer;margin:0}
+.ms-unit{color:#94a3b8;font-size:11px}
+.ms-foot{display:flex;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9}
+.ms-foot button{flex:1;padding:5px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;font-size:12px;color:#475569;cursor:pointer}
+.ms-foot button:hover{background:#eef2f7}
+</style>
+
+<!-- Print 样式：PDF 导出时隐藏控件，只保留表格和图表 -->
+<style>
+@media print {
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .header, .controls, .export-wrap, .section-label, .section-divider,
+  .collapsible-header .toggle-icon { display: none !important; }
+  .ms { display: none !important; }
+  .collapsible-body { display: block !important; max-height: none !important; }
+  .card { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; page-break-inside: avoid; }
+  .chart-wrap, .chart-wrap.compact, .chart-wrap.annual { height: 180px !important; }
+  .kpi-card { box-shadow: none; border: 1px solid #e2e8f0; }
+  .table-wrap { overflow: visible; max-height: none; }
+  .trend-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 诺博大宗原材料价格看板</h1>
+  <span class="updated" id="updatedTime">加载中...</span>
+</div>
+
+<div class="controls">
+  <select id="yearSelect" onchange="switchMonth()"></select>
+  <select id="monthSelect" onchange="switchMonth()"></select>
+  <div style="margin-left:auto">
+    <div class="export-wrap">
+      <button class="export-toggle" onclick="toggleExportMenu(event)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        导出
+      </button>
+      <div class="export-menu" id="exportMenu">
+        <button class="export-menu-item" onclick="exportExcel();closeExportMenu()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Excel (.csv)
+        </button>
+        <button class="export-menu-item" onclick="exportPDF();closeExportMenu()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l3 3 3-3"/></svg>
+          PDF (打印)
+        </button>
+        <button class="export-menu-item" onclick="exportMarkdown();closeExportMenu()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Markdown (.md)
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI 摘要行 -->
+<div class="kpi-row" id="kpiRow"></div>
+
+<!-- ===== 日维度 ===== -->
+<div class="section daily">
+  <div class="section-label daily"><span class="bar"></span>日维度</div>
+
+  <div class="card">
+    <h3>📋 日价格明细表 <span class="badge badge-daily">每日</span></h3>
+    <div class="table-wrap" id="tableContainer"></div>
+  </div>
+
+  <div class="card" id="singleTrendCard">
+    <h3>📈 单品日趋势 <span class="badge badge-daily">点品种出图</span></h3>
+    <div class="trend-controls">
+      <select id="singleTrendVariety" onchange="renderSingleTrend()" aria-label="选择品种"></select>
+      <div class="seg" id="singleTrendRange">
+        <button type="button" class="seg-btn active" data-range="month" onclick="setSingleTrendRange('month')">本月</button>
+        <button type="button" class="seg-btn" data-range="3month" onclick="setSingleTrendRange('3month')">近3月</button>
+        <button type="button" class="seg-btn" data-range="ytd" onclick="setSingleTrendRange('ytd')">今年</button>
+      </div>
+      <span id="singleTrendMeta" class="trend-meta"></span>
+    </div>
+    <div class="chart-wrap" style="height:320px"><canvas id="singleTrendChart"></canvas></div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ===== 月维度 ===== -->
+<div class="section monthly">
+  <div class="section-label monthly"><span class="bar"></span>月维度</div>
+
+  <div class="card">
+    <div class="collapsible-header" onclick="toggleAvgTable()">
+      <h3>📋 月度均价明细表 <span class="badge badge-monthly">月度</span> <span class="badge badge-cross">含环比</span></h3>
+      <span class="toggle-icon" id="avgToggleIcon">▶ 点击展开</span>
+    </div>
+    <div class="collapsible-body" id="avgTableBody" style="display:none">
+      <div class="ms" id="msAvgWrap">
+        <button class="ms-trigger" type="button" onclick="toggleMs('msAvg')"><span id="msAvgLabel">选择品种（可多选）</span><span class="ms-caret">▾</span></button>
+        <div class="ms-panel" id="msAvg" style="display:none">
+          <input class="ms-search" placeholder="搜索品种" oninput="filterMs('msAvg', this.value)">
+          <div class="ms-list" id="msAvgList"></div>
+          <div class="ms-foot"><button type="button" onclick="msAll('msAvg')">全选</button><button type="button" onclick="msClear('msAvg')">清空</button></div>
+        </div>
+      </div>
+      <div class="avg-table-wrap" id="avgTableContainer"></div>
+    </div>
+  </div>
+
+  <div class="dual-charts">
+    <div class="card">
+      <h3>📊 月度波动趋势 <span class="badge badge-monthly">区间</span></h3>
+      <div class="ms" id="msVolWrap">
+        <button class="ms-trigger" type="button" onclick="toggleMs('msVol')"><span id="msVolLabel">选择品种（可多选）</span><span class="ms-caret">▾</span></button>
+        <div class="ms-panel" id="msVol" style="display:none">
+          <input class="ms-search" placeholder="搜索品种" oninput="filterMs('msVol', this.value)">
+          <div class="ms-list" id="msVolList"></div>
+          <div class="ms-foot"><button type="button" onclick="msAll('msVol')">全选</button><button type="button" onclick="msClear('msVol')">清空</button></div>
+        </div>
+      </div>
+      <div class="chart-wrap compact" style="height:280px"><canvas id="volatilityChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>🔮 下月价格预测 <span class="badge badge-predict">预测</span></h3>
+      <div style="margin-bottom:8px">
+        <select id="predVariety" onchange="renderPrediction()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer"></select>
+      </div>
+      <div class="chart-wrap compact" style="height:280px"><canvas id="predictionChart"></canvas></div>
+      <div class="prediction-note" id="predictionNote"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ===== DATA =====
+let ALL_DATA = {};
+const VARIETY_NAMES = {"PC2405": "科思创PC2405", "PC1225Y": "帝人PC1225Y", "PC1201-15": "LG PC1201-15", "ABS_GP22": "苯领ABS GP-22", "ABS_AG12A1": "台化ABS AG12A1-H", "ABS_PA757K": "镇江奇美PA-757K", "PP_SP179": "华锦PP SP179", "POE_7467": "陶氏POE 7467", "PA6_YH400": "巴陵PA6 YH400"};
+const VARIETY_UNITS = {};
+const VARIETY_SOURCES = {"PC2405": "中塑在线", "PC1225Y": "中塑在线", "PC1201-15": "中塑在线", "ABS_GP22": "中塑在线", "ABS_AG12A1": "中塑在线", "ABS_PA757K": "中塑在线", "PP_SP179": "中塑在线", "POE_7467": "中塑在线", "PA6_YH400": "中塑在线"};
+const CATEGORIES = [{"name": "PC 聚碳酸酯", "codes": ["PC2405", "PC1225Y", "PC1201-15"]}, {"name": "ABS 树脂", "codes": ["ABS_GP22", "ABS_AG12A1", "ABS_PA757K"]}, {"name": "PP/POE/PA 橡塑", "codes": ["PP_SP179", "POE_7467", "PA6_YH400"]}];
+const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#9333ea", "#0891b2", "#ea580c", "#4f46e5", "#be123c", "#0d9488", "#d97706", "#7c3aed"];
+const CHART_IDS = [];
+const MS_STATE = { msAvg: null, msVol: null };
+const MS_ONCHANGE = {};
+let singleTrendRange = "month";
+
+const DEFAULT_UNIT = "元/吨";
+
+// ===== SELECTOR =====
+function initSelectors() {
+  const months = Object.keys(ALL_DATA).map(d => d.substring(0,7));
+  const uniqueMonths = [...new Set(months)].sort();
+  const years = [...new Set(uniqueMonths.map(m => m.substring(0,4)))].sort();
+  
+  const ys = document.getElementById("yearSelect");
+  const ms = document.getElementById("monthSelect");
+  ys.innerHTML = years.map(y => `<option value="${y}">${y}年</option>`).join("");
+  
+  if(uniqueMonths.length > 0) {
+    const [ly, lm] = uniqueMonths[uniqueMonths.length-1].split("-");
+    ys.value = ly;
+    updateMonthOptions(ly, lm);
+  }
+}
+
+function updateMonthOptions(year, selectedMonth) {
+  const ms = document.getElementById("monthSelect");
+  const mm = ALL_DATA ? Object.keys(ALL_DATA)
+    .filter(d => d.startsWith(year))
+    .map(d => d.substring(5,7))
+    .filter((v,i,a) => a.indexOf(v)===i)
+    .sort() : [];
+  ms.innerHTML = mm.map(m => `<option value="${m}">${m}月</option>`).join("");
+  if(selectedMonth && mm.includes(selectedMonth)) ms.value = selectedMonth;
+  else if(mm.length > 0) ms.value = mm[mm.length-1];
+}
+
+function switchMonth() {
+  const y = document.getElementById("yearSelect").value;
+  const prevMonth = document.getElementById("monthSelect").value;
+  updateMonthOptions(y, prevMonth);
+  const m = document.getElementById("monthSelect").value;
+  renderAll(y, parseInt(m));
+}
+
+function getSelected() {
+  return {
+    year: parseInt(document.getElementById("yearSelect").value),
+    month: parseInt(document.getElementById("monthSelect").value)
+  };
+}
+
+// ===== RENDER =====
+function renderAll(year, month) {
+  destroyCharts();
+
+  renderKPIs(year, month);
+  renderMonthlyAvgTable(year);
+  renderTable(year, month);
+  renderSingleTrend();
+  renderVolatilityTrend();
+  renderPrediction();
+}
+
+// 单品日趋势图：选一个品种，只画它自己一条线
+function renderSingleTrend() {
+  const sel = document.getElementById("singleTrendVariety");
+  const code = sel ? sel.value : (CATEGORIES.flatMap(c => c.codes)[0]);
+  if (!code) return;
+  const metaEl = document.getElementById("singleTrendMeta");
+  const { year, month } = getSelected();
+
+  // 计算日期范围
+  let keys;
+  if (singleTrendRange === "month") {
+    const prefix = `${year}-${String(month).padStart(2,"0")}`;
+    keys = Object.keys(ALL_DATA).filter(k => k.startsWith(prefix)).sort();
+  } else if (singleTrendRange === "3month") {
+    const start = new Date(year, month - 3, 1); // 含当月共3个月
+    const startStr = formatDateLocal(start);
+    const endStr = `${year}-${String(month).padStart(2,"0")}-31`;
+    keys = Object.keys(ALL_DATA).filter(k => k >= startStr && k <= endStr).sort();
+  } else { // ytd 今年至今
+    keys = Object.keys(ALL_DATA).filter(k => k.startsWith(String(year))).sort();
+  }
+
+  const labels = keys.map(k => { const p = k.split("-"); return parseInt(p[1]) + "/" + parseInt(p[2]); });
+  const points = keys.map(k => ALL_DATA[k] && ALL_DATA[k][code] != null ? ALL_DATA[k][code] : null);
+  const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
+  const allCodes = CATEGORIES.flatMap(c => c.codes);
+  const color = COLORS[allCodes.indexOf(code) % COLORS.length];
+
+  // 元信息：最新价 + 区间涨跌（红涨绿跌，中国习惯）
+  const valid = points.filter(v => v !== null);
+  if (valid.length > 0) {
+    const first = valid[0], last = valid[valid.length - 1];
+    const chg = first ? (last - first) / first * 100 : 0;
+    const arrow = chg >= 0 ? "▲" : "▼";
+    const cls = chg >= 0 ? "#dc2626" : "#16a34a";
+    if (metaEl) metaEl.innerHTML = `最新 <b>${Math.round(last).toLocaleString()}</b> ${unit} · 来源 ${VARIETY_SOURCES[code]||"—"} · 区间 <span style="color:${cls}">${arrow}${Math.abs(chg).toFixed(1)}%</span>`;
+  } else if (metaEl) {
+    metaEl.textContent = "该区间暂无数据";
+  }
+
+  const canvas = document.getElementById("singleTrendChart");
+  if (!canvas) return;
+  if (window._singleTrendChart) window._singleTrendChart.destroy();
+  window._singleTrendChart = new Chart(canvas, {
+    type: "line",
+    data: { labels, datasets: [{
+      label: VARIETY_NAMES[code] + " (" + unit + ")",
+      data: points,
+      borderColor: color,
+      backgroundColor: color + "18",
+      fill: true,
+      tension: 0.3,
+      pointRadius: 2, pointHoverRadius: 5, spanGaps: false, borderWidth: 2,
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { tooltip: { mode: "index", intersect: false } },
+      scales: {
+        x: { title: { display: true, text: "日期" }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
+        y: { title: { display: true, text: "价格 (" + unit + ")" }, beginAtZero: false }
+      }
+    }
+  });
+}
+
+// 区间切换（本月 / 近3月 / 今年）
+function setSingleTrendRange(range) {
+  singleTrendRange = range;
+  document.querySelectorAll("#singleTrendRange .seg-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.range === range);
+  });
+  renderSingleTrend();
+}
+
+// 从明细表点品种名联动
+function selectSingleTrend(code) {
+  const sel = document.getElementById("singleTrendVariety");
+  if (sel) sel.value = code;
+  renderSingleTrend();
+  const card = document.getElementById("singleTrendCard");
+  if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ===== 多选下拉组件（具体单品 + 多选） =====
+function setupMultiSelect(panelId, listId, defaultCodes, onChange) {
+  MS_STATE[panelId] = new Set(defaultCodes);
+  MS_ONCHANGE[panelId] = onChange;
+  renderMsList(panelId, listId);
+  updateMsLabel(panelId);
+}
+
+function renderMsList(panelId, listId) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+  const allCodes = CATEGORIES.flatMap(c => c.codes);
+  const sel = MS_STATE[panelId] || new Set();
+  list.innerHTML = allCodes.map(code => {
+    const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
+    const checked = sel.has(code) ? "checked" : "";
+    return `<label class="ms-item"><input type="checkbox" value="${code}" ${checked} onchange="onMsChange('${panelId}', '${code}', this.checked)">${VARIETY_NAMES[code]}<span class="ms-unit">(${unit})</span></label>`;
+  }).join("");
+}
+
+function toggleMs(panelId) {
+  Object.keys(MS_STATE).forEach(id => {
+    const p = document.getElementById(id);
+    if (p && id !== panelId) p.style.display = "none";
+  });
+  const p = document.getElementById(panelId);
+  if (p) p.style.display = p.style.display === "none" ? "block" : "none";
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest || !e.target.closest(".ms")) {
+    Object.keys(MS_STATE).forEach(id => { const p = document.getElementById(id); if (p) p.style.display = "none"; });
+  }
+});
+
+function onMsChange(panelId, code, checked) {
+  const set = MS_STATE[panelId];
+  if (checked) set.add(code); else set.delete(code);
+  updateMsLabel(panelId);
+  if (MS_ONCHANGE[panelId]) MS_ONCHANGE[panelId]();
+}
+
+function filterMs(panelId, q) {
+  const list = document.getElementById(panelId + "List");
+  if (!list) return;
+  q = (q || "").trim().toLowerCase();
+  list.querySelectorAll(".ms-item").forEach(el => {
+    el.style.display = !q || el.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+}
+
+function msAll(panelId) {
+  const allCodes = CATEGORIES.flatMap(c => c.codes);
+  MS_STATE[panelId] = new Set(allCodes);
+  renderMsList(panelId, panelId + "List");
+  updateMsLabel(panelId);
+  if (MS_ONCHANGE[panelId]) MS_ONCHANGE[panelId]();
+}
+
+function msClear(panelId) {
+  MS_STATE[panelId] = new Set();
+  renderMsList(panelId, panelId + "List");
+  updateMsLabel(panelId);
+  if (MS_ONCHANGE[panelId]) MS_ONCHANGE[panelId]();
+}
+
+function updateMsLabel(panelId) {
+  const set = MS_STATE[panelId];
+  const total = CATEGORIES.flatMap(c => c.codes).length;
+  const label = document.getElementById(panelId + "Label");
+  if (!label) return;
+  if (!set || set.size === 0) label.textContent = "未选择品种";
+  else if (set.size === total) label.textContent = "全部品种 (" + total + ")";
+  else label.textContent = "已选 " + set.size + " 个品种";
+}
+
+// 月度横拉表
+function renderTable(year, month) {
+  const container = document.getElementById("tableContainer");
+  const prefix = year + "-" + String(month).padStart(2,"0");
+  const days = getMonthDays(year, month);
+  const allCodes = CATEGORIES.flatMap(c => c.codes);
+
+  // 该月所有工作日（整月齐列，列宽固定；无数据格子显示 "-"，不随列数拉伸）
+  const workDays = days.filter(d => isWorkingDay(d));
+  if(workDays.length === 0) {
+    container.innerHTML = '<p class="no-data" style="padding:20px">该月份无工作日</p>';
+    return;
+  }
+
+  const todayStr = formatDateLocal(new Date());
+  const todayIdx = workDays.findIndex(d => formatDateLocal(d) === todayStr);
+
+  // 固定列宽：品种列较宽，日期列统一，列多时容器横向滚动
+  let colgroup = '<colgroup>';
+  colgroup += '<col style="width:110px">';
+  colgroup += '<col style="width:46px">';
+  workDays.forEach(function(){ colgroup += '<col style="width:60px">'; });
+  colgroup += '<col style="width:88px">';
+  colgroup += '</colgroup>';
+
+  let html = '<table>' + colgroup + '<thead><tr><th class="sticky-col">品种</th><th class="sticky-unit">单位</th>';
+  workDays.forEach(function(d, i) {
+    const isToday = i === todayIdx;
+    const cls = isToday ? ' class="today-col"' : '';
+    html += '<th' + cls + '>' + (d.getMonth()+1) + '/' + d.getDate() + (isToday ? '<br><span style="font-size:9px;font-weight:700">今日</span>' : '') + '</th>';
+  });
+  html += '<th class="avg-col sticky-right">月均价</th></tr></thead><tbody>';
+
+  CATEGORIES.forEach(function(cat) {
+    html += '<tr class="cat-row"><td colspan="' + (workDays.length+3) + '">' + cat.name + '</td></tr>';
+    cat.codes.forEach(function(code) {
+      html += '<tr><td class="sticky-col"><span class="variety-name" data-code="' + code + '" data-source="' + (VARIETY_SOURCES[code] || '') + '" onclick="selectSingleTrend(\'' + code + '\')" title="点击查看日趋势">' + VARIETY_NAMES[code] + '</span></td><td class="sticky-unit">' + (VARIETY_UNITS[code] || DEFAULT_UNIT) + '</td>';
+      let sum=0, cnt=0;
+      workDays.forEach(function(d, i) {
+        const ds = formatDateLocal(d);
+        const v = ALL_DATA[ds] && ALL_DATA[ds][code] != null ? ALL_DATA[ds][code] : null;
+        const isToday = i === todayIdx;
+        if(v != null) {
+          sum += v; cnt++;
+          html += '<td' + (isToday ? ' class="today-col"' : '') + '>' + (Number.isInteger(v) ? v : v.toFixed(2)) + '</td>';
+        } else {
+          html += '<td' + (isToday ? ' class="today-col no-data"' : ' class="no-data"') + '>-</td>';
+        }
+      });
+      const avg = cnt > 0 ? Math.round(sum/cnt * 100) / 100 : null;
+      html += '<td class="avg-col sticky-right">' + (avg != null ? (Number.isInteger(avg) ? avg : avg.toFixed(2)) : '-') + '</td></tr>';
+    });
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ===== MONTHLY STATS ENGINE =====
+function computeMonthlyStats(year) {
+  const stats = {};
+  const allDates = Object.keys(ALL_DATA).filter(d => d.startsWith(String(year))).sort();
+  allDates.forEach(ds => {
+    const month = ds.substring(5, 7);
+    if (!stats[month]) stats[month] = {};
+    const prices = ALL_DATA[ds];
+    Object.keys(prices).forEach(code => {
+      const v = prices[code];
+      if (v == null) return;
+      if (!stats[month][code]) stats[month][code] = { sum: 0, count: 0, min: Infinity, max: -Infinity };
+      stats[month][code].sum += v;
+      stats[month][code].count++;
+      if (v < stats[month][code].min) stats[month][code].min = v;
+      if (v > stats[month][code].max) stats[month][code].max = v;
+    });
+  });
+  // Finalize averages
+  Object.keys(stats).forEach(month => {
+    Object.keys(stats[month]).forEach(code => {
+      const s = stats[month][code];
+      s.avg = s.count > 0 ? s.sum / s.count : null;
+    });
+  });
+  return stats;
+}
+
+function getAvailableMonths(year) {
+  return Object.keys(computeMonthlyStats(year)).sort();
+}
+
+// ===== KPI 摘要行 =====
+function renderKPIs(year, month) {
+  const stats = computeMonthlyStats(year);
+  const monthKey = String(month).padStart(2, "0");
+  const monthData = stats[monthKey] || {};
+  const prevMonthKey = String(month - 1).padStart(2, "0");
+  const prevMonthData = stats[prevMonthKey] || {};
+
+  // 今日更新品种：明确以当地日期为准，避免 UTC 跨天误差
+  const todayLocalStr = formatDateLocal(new Date());
+  const todayData = ALL_DATA[todayLocalStr] || {};
+  const varietyCount = Object.keys(todayData).filter(k => todayData[k] != null).length;
+
+  // 该月最新有数据日期（用于副行显示）
+  const prefix = `${year}-${monthKey}`;
+  const dates = Object.keys(ALL_DATA).filter(d => d.startsWith(prefix)).sort();
+  const latestDate = dates.length > 0 ? dates[dates.length - 1] : null;
+
+  // MoM average across all varieties
+  let momChanges = [];
+  Object.keys(monthData).forEach(code => {
+    if (monthData[code] && monthData[code].avg != null && prevMonthData[code] && prevMonthData[code].avg != null) {
+      momChanges.push((monthData[code].avg - prevMonthData[code].avg) / prevMonthData[code].avg * 100);
+    }
+  });
+  const avgMom = momChanges.length > 0 ? momChanges.reduce((a,b) => a+b, 0) / momChanges.length : 0;
+
+// Key varieties
+  function fmtChg(cur, prev) {
+    if (cur == null || prev == null) return "";
+    const chg = (cur - prev) / prev * 100;
+    const cls = chg >= 0 ? "kpi-up" : "kpi-down";
+    const arrow = chg >= 0 ? "▲" : "▼";
+    return `<span class="kpi-change ${cls}">${arrow}${Math.abs(chg).toFixed(1)}%</span>`;
+  }
+
+  // 日涨跌：最新日 vs 前一日
+  const allSortedDates = dates;
+  const latestDateVal = latestDate ? (ALL_DATA[latestDate] || {}) : {};
+  const prevDate = allSortedDates.length >= 2 ? allSortedDates[allSortedDates.length - 2] : null;
+  const prevDateVal = prevDate ? (ALL_DATA[prevDate] || {}) : {};
+
+  // 最新日价格（用于 KPI 显示）
+
+  document.getElementById("kpiRow").innerHTML = `
+    <div class="kpi-card accent-mom">
+      <div class="kpi-label">今日更新品种</div>
+      <div class="kpi-value">${varietyCount}<span class="unit">/ ${CATEGORIES.flatMap(c => c.codes).length}</span></div>
+      <div class="kpi-sub">${latestDate || "暂无数据"}</div>
+    </div>
+    ${CATEGORIES.flatMap(c => c.codes).map((code, idx) => {
+      const nm = VARIETY_NAMES[code] || code;
+      const cur = latestDateVal[code];
+      const prev = prevDateVal[code];
+      const avg = monthData[code] ? monthData[code].avg : null;
+      const pAvg = prevMonthData[code] ? prevMonthData[code].avg : null;
+      const accent = COLORS[idx % COLORS.length];
+      return `<div class="kpi-card" style="border-left-color:${accent}">
+        <div class="kpi-label">${nm} · 最新</div>
+        <div class="kpi-value">${cur != null ? Math.round(cur).toLocaleString() : "—"}<span class="unit">元/吨</span>${fmtChg(cur, prev)}</div>
+        <div class="kpi-sub">月均${avg ? Math.round(avg).toLocaleString() : "—"}${fmtChg(avg, pAvg)}</div>
+      </div>`;
+    }).join("")}
+  `;
+}
+
+// ===== 月度均价明细表（具体单品多选） =====
+function renderMonthlyAvgTable(year, codesArg) {
+  const stats = computeMonthlyStats(year);
+  const months = Object.keys(stats).sort();
+  const container = document.getElementById("avgTableContainer");
+  if (months.length === 0) { container.innerHTML = '<p class="no-data" style="padding:20px">该年度暂无数据</p>'; return; }
+  const latestMonth = months[months.length - 1];
+  const selected = codesArg || (MS_STATE.msAvg ? Array.from(MS_STATE.msAvg) : []);
+
+  let html = '<table><thead><tr><th class="sticky-col">品种</th><th class="sticky-unit">单位</th>';
+  months.forEach(m => { html += `<th${m === latestMonth ? ' class="latest-month"' : ''}>${parseInt(m)}月均价</th>`; });
+  html += '<th>环比</th></tr></thead><tbody>';
+
+  if (selected.length === 0) {
+    html += `<tr><td colspan="${months.length + 3}" class="no-data" style="padding:20px;text-align:center">请在上方选择品种</td></tr>`;
+  } else {
+    selected.forEach(code => {
+      html += `<tr><td class="sticky-col"><span class="variety-name" data-code="${code}" data-source="${VARIETY_SOURCES[code] || ''}" onclick="selectSingleTrend('${code}')" title="点击查看日趋势">${VARIETY_NAMES[code]}</span></td><td class="sticky-unit">${VARIETY_UNITS[code] || DEFAULT_UNIT}</td>`;
+      months.forEach(m => {
+        const s = stats[m][code];
+        const avg = s && s.avg != null ? Math.round(s.avg * 100) / 100 : null;
+        html += avg != null
+          ? `<td${m === latestMonth ? ' class="latest-month"' : ''}>${Number.isInteger(avg) ? avg : avg.toFixed(2)}</td>`
+          : `<td class="no-data">—</td>`;
+      });
+      const latestAvg = stats[latestMonth][code] ? stats[latestMonth][code].avg : null;
+      const prevAvg = months.length >= 2 ? (stats[months[months.length-2]][code] ? stats[months[months.length-2]][code].avg : null) : null;
+      if (latestAvg != null && prevAvg != null) {
+        const chg = (latestAvg - prevAvg) / prevAvg * 100;
+        const cls = chg > 0.1 ? "chg-up" : chg < -0.1 ? "chg-down" : "chg-flat";
+        html += `<td class="${cls}">${chg >= 0 ? "+" : ""}${chg.toFixed(1)}%</td>`;
+      } else { html += '<td class="chg-flat">—</td>'; }
+      html += '</tr>';
+    });
+  }
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ===== 月度波动趋势图（具体单品多选） =====
+function renderVolatilityTrend(codesArg) {
+  const year = parseInt(document.getElementById("yearSelect").value);
+  const stats = computeMonthlyStats(year);
+  const months = Object.keys(stats).sort();
+  if (months.length === 0) return;
+
+  const selected = codesArg || (MS_STATE.msVol ? Array.from(MS_STATE.msVol) : []);
+
+  const labels = months.map(m => parseInt(m) + "月");
+  const datasets = [];
+  selected.forEach((code, i) => {
+    const color = COLORS[i % COLORS.length];
+    const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
+    const rangeData = months.map(m => {
+      const s = stats[m][code];
+      return (s && s.min != Infinity && s.max != -Infinity) ? [Math.round(s.min), Math.round(s.max)] : null;
+    });
+    const avgData = months.map(m => { const s = stats[m][code]; return s && s.avg != null ? Math.round(s.avg) : null; });
+    if (rangeData.some(v => v !== null)) {
+      datasets.push({
+        label: VARIETY_NAMES[code] + " 区间 (" + unit + ")",
+        data: rangeData, backgroundColor: color + "25", borderColor: color + "50",
+        borderWidth: 1, borderRadius: 2, borderSkipped: false,
+      });
+      datasets.push({
+        label: VARIETY_NAMES[code] + " 均价", data: avgData,
+        borderColor: color, backgroundColor: "transparent",
+        tension: 0.3, pointRadius: 3, borderWidth: 2, type: "line",
+      });
+    }
+  });
+
+  if (window._volChart) window._volChart.destroy();
+  window._volChart = new Chart(document.getElementById("volatilityChart"), {
+    type: "bar", data: { labels, datasets },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { tooltip: { mode: "index", intersect: false }, legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } } },
+      scales: { x: { title: { display: true, text: "月份" } }, y: { title: { display: true, text: "价格" }, beginAtZero: false } }
+    }
+  });
+}
+
+// ===== 下月价格预测图 =====
+function renderPrediction() {
+  const year = parseInt(document.getElementById("yearSelect").value);
+  const stats = computeMonthlyStats(year);
+  const months = Object.keys(stats).sort();
+  const noteEl = document.getElementById("predictionNote");
+  if (months.length < 3) { noteEl.innerHTML = "需要至少 3 个月的数据才能进行预测。"; return; }
+
+  const sel = document.getElementById("predVariety");
+  const code = sel ? sel.value : (CATEGORIES.flatMap(c => c.codes)[0]);
+  const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
+  const monthlyAvgs = months.map(m => { const s = stats[m][code]; return s && s.avg != null ? s.avg : null; });
+  if (monthlyAvgs.filter(v => v !== null).length < 3) { noteEl.innerHTML = `${VARIETY_NAMES[code]} 数据不足，无法预测。`; return; }
+
+  const N = months.length;
+  const validMonths = months.filter((_, i) => monthlyAvgs[i] != null);
+  const validAvgs = monthlyAvgs.filter(v => v !== null);
+  const nValid = validAvgs.length;
+
+  // ===== 1. 加权线性回归趋势（近期权重更高）=====
+  const x = validAvgs.map((_, i) => i);
+  // 指数衰减权重：最近的月份权重最大
+  const weights = validAvgs.map((_, i) => Math.pow(0.7, nValid - 1 - i));
+  const sumW = weights.reduce((a, b) => a + b, 0);
+  const wX = x.reduce((a, xi, i) => a + weights[i] * xi, 0);
+  const wY = validAvgs.reduce((a, yi, i) => a + weights[i] * yi, 0);
+  const wXY = x.reduce((a, xi, i) => a + weights[i] * xi * validAvgs[i], 0);
+  const wX2 = x.reduce((a, xi, i) => a + weights[i] * xi * xi, 0);
+  const denom = sumW * wX2 - wX * wX;
+  const slope = denom !== 0 ? (sumW * wXY - wX * wY) / denom : 0;
+  const intercept = (wY - slope * wX) / sumW;
+
+  // ===== 2. 动量修正（最近2个月的变动率）=====
+  const lastAvg = validAvgs[nValid - 1];
+  const prevAvg = validAvgs[nValid - 2];
+  const momentum = lastAvg && prevAvg ? (lastAvg - prevAvg) / prevAvg : 0; // 正=上涨势头
+
+  // ===== 3. 综合预测值 =====
+  // 趋势外推占 70%，动量占 30%
+  const trendPred = slope * nValid + intercept;
+  const momentumPred = lastAvg * (1 + momentum);
+  const predValue = trendPred * 0.7 + momentumPred * 0.3;
+
+  // ===== 4. 自适应置信区间（考虑趋势不确定性）=====
+  const residuals = validAvgs.map((yi, i) => yi - (slope * i + intercept));
+  const SE = Math.sqrt(residuals.reduce((s, r) => s + r * r, 0) / Math.max(nValid - 2, 1));
+  // 预测月份比最后一个数据点远 1 个月，不确定性略增
+  const predSE = SE * 1.15;
+  const ciLower = predValue - 1.96 * predSE;
+  const ciUpper = predValue + 1.96 * predSE;
+
+  // ===== 5. EWMA 平滑线（替代简单3月MA）=====
+  const ewmaAlpha = 0.4;
+  const ewmaData = [];
+  let ewma = validAvgs[0];
+  ewmaData.push(ewma);
+  for (let i = 1; i < nValid; i++) {
+    ewma = ewmaAlpha * validAvgs[i] + (1 - ewmaAlpha) * ewma;
+    ewmaData.push(ewma);
+  }
+  // 外推 EWMA
+  const ewmaPred = ewmaAlpha * predValue + (1 - ewmaAlpha) * ewma;
+
+  // ===== 构建图表 =====
+  const nextMonthNum = parseInt(months[months.length - 1]) + 1;
+  const labels = [...validMonths.map(m => parseInt(m) + "月"), `${nextMonthNum}月(预测)`];
+  const nullPad = Array(nValid).fill(null);
+
+  // 趋势线数据
+  const trendLine = x.map(i => slope * i + intercept);
+
+  const datasets = [
+    // 置信区间（填充区域）
+    { label: "95%置信上界", data: [...nullPad, Math.round(ciUpper)], borderColor: "transparent", backgroundColor: "rgba(147,51,234,0.10)", pointRadius: 0, fill: false, type: "line" },
+    { label: "95%置信下界", data: [...nullPad, Math.round(ciLower)], borderColor: "transparent", backgroundColor: "rgba(147,51,234,0.10)", pointRadius: 0, fill: "-1", type: "line" },
+    // 实际月均价
+    { label: "实际月均价", data: [...validAvgs.map(v => Math.round(v)), null], borderColor: "#2563eb", backgroundColor: "transparent", tension: 0.3, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2.5 },
+    // 加权趋势线
+    { label: "加权趋势", data: [...trendLine.map(v => Math.round(v)), Math.round(trendPred)], borderColor: "#ea580c", backgroundColor: "transparent", borderDash: [6, 3], pointRadius: 0, borderWidth: 1.5, tension: 0 },
+    // EWMA 平滑
+    { label: "EWMA平滑", data: [...ewmaData.map(v => Math.round(v)), Math.round(ewmaPred)], borderColor: "#16a34a", backgroundColor: "transparent", borderDash: [3, 3], pointRadius: 2, borderWidth: 1.5, tension: 0.3 },
+    // 预测值（大菱形）
+    { label: `预测: ${Math.round(predValue).toLocaleString()}`, data: [...nullPad, Math.round(predValue)], borderColor: "#9333ea", backgroundColor: "#9333ea", pointRadius: 8, pointHoverRadius: 10, pointStyle: "rectRot", showLine: false },
+  ];
+
+  if (window._predChart) window._predChart.destroy();
+  window._predChart = new Chart(document.getElementById("predictionChart"), {
+    type: "line", data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        tooltip: { mode: "index", intersect: false },
+        legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } }
+      },
+      scales: {
+        x: { title: { display: true, text: "月份" } },
+        y: { title: { display: true, text: "价格 (" + unit + ")" }, beginAtZero: false }
+      }
+    }
+  });
+
+  // ===== 预测摘要 =====
+  const trendDir = slope > 0 ? "上涨" : slope < 0 ? "下跌" : "持平";
+  const trendRate = lastAvg ? Math.abs(slope / lastAvg * 100).toFixed(2) : "0.00";
+  const momDir = momentum > 0.005 ? "加速" : momentum < -0.005 ? "减速" : "平稳";
+  const ciWidth = predValue ? ((ciUpper - ciLower) / predValue * 100).toFixed(1) : "0";
+  const vsLastMonth = lastAvg ? ((predValue - lastAvg) / lastAvg * 100).toFixed(1) : "0";
+  const vsArrow = parseFloat(vsLastMonth) >= 0 ? "▲" : "▼";
+
+  noteEl.innerHTML =
+    `<strong>${VARIETY_NAMES[code]}</strong> ${nextMonthNum}月预测: <strong style="color:#9333ea">${Math.round(predValue).toLocaleString()} ${unit}</strong> ${vsArrow}${Math.abs(vsLastMonth)}% 较本月<br>` +
+    `趋势: ${trendDir} (月均${trendRate}%) | 动量: ${momDir} | 置信区间: ${Math.round(ciLower).toLocaleString()} ~ ${Math.round(ciUpper).toLocaleString()} (带宽${ciWidth}%)<br>` +
+    `<span style="font-size:10px;color:#94a3b8">模型: 加权趋势(70%) + 动量修正(30%) + EWMA平滑 | 基于${nValid}个月数据</span><br>` +
+    `<span style="font-size:10px;color:#a855f7">⚠ 本预测仅基于历史价格数据的统计模型，未考虑宏观政策、供需突变、地缘事件等外部因素，结果仅供参考，不构成投资建议。</span>`;
+}
+
+// ===== 下拉框初始化 =====
+function initNewDropdowns() {
+  const allCodes = CATEGORIES.flatMap(c => c.codes);
+  document.getElementById("predVariety").innerHTML = allCodes.map(code =>
+    `<option value='${code}'>${VARIETY_NAMES[code]} (${VARIETY_UNITS[code] || DEFAULT_UNIT})</option>`
+  ).join("");
+  document.getElementById("predVariety").value = allCodes[0];
+
+  // 单品日趋势下拉框
+  const stSel = document.getElementById("singleTrendVariety");
+  if (stSel) {
+    stSel.innerHTML = allCodes.map(code =>
+      `<option value='${code}'>${VARIETY_NAMES[code]} (${VARIETY_UNITS[code] || DEFAULT_UNIT}) · ${VARIETY_SOURCES[code] || ""}</option>`
+    ).join("");
+    stSel.value = allCodes[0];
+  }
+
+  // 多选下拉：月度均价明细表（默认全选）+ 月度波动趋势（默认主品种）
+  setupMultiSelect("msAvg", "msAvgList", allCodes, () => {
+    const { year } = getSelected();
+    renderMonthlyAvgTable(year);
+  });
+  setupMultiSelect("msVol", "msVolList", allCodes.slice(0, 4), () => renderVolatilityTrend());
+}
+
+// ===== HELPERS =====
+function getMonthDays(year, month) {
+  const days = [];
+  const d = new Date(year, month-1, 1);
+  while(d.getMonth() === month-1) { days.push(new Date(d)); d.setDate(d.getDate()+1); }
+  return days;
+}
+
+function formatDateLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function destroyCharts() {
+  // Destroy named chart instances
+  ["_volChart", "_predChart", "_singleTrendChart"].forEach(name => {
+    if (window[name]) { window[name].destroy(); window[name] = null; }
+  });
+  // Destroy category/annual charts (created dynamically)
+  if (typeof Chart !== "undefined" && Chart.instances) {
+    Object.values(Chart.instances || {}).forEach(c => c.destroy());
+  }
+}
+
+// ===== 可折叠均价表 =====
+function toggleAvgTable() {
+  const body = document.getElementById("avgTableBody");
+  const icon = document.getElementById("avgToggleIcon");
+  if (body.style.display === "none") {
+    body.style.display = "block";
+    icon.textContent = "▼ 点击收起";
+  } else {
+    body.style.display = "none";
+    icon.textContent = "▶ 点击展开";
+  }
+}
+
+// ===== INIT =====
+// 2026年中国法定节假日（硬编码，不依赖外部API）
+const HOLIDAYS_2026 = new Set([
+  "2026-01-01","2026-01-02","2026-01-03", // 元旦
+  "2026-01-28","2026-01-29","2026-01-30","2026-01-31",
+  "2026-02-01","2026-02-02","2026-02-03", // 春节
+  "2026-04-04","2026-04-05","2026-04-06", // 清明
+  "2026-05-01","2026-05-02","2026-05-03","2026-05-04","2026-05-05", // 劳动节
+  "2026-06-19","2026-06-20","2026-06-21", // 端午
+  "2026-10-01","2026-10-02","2026-10-03","2026-10-04",
+  "2026-10-05","2026-10-06","2026-10-07","2026-10-08", // 中秋+国庆
+]);
+
+function isWorkingDay(d) {
+  const ds = formatDateLocal(d);
+  // 节假日
+  if (HOLIDAYS_2026.has(ds)) return false;
+  // 周末（0=周日, 6=周六）
+  const dow = d.getDay();
+  if (dow === 0 || dow === 6) return false;
+  return true;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const resp = await fetch("data.json?ts=" + Date.now());
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const json = await resp.json();
+    ALL_DATA = json.data;
+    // 更新最后更新时间
+    const updateTime = document.getElementById("updatedTime");
+    if (json.last_updated) {
+      updateTime.textContent = "最后更新: " + json.last_updated + " | 共 " + json.total_days + " 天数据";
+    }
+  } catch (e) {
+    document.getElementById("updatedTime").textContent = "数据加载失败: " + e.message + " (需通过 HTTP 服务器访问)";
+    console.error("Failed to load data.json:", e);
+    return;
+  }
+  initSelectors();
+  initNewDropdowns();
+  const sel = getSelected();
+  renderAll(sel.year, sel.month);
+});
+
+// ===== 品种数据来源浮层（只触发于文字，切换有动效）=====
+(function initSourceTooltip(){
+  const tip = document.createElement("div");
+  tip.id = "sourceTooltip";
+  document.body.appendChild(tip);
+  let currentSource = "";
+  let swapToken = 0;
+  function placeAt(x, y){
+    const r = tip.getBoundingClientRect();
+    let px = x + 14, py = y + 14;
+    if (px + r.width > window.innerWidth) px = x - r.width - 14;
+    if (py + r.height > window.innerHeight) py = y - r.height - 14;
+    tip.style.left = px + "px";
+    tip.style.top = py + "px";
+  }
+  function show(text, x, y){
+    tip.textContent = text;
+    tip.style.opacity = "1";
+    tip.style.transform = "translateY(0)";
+    placeAt(x, y);
+  }
+  function swapTo(text, x, y){
+    const my = ++swapToken;
+    tip.style.opacity = "0";
+    tip.style.transform = "translateY(4px)";
+    setTimeout(() => {
+      if (my !== swapToken) return;
+      show(text, x, y);
+    }, 160);
+  }
+  document.addEventListener("mouseover", e => {
+    const name = e.target.closest(".variety-name");
+    if (!name || !name.dataset.source) return;
+    const prev = e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".variety-name");
+    const switchingFromAnother = prev && prev !== name && prev.dataset.source && prev.dataset.source !== name.dataset.source;
+    if (switchingFromAnother) {
+      swapTo(name.dataset.source, e.clientX, e.clientY);
+    } else {
+      show(name.dataset.source, e.clientX, e.clientY);
+    }
+    currentSource = name.dataset.source;
+  });
+  document.addEventListener("mousemove", e => {
+    if (tip.style.opacity === "1") placeAt(e.clientX, e.clientY);
+  });
+  document.addEventListener("mouseout", e => {
+    const name = e.target.closest(".variety-name");
+    if (!name) return;
+    const next = e.relatedTarget;
+    const nextOnName = next && next.closest && next.closest(".variety-name");
+    if (!nextOnName) {
+      tip.style.opacity = "0";
+      currentSource = "";
+    }
+  });
+})();
+
+// ===== 导出功能 =====
+function toggleExportMenu(e) {
+  e.stopPropagation();
+  document.getElementById('exportMenu').classList.toggle('open');
+}
+function closeExportMenu() {
+  document.getElementById('exportMenu').classList.remove('open');
+}
+document.addEventListener('click', closeExportMenu);
+
+function _getExportData() {
+  const y = parseInt(document.getElementById("yearSelect").value);
+  const m = parseInt(document.getElementById("monthSelect").value);
+  const prefix = `${y}-${String(m).padStart(2,"0")}`;
+  const allCodes = CATEGORIES.flatMap(c => c.codes);
+  const dates = Object.keys(ALL_DATA).filter(d => d.startsWith(prefix)).sort();
+  const monthLabel = `${y}年${m}月`;
+  return { y, m, prefix, allCodes, dates, monthLabel };
+}
+
+function exportExcel() {
+  const { allCodes, dates, monthLabel } = _getExportData();
+  // CSV 格式（Excel 可直接打开），带 BOM 支持 Excel 正确识别 UTF-8
+  let csv = '\uFEFF品种,单位,' + dates.join(',') + '\n';
+  CATEGORIES.forEach(cat => {
+    cat.codes.forEach(code => {
+      const name = VARIETY_NAMES[code];
+      const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
+      const vals = dates.map(d => {
+        const v = ALL_DATA[d] && ALL_DATA[d][code];
+        return v != null ? v : '';
+      });
+      csv += name + ',' + unit + ',' + vals.join(',') + '\n';
+    });
+  });
+  _download(csv, `有色金属价格_${monthLabel}.csv`, 'text/csv;charset=utf-8');
+}
+
+function exportMarkdown() {
+  const { allCodes, dates, monthLabel } = _getExportData();
+  let md = `# 有色金属价格 ${monthLabel}\n\n`;
+  md += `| 品种 | 单位 | ` + dates.map(d => d.substring(5)).join(' | ') + ' |\n';
+  md += '| --- | --- | ' + dates.map(() => '---').join(' | ') + ' |\n';
+  CATEGORIES.forEach(cat => {
+    md += `| **${cat.name}** | | |\n`;
+    cat.codes.forEach(code => {
+      const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
+      const vals = dates.map(d => {
+        const v = ALL_DATA[d] && ALL_DATA[d][code];
+        return v != null ? (Number.isInteger(v) ? v : v.toFixed(2)) : '—';
+      });
+      md += `| ${VARIETY_NAMES[code]} | ${unit} | ` + vals.join(' | ') + ' |\n';
+    });
+  });
+  _download(md, `有色金属价格_${monthLabel}.md`, 'text/markdown;charset=utf-8');
+}
+
+function exportPDF() {
+  // 利用 window.print() + @media print 样式，简洁可靠
+  // 浏览器原生导出 PDF，无需第三方库
+  window.print();
+}
+
+function _download(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
