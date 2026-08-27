@@ -899,7 +899,7 @@ function initNewDropdowns() {
     const { year } = getSelected();
     renderMonthlyAvgTable(year);
   });
-  setupMultiSelect("msVol", "msVolList", allCodes.slice(0, 4), () => renderVolatilityTrend());
+  setupMultiSelect("msVol", "msVolList", allCodes.slice(0, 1), () => renderVolatilityTrend());
 }
 
 // ===== HELPERS =====
