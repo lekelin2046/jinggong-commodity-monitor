@@ -129,8 +129,14 @@ def _check_logged_in(html: str) -> bool:
     return True  # 不明确时放行（可能是新页面格式）
 
 
-async def fetch_sci99_async(timeout: int = 90) -> Dict[str, float]:
+async def fetch_sci99_async(timeout: int = 90, holder: Optional[Dict[str, float]] = None) -> Dict[str, float]:
     """异步抓取卓创 6 个品种的平均价
+
+    Args:
+        timeout: 保留参数（兼容旧调用），实际超时由各品种 goto 内部控制
+        holder: 可选外部字典；每个品种取到值后立即写入，
+                即使外层 asyncio.wait_for 超时取消任务，已取部分也不丢失
+                （2026-08-28 修复：此前总时限一到部分结果被整体丢弃）
 
     Returns:
         {"SS_304": 15700.0, "SS_409": 8000.0, ...}
@@ -186,6 +192,8 @@ async def fetch_sci99_async(timeout: int = 90) -> Dict[str, float]:
                 price = _extract_price(html)
                 if price is not None:
                     result[code] = price
+                    if holder is not None:
+                        holder[code] = price  # 立即外写，超时取消也不丢
                     print(f"  [卓创] {name}: {price}")
                 else:
                     print(f"  [卓创] {name}: 未提取到价格")

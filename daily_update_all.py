@@ -211,7 +211,14 @@ async def fetch_sci99() -> dict:
     print("  卓创资讯（6品种）...", end="", flush=True)
     try:
         from jinggong_monitor.fetcher_sci99 import fetch_sci99_async
-        prices = await asyncio.wait_for(fetch_sci99_async(), timeout=120)
+        holder: dict = {}
+        try:
+            # 2026-08-28 修复：总时限 120s→300s（6 品种各约 45s+2s 封顶），
+            # 并传入 holder，超时时也保留已取部分，不再整体丢弃
+            prices = await asyncio.wait_for(fetch_sci99_async(holder=holder), timeout=300)
+        except asyncio.TimeoutError:
+            prices = holder
+            print(f" 超时（300s）保留部分 {len(prices)} 项", end="", flush=True)
         if prices:
             names = {"SS_304": "304", "SS_409": "409", "SS_439": "439",
                      "SS_441": "441", "NICKEL_IRON": "镍铁", "HIGH_CARBON_FECR": "铬铁"}
@@ -221,7 +228,7 @@ async def fetch_sci99() -> dict:
         print(" 无结果（cookie 可能过期）")
         return {}
     except asyncio.TimeoutError:
-        print(f" 超时（120s）")
+        print(f" 超时（300s）")
         return {}
     except Exception as e:
         print(f" 失败: {e}")
