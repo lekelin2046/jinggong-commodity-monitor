@@ -97,6 +97,15 @@ async def _login_and_save_cookies(ctx) -> bool:
         await page.locator("#userName").fill(smm_user)
         await page.locator("#password").fill(smm_pass)
         await page.locator("#user_account_password_login_button").click()
+        await asyncio.sleep(2)
+        # 2026-08 登录页新增"请阅读并同意"弹窗，需点击"同意并登录"才真正提交
+        try:
+            agree_btn = page.locator("button:has-text('同意并登录')")
+            if await agree_btn.count() > 0:
+                await agree_btn.first.click()
+                logger.info("点击了'同意并登录'")
+        except Exception:
+            pass
         await asyncio.sleep(8)
         ok = "login" not in page.url.lower()
         if ok:
