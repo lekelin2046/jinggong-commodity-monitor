@@ -13400,6 +13400,1016 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "b934023f2fceb0ef7330d8684b307ac53053889c"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "ADC12",
+      "old": null,
+      "new": 24100.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "A380",
+      "old": null,
+      "new": 26000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "AlSi9Cu3",
+      "old": null,
+      "new": 25000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "A356",
+      "old": null,
+      "new": 24200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "A00_AL",
+      "old": null,
+      "new": 24110.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "CU",
+      "old": null,
+      "new": 110580.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "SI_441",
+      "old": null,
+      "new": 10200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "SI_3303",
+      "old": null,
+      "new": 10600.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "MG",
+      "old": null,
+      "new": 17600.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "MN",
+      "old": null,
+      "new": 19000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "SI_331",
+      "old": null,
+      "new": 10900.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "Wenxi_MG",
+      "old": null,
+      "new": 16200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "AM60B",
+      "old": null,
+      "new": 17950.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "AZ91D",
+      "old": null,
+      "new": 18200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "W",
+      "old": null,
+      "new": 920.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "WTI",
+      "old": null,
+      "new": 87.87,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 853.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "COKE",
+      "old": null,
+      "new": 1940.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "SS_304",
+      "old": null,
+      "new": 15150.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1145.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-01T17:05:48",
+      "date_row": "2026-09-01",
+      "code": "ADC12_JAPAN_CIF",
+      "old": null,
+      "new": 3080.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "77d9d9420da139b4c06581a0d59cde097afc608b"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "ADC12",
+      "old": null,
+      "new": 24100.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "A380",
+      "old": null,
+      "new": 26000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "AlSi9Cu3",
+      "old": null,
+      "new": 25000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "A356",
+      "old": null,
+      "new": 24200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "A00_AL",
+      "old": null,
+      "new": 24080.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "CU",
+      "old": null,
+      "new": 108910.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "SI_441",
+      "old": null,
+      "new": 10200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "SI_3303",
+      "old": null,
+      "new": 10600.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "MG",
+      "old": null,
+      "new": 17700.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "MN",
+      "old": null,
+      "new": 19000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "SI_331",
+      "old": null,
+      "new": 10900.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "Wenxi_MG",
+      "old": null,
+      "new": 16250.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "AM60B",
+      "old": null,
+      "new": 18000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "AZ91D",
+      "old": null,
+      "new": 18250.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "W",
+      "old": null,
+      "new": 920.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "WTI",
+      "old": null,
+      "new": 90.51,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 852.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "COKE",
+      "old": null,
+      "new": 1940.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "SS_304",
+      "old": null,
+      "new": 15150.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1143.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:03:10",
+      "date_row": "2026-09-02",
+      "code": "ADC12_JAPAN_CIF",
+      "old": null,
+      "new": 3080.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8e830eec3f5b6ee5cfa37bf0ccd99a432e622d2a"
+    },
+    {
+      "ts": "2026-09-02T15:16:04",
+      "date_row": "2026-09-02",
+      "code": "WTI",
+      "old": 90.51,
+      "new": 90.2,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "87ed4ca990044c43569e190dd4b8fb9d9ddbaccd"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "ADC12",
+      "old": null,
+      "new": 24300.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "A380",
+      "old": null,
+      "new": 26200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "AlSi9Cu3",
+      "old": null,
+      "new": 25200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "A356",
+      "old": null,
+      "new": 24500.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "A00_AL",
+      "old": null,
+      "new": 24350.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "CU",
+      "old": null,
+      "new": 109590.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "SI_441",
+      "old": null,
+      "new": 10300.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "SI_3303",
+      "old": null,
+      "new": 10600.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "MG",
+      "old": null,
+      "new": 17800.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "MN",
+      "old": null,
+      "new": 19000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "SI_331",
+      "old": null,
+      "new": 11000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "Wenxi_MG",
+      "old": null,
+      "new": 16250.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "AM60B",
+      "old": null,
+      "new": 18000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "AZ91D",
+      "old": null,
+      "new": 18250.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "W",
+      "old": null,
+      "new": 920.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "WTI",
+      "old": null,
+      "new": 90.01,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 846.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "COKE",
+      "old": null,
+      "new": 1940.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "SS_304",
+      "old": null,
+      "new": 15150.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1140.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-03T15:04:31",
+      "date_row": "2026-09-03",
+      "code": "ADC12_JAPAN_CIF",
+      "old": null,
+      "new": 3080.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "50c3c023875fd2043dccb0ed3b766a6d0405e4e4"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "ADC12",
+      "old": null,
+      "new": 24300.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "A380",
+      "old": null,
+      "new": 26200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "AlSi9Cu3",
+      "old": null,
+      "new": 25200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "A356",
+      "old": null,
+      "new": 24500.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "A00_AL",
+      "old": null,
+      "new": 24360.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "CU",
+      "old": null,
+      "new": 110050.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "SI_441",
+      "old": null,
+      "new": 10400.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "SI_3303",
+      "old": null,
+      "new": 10600.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "MG",
+      "old": null,
+      "new": 17800.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "MN",
+      "old": null,
+      "new": 19000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "SI_331",
+      "old": null,
+      "new": 11100.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "Wenxi_MG",
+      "old": null,
+      "new": 16300.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "AM60B",
+      "old": null,
+      "new": 18000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "AZ91D",
+      "old": null,
+      "new": 18250.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "WTI",
+      "old": null,
+      "new": 91.49,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 855.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "COKE",
+      "old": null,
+      "new": 2040.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "SS_304",
+      "old": null,
+      "new": 15150.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1139.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 8000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:03:12",
+      "date_row": "2026-09-04",
+      "code": "ADC12_JAPAN_CIF",
+      "old": null,
+      "new": 3080.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "35c56f12746a901af97fc92e41b883ed23c70e95"
+    },
+    {
+      "ts": "2026-09-04T15:41:00",
+      "date_row": "2026-09-04",
+      "code": "W",
+      "old": null,
+      "new": 900.0,
+      "source": "manual_xlsx",
+      "editor": "—",
+      "commit": "d6ce29fc18070ad52528d27b4ad52aa0f7422f26"
     }
   ]
 }
