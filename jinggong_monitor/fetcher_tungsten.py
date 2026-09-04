@@ -130,6 +130,23 @@ class ChinatungstenFetcher(BaseFetcher):
         """
         results: dict[str, float] = {}
 
+        # 0. 先探栏目页健康度，区分「网站故障」与「无文章」
+        #    2026-09-04 实测：网站数据库挂掉时栏目页返回
+        #    "Database connection error (2): Could not connect to MySQL"，
+        #    此时应明确报源站故障、引导走微信专辑页人工兜底，
+        #    而非含糊的「找不到当日文章」（曾导致人工误判为 fetcher bug）。
+        try:
+            probe = self._get(_SECTION_URL, timeout=15)
+            probe.encoding = "utf-8"
+            if "Database connection error" in probe.text or "Could not connect" in probe.text:
+                self._raise(
+                    "中钨在线网站数据库故障（MySQL error），钨粉源暂不可用；"
+                    "请走微信专辑页人工兜底（取当日「中颗粒钨粉」万元/吨 ÷1000 回填）"
+                )
+                return {}
+        except Exception:
+            pass  # 网络异常交给后续正常流程处理
+
         # 1. 从栏目页拿多篇含「钨」的文章 URL
         candidate_urls = self._find_candidate_article_urls(limit=5)
         if not candidate_urls:
