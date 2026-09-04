@@ -14410,6 +14410,16 @@
       "source": "manual_xlsx",
       "editor": "—",
       "commit": "d6ce29fc18070ad52528d27b4ad52aa0f7422f26"
+    },
+    {
+      "ts": "2026-09-04T15:49:10",
+      "date_row": "2026-09-03",
+      "code": "W",
+      "old": 920.0,
+      "new": 900.0,
+      "source": "manual_xlsx",
+      "editor": "—",
+      "commit": "86983960f5749c4a04cf3bddae2d359933c1d136"
     }
   ]
 }

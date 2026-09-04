@@ -20,6 +20,9 @@ logger = logging.getLogger("jinggong.fetcher.chinatungsten")
 # 钨品种价格正则模式
 # ⚠️ 只保留「钨粉」本体写法。钨精矿/APT 是另一品种、计价单位「万元/吨」，
 # 绝不能拿来当钨粉价（2026-08-04 事故：兜底正则误抓黑钨精矿 → 落 26.0 离谱值）。
+# 2026-09-04 修正：文章内同时存在「报价表」与正文涨跌描述，正则易把「昨日价」
+# 抓成当日价（例：9-3 表内钨粉=900，正文带「↓20」被旧正则抓成 920）。
+# 因此改为：优先解析 HTML 报价表；表解析失败才降级到散文正则。
 _PRICE_PATTERNS = {
     "W": [
         # 6/26 主人拍板：取「钨粉价格 X 元/千克」这个表达（不是表里的「钨粉 X」）
@@ -33,6 +36,70 @@ _PRICE_PATTERNS = {
 # 中钨在线每日文章 URL（一般是当日）
 _BASE_URL = "http://news.chinatungsten.com/"
 _SECTION_URL = "http://news.chinatungsten.com/cn/tungsten-product-news.html"
+
+
+def _strip_html_tags(s: str) -> str:
+    """去掉 HTML 标签，只保留文本"""
+    return re.sub(r"<[^>]+>", "", s).strip()
+
+
+def _extract_w_from_table(html: str) -> Optional[float]:
+    """从文章 HTML 的报价表里提取 钨粉(元/千克) 价格。
+
+    2026-09-04 修正：中钨在线每日文章内嵌「中钨在线钨精矿和主要钨制品报价表」，
+    报价表是权威口径。正文/涨跌描述里会出现前一日价格，散文正则容易抓错。
+    这里优先解析表格：找到 产品名称=钨粉（非碳化钨粉）、单位=元/千克 的行，
+    再取「中钨在线报价」列的数值。
+    """
+    # 1) 定位含 钨粉 的 table（减少误扫）
+    for table_match in re.finditer(r"<table[^>]*>.*?</table>", html, re.S | re.I):
+        table_html = table_match.group(0)
+        if "钨粉" not in table_html:
+            continue
+
+        # 2) 拆出行
+        rows = re.findall(r"<tr[^>]*>.*?</tr>", table_html, re.S | re.I)
+        if not rows:
+            continue
+
+        # 3) 从表头找「中钨在线报价」列索引
+        price_col_idx: Optional[int] = None
+        for row in rows[:3]:  # 表头通常在前面 3 行内
+            header_cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)
+            header_texts = [_strip_html_tags(c) for c in header_cells]
+            for i, txt in enumerate(header_texts):
+                if "中钨在线报价" in txt or ("报价" in txt and "涨跌" not in txt):
+                    price_col_idx = i
+                    break
+            if price_col_idx is not None:
+                break
+
+        # 4) 如果没找到报价列，跳过该 table
+        if price_col_idx is None:
+            continue
+
+        # 5) 遍历数据行，找 钨粉 且 单位=元/千克 的行
+        for row in rows:
+            cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)
+            if len(cells) <= price_col_idx:
+                continue
+            texts = [_strip_html_tags(c) for c in cells]
+            product = texts[0] if texts else ""
+            unit = texts[-1] if len(texts) >= 2 else ""
+            # 只要「钨粉」且排除「碳化钨粉」；单位必须是元/千克
+            if "钨粉" not in product or "碳化" in product:
+                continue
+            if "元/千克" not in unit and "元／千克" not in unit:
+                continue
+            price_text = _strip_html_tags(cells[price_col_idx])
+            price_text = re.sub(r"[^\d.]", "", price_text)
+            if price_text.replace(".", "", 1).isdigit():
+                price = float(price_text)
+                # 合理性：钨粉近年价格区间大致 200~2000 元/千克
+                if 100 < price < 5000:
+                    return round(price, 2)
+
+    return None
 
 
 class ChinatungstenFetcher(BaseFetcher):
@@ -183,6 +250,15 @@ class ChinatungstenFetcher(BaseFetcher):
                 logger.warning("获取文章 %s 失败: %s", article_url, e)
                 continue
 
+            # 2.1 优先从报价表解析（避免正文/涨跌描述里的昨日价误匹配）
+            table_price = _extract_w_from_table(text)
+            if table_price is not None:
+                results["W"] = table_price
+                self._last_article_url = article_url
+                logger.info("中钨在线 W(钨粉): %.2f (来自报价表)", table_price)
+                break
+
+            # 2.2 表解析失败，降级到散文正则
             for variety_id, patterns in _PRICE_PATTERNS.items():
                 for pattern in patterns:
                     m = pattern.search(text)
