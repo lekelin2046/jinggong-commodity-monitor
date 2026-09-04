@@ -74,24 +74,45 @@ def _extract_w_from_table(html: str) -> Optional[float]:
             if price_col_idx is not None:
                 break
 
-        # 4) 如果没找到报价列，跳过该 table
-        if price_col_idx is None:
-            continue
+        # 4) 未定位到报价列时不跳过：交给下方第 6 步的「位置兜底」解析
+        #    （行的 产品名称=钨粉、单位=元/千克 过滤仍然生效，安全性不变）
 
         # 5) 遍历数据行，找 钨粉 且 单位=元/千克 的行
         for row in rows:
             cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)
-            if len(cells) <= price_col_idx:
-                continue
             texts = [_strip_html_tags(c) for c in cells]
-            product = texts[0] if texts else ""
+            if not texts:
+                continue
+            product = texts[0]
             unit = texts[-1] if len(texts) >= 2 else ""
             # 只要「钨粉」且排除「碳化钨粉」；单位必须是元/千克
             if "钨粉" not in product or "碳化" in product:
                 continue
             if "元/千克" not in unit and "元／千克" not in unit:
                 continue
-            price_text = _strip_html_tags(cells[price_col_idx])
+
+            # 6) 取价格。优先用表头定位的 price_col_idx；
+            #    没定位到（例如微信文省略表头）时，从单位列往前回溯，
+            #    跳过「涨跌」列（含 ↑↓ 箭头或 涨/跌/—），第一个数字格即为报价。
+            if price_col_idx is not None and len(cells) > price_col_idx:
+                price_cell = cells[price_col_idx]
+            else:
+                unit_idx = next(
+                    (i for i, t in enumerate(texts) if "元/千克" in t or "元／千克" in t),
+                    len(texts) - 1,
+                )
+                price_cell = None
+                for i in range(unit_idx - 1, -1, -1):
+                    t = texts[i]
+                    if not t or any(c in t for c in ("↑", "↓", "涨", "跌")):
+                        continue
+                    if re.sub(r"[^\d.]", "", t).replace(".", "", 1).isdigit():
+                        price_cell = cells[i]
+                        break
+                if price_cell is None:
+                    continue
+
+            price_text = _strip_html_tags(price_cell)
             price_text = re.sub(r"[^\d.]", "", price_text)
             if price_text.replace(".", "", 1).isdigit():
                 price = float(price_text)
