@@ -3545,7 +3545,8 @@
       "SS_439": 10000.0,
       "SS_441": 11200.0,
       "NICKEL_IRON": 1139.0,
-      "HIGH_CARBON_FECR": 8000.0
+      "HIGH_CARBON_FECR": 8000.0,
+      "ADC12_JAPAN_CIF": 3080.0
     }
   }
 }
