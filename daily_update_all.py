@@ -399,6 +399,8 @@ async def main():
     sci99 = await fetch_sci99()
     if sci99: all_prices.update(sci99)
     print()
+    # LME 铝（第 27 列）2026-09-08 新增；延迟 import 与其它源写法一致
+    from jinggong_monitor.fetcher_lme import fetch_lme
     lme = fetch_lme()
     if lme: all_prices.update(lme)
     print()

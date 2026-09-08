@@ -284,9 +284,19 @@ async def fetch_async(target_date: Optional[str] = None) -> dict:
 async def _fetch_asianmetal_raw() -> dict:
     """抓取闻喜镁锭价格。"""
     async with async_playwright() as p:
-        b = await p.chromium.launch(headless=True, args=["--no-sandbox"])
+        # 2026-09-03：亚洲金属网开始拦截无头 Chromium（headless 登录 60s 均失败），
+        # 加 ASIANMETAL_HEADLESS=0 开关切有头模式；默认仍为无头，不影响定时任务。
+        headless = os.environ.get("ASIANMETAL_HEADLESS", "1") != "0"
+        launch_args = ["--no-sandbox", "--disable-blink-features=AutomationControlled"]
+        b = await p.chromium.launch(headless=headless, args=launch_args)
         try:
-            ctx = await b.new_context(viewport={"width": 1280, "height": 900}, bypass_csp=True)
+            ctx_kw = dict(viewport={"width": 1280, "height": 900}, bypass_csp=True)
+            if headless:
+                # 无头时用真实 Chrome UA，抹掉 HeadlessChrome 特征
+                ctx_kw["user_agent"] = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                        "Chrome/126.0.0.0 Safari/537.36")
+            ctx = await b.new_context(**ctx_kw)
             await _load_cookies(ctx)
 
             page = await ctx.new_page()
