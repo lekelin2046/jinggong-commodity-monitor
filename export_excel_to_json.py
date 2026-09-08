@@ -55,6 +55,7 @@ COLUMN_MAP = {
     24: "NICKEL_IRON",
     25: "HIGH_CARBON_FECR",
     26: "ADC12_JAPAN_CIF",
+    27: "LME_AL",
 }
 
 

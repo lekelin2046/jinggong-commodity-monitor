@@ -40,6 +40,7 @@ COLUMN_MAP = {
     18: "IRON_ORE", 19: "COKE",
     20: "SS_304", 21: "SS_409", 22: "SS_439", 23: "SS_441",
     24: "NICKEL_IRON", 25: "HIGH_CARBON_FECR", 26: "ADC12_JAPAN_CIF",
+    27: "LME_AL",
 }
 CODE_TO_COL = {v: k for k, v in COLUMN_MAP.items()}
 

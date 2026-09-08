@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-全品种每日抓取脚本（16项）
-覆盖: ccmn(7) + SMM(7) + 钨粉(1) + WTI(1) = 16
+全品种每日抓取脚本（17项）
+覆盖: ccmn(7) + SMM(7) + 钨粉(1) + WTI(1) + 钢铁(2) + 卓创(6) + SMM_ADC12_JP(1) + LME铝(1)
 
 用法: python3 daily_update_all.py
 """
@@ -25,6 +25,37 @@ EXCEL_PATH = SCRIPT_DIR / "2026年有色金属市场价格.xlsx"
 SHEET_NAME = "日均价（2026年市场）"
 TODAY = datetime.date.today().isoformat()
 
+# ===== 中国法定节假日（2026，国务院办公厅国办发明电〔2025〕7号）=====
+# 用途：所有数据源周末/节假日均休市，不应抓取。2026-09-08 确立跳过逻辑。
+# 注：调休补班日（1/4、2/14、2/28、5/9、9/20、10/10）均为周六/周日，
+#     已被下方"周末跳过"自动覆盖，无需在此列入。
+# TODO(2027): 跨年时需更新为本年度官方放假安排。
+HOLIDAYS_2026 = {
+    # 元旦 1/1-1/3
+    (1, 1), (1, 2), (1, 3),
+    # 春节 2/15-2/23（2/15、2/21、2/22 为周末，已覆盖）
+    (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23),
+    # 清明 4/4-4/6（4/4、4/5 为周末，已覆盖）
+    (4, 4), (4, 5), (4, 6),
+    # 劳动节 5/1-5/5（5/2、5/3 为周末，已覆盖）
+    (5, 1), (5, 2), (5, 3), (5, 4), (5, 5),
+    # 端午 6/19-6/21（6/20、6/21 为周末，已覆盖）
+    (6, 19), (6, 20), (6, 21),
+    # 中秋 9/25-9/27（9/26、9/27 为周末，已覆盖）
+    (9, 25), (9, 26), (9, 27),
+    # 国庆 10/1-10/7
+    (10, 1), (10, 2), (10, 3), (10, 4), (10, 5), (10, 6), (10, 7),
+}
+
+
+def _is_trading_day(d: datetime.date) -> bool:
+    """判断是否为应抓取的交易日（非周末且非法定节假日）"""
+    if d.weekday() >= 5:           # 周六(5)/周日(6)
+        return False
+    if (d.month, d.day) in HOLIDAYS_2026:
+        return False
+    return True
+
 # Excel 列 → (品种代码, 来源)
 COL_MAP = {
     2:  ("ADC12",    "smm"),  3:  ("A380",      "smm"),
@@ -42,6 +73,7 @@ COL_MAP = {
     22: ("SS_439",   "sci99"), 23: ("SS_441",     "sci99"),
     24: ("NICKEL_IRON", "sci99"), 25: ("HIGH_CARBON_FECR", "sci99"),
     26: ("ADC12_JAPAN_CIF", "smm"),
+    27: ("LME_AL",   "lme"),
 }
 
 # CCMN 返回 key → 品种代码
@@ -320,6 +352,20 @@ def export_and_push(row: int):
 
 
 async def main():
+    # ===== 周末及法定节假日跳过（2026-09-08 确立）=====
+    # 所有数据源周末/法定节假日均休市（LME/SMM/长江现货/卓创等），不应抓取。
+    # 此前因定时任务未过滤周末，导致 Excel 写入 34 个周末行（部分含错误数据）。
+    # 现强制跳过：周六(5)/周日(6) 及 中国法定节假日（HOLIDAYS_2026）。
+    today_d = datetime.date.today()
+    if not _is_trading_day(today_d):
+        if today_d.weekday() >= 5:
+            wd_name = "周六" if today_d.weekday() == 5 else "周日"
+        else:
+            wd_name = f"法定节假日（{today_d.month}月{today_d.day}日）"
+        print(f"\n⏸️  今日为{wd_name}（{TODAY}），市场休市，跳过抓取。")
+        print(f"  如需补录，请于下一工作日手动运行。\n")
+        return
+
     print(f"\n{'='*50}")
     print(f"  全品种抓取 · {TODAY}")
     print(f"{'='*50}\n")
@@ -352,6 +398,9 @@ async def main():
     if steel: all_prices.update(steel)
     sci99 = await fetch_sci99()
     if sci99: all_prices.update(sci99)
+    print()
+    lme = fetch_lme()
+    if lme: all_prices.update(lme)
     print()
 
     print(f"[写表] ", end="")
