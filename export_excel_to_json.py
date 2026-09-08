@@ -87,6 +87,10 @@ def export(excel_path: str, output_path: str):
     row_count = 0
     latest_date = None
 
+    # 同一日期可能出现多行（如线上编辑回写/异常追加产生的稀疏重复行），
+    # 仅保留填充品种数最多的那一行，避免稀疏行覆盖完整行（2026-09-08 事故根因）。
+    best_fill = {}
+
     for r in range(2, ws.max_row + 1):
         date_val = ws.cell(r, 1).value
         if date_val is None:
@@ -124,10 +128,14 @@ def export(excel_path: str, output_path: str):
                 has_any = True
 
         if has_any:
-            data[date_str] = day_data
-            row_count += 1
-            if latest_date is None or date_str > latest_date:
-                latest_date = date_str
+            # 去重：仅当填充数更多时才覆盖（保留最完整行）
+            if date_str not in best_fill or len(day_data) > best_fill[date_str]:
+                best_fill[date_str] = len(day_data)
+                data[date_str] = day_data
+                if latest_date is None or date_str > latest_date:
+                    latest_date = date_str
+
+    row_count = len(data)
 
     # 构建输出对象
     output = {
