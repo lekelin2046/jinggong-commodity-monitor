@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="zh-CN" data-page-node-id="c0DmNS9rezULno3SKaubjN">
+<head data-page-node-id="jVv98PAc3o3AXx9sBX03Du">
+<meta charset="UTF-8" data-page-node-id="7mgjqNTVDFEWdyjzqgS65Q">
+<meta name="viewport" content="width=device-width,initial-scale=1" data-page-node-id="S2qovWx7lY0d4keudqbqAH">
 <title>诺博大宗原材料价格看板</title>
 <script src="../vendor/chart.umd.min.js"></script>
 <style>
@@ -183,33 +183,33 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 }
 </style>
 </head>
-<body>
+<body data-page-node-id="6ms7kpgDfj8KvPk21FRIY2">
 
-<div class="header">
-  <h1>📊 诺博大宗原材料价格看板</h1>
-  <span class="updated" id="updatedTime">加载中...</span>
+<div class="header" data-page-node-id="TWYILIuUVd9CPNiPnagcV6">
+  <h1 data-page-node-id="KTPI4s1ybbLhQBqZnd2yfQ">📊 诺博大宗原材料价格看板</h1>
+  <span class="updated" id="updatedTime" data-page-node-id="dPCtOIdylMDFYXFIEpjSms">加载中...</span>
 </div>
 
-<div class="controls">
-  <select id="yearSelect" onchange="switchMonth()"></select>
-  <select id="monthSelect" onchange="switchMonth()"></select>
-  <div style="margin-left:auto">
-    <div class="export-wrap">
-      <button class="export-toggle" onclick="toggleExportMenu(event)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+<div class="controls" data-page-node-id="lUpKOjLM1RNqwIgEn9cl7L">
+  <select id="yearSelect" onchange="switchMonth()" data-page-node-id="RFXMC37yPv4OqWi9oBbry2"></select>
+  <select id="monthSelect" onchange="switchMonth()" data-page-node-id="MfHPXC3613vSGbsjQT4MGD"></select>
+  <div style="margin-left:auto" data-page-node-id="nC2uLCceoZ9z0jf4xshEZ7">
+    <div class="export-wrap" data-page-node-id="nD7FYZ9cQnKBQl1EmuMPM7">
+      <button class="export-toggle" onclick="toggleExportMenu(event)" data-page-node-id="tkkLKRhDuINythWvrpLCWU">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="NNnh0ADv6A5tOKOeyz0WL6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" data-page-node-id="yuO4WLxscGg3H4dFzS7KYv"/><polyline points="7 10 12 15 17 10" data-page-node-id="C8ceSPQTu6AIOZZWDibncX"/><line x1="12" y1="15" x2="12" y2="3" data-page-node-id="rqCKmBSPJxoRhDoG4249Xa"/></svg>
         导出
       </button>
-      <div class="export-menu" id="exportMenu">
-        <button class="export-menu-item" onclick="exportExcel();closeExportMenu()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <div class="export-menu" id="exportMenu" data-page-node-id="9OJdnC6FGTFCXcqqGgvAoR">
+        <button class="export-menu-item" onclick="exportExcel();closeExportMenu()" data-page-node-id="g2Ybi8hhDB3yCfXbo1hF5e">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="7yQVgG70O1zev2qjoeQZUI"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" data-page-node-id="qw4BesZy0cEnRBJBBHLEIh"/><polyline points="14 2 14 8 20 8" data-page-node-id="rYdp7cK0O5nJweEV6WLTm9"/><line x1="16" y1="13" x2="8" y2="13" data-page-node-id="IaGFP3iORAxkz7eGLWcchv"/><line x1="16" y1="17" x2="8" y2="17" data-page-node-id="gdXximr8GuA0dH5N7YXFKo"/></svg>
           Excel (.csv)
         </button>
-        <button class="export-menu-item" onclick="exportPDF();closeExportMenu()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l3 3 3-3"/></svg>
+        <button class="export-menu-item" onclick="exportPDF();closeExportMenu()" data-page-node-id="DnCFyAFLB9z64SL21nC5jo">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="0yUZBsJDOra29JtKtDcfXg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" data-page-node-id="hom6yshxAF3vP83Kcfr7Js"/><polyline points="14 2 14 8 20 8" data-page-node-id="zFPwK5OLdF316fxz3RGuEN"/><path d="M9 15l3 3 3-3" data-page-node-id="BBFHCfyzOuC2ZAUeHO60wO"/></svg>
           PDF (打印)
         </button>
-        <button class="export-menu-item" onclick="exportMarkdown();closeExportMenu()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <button class="export-menu-item" onclick="exportMarkdown();closeExportMenu()" data-page-node-id="J8Xa8iDwMJVJh73HeyASfL">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="0Jn0aDJJOsYxD0rnFjjdqo"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" data-page-node-id="RwLHkHkTMNgBsvlHwgwi4l"/><polyline points="14 2 14 8 20 8" data-page-node-id="QT7Kys87bXoGpE0S0Hw6a5"/></svg>
           Markdown (.md)
         </button>
       </div>
@@ -218,76 +218,76 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 </div>
 
 <!-- KPI 摘要行 -->
-<div class="kpi-row" id="kpiRow"></div>
+<div class="kpi-row" id="kpiRow" data-page-node-id="ewkXmm3JrQqWKXYBcVjlcj"></div>
 
 <!-- ===== 日维度 ===== -->
-<div class="section daily">
-  <div class="section-label daily"><span class="bar"></span>日维度</div>
+<div class="section daily" data-page-node-id="N6vEhuALK9BFDNTlYZ3SXx">
+  <div class="section-label daily" data-page-node-id="oHAUMJpEE5DSYl00vkV7UK"><span class="bar" data-page-node-id="7S3N9iN8DDFRCJcvLF7SUA"></span>日维度</div>
 
-  <div class="card">
-    <h3>📋 日价格明细表 <span class="badge badge-daily">每日</span></h3>
-    <div class="table-wrap" id="tableContainer"></div>
+  <div class="card" data-page-node-id="310ruIhmtIOgYS2ZK6fCcQ">
+    <h3 data-page-node-id="Mc9sSiJZzbstWWcnao7uP8">📋 日价格明细表 <span class="badge badge-daily" data-page-node-id="QrSPETvMZZE3MON2CpUGg4">每日</span></h3>
+    <div class="table-wrap" id="tableContainer" data-page-node-id="KiFYplN8A0PmmRzBsaJsKw"></div>
   </div>
 
-  <div class="card" id="singleTrendCard">
-    <h3>📈 单品日趋势 <span class="badge badge-daily">点品种出图</span></h3>
-    <div class="trend-controls">
-      <select id="singleTrendVariety" onchange="renderSingleTrend()" aria-label="选择品种"></select>
-      <div class="seg" id="singleTrendRange">
-        <button type="button" class="seg-btn active" data-range="month" onclick="setSingleTrendRange('month')">本月</button>
-        <button type="button" class="seg-btn" data-range="3month" onclick="setSingleTrendRange('3month')">近3月</button>
-        <button type="button" class="seg-btn" data-range="ytd" onclick="setSingleTrendRange('ytd')">今年</button>
+  <div class="card" id="singleTrendCard" data-page-node-id="WjM3mztGPJHGrddjC84UjR">
+    <h3 data-page-node-id="DQgIk5ucyaF0vwgakfrMT3">📈 单品日趋势 <span class="badge badge-daily" data-page-node-id="lwnCQSj04zcEuwwm6kLypz">点品种出图</span></h3>
+    <div class="trend-controls" data-page-node-id="tol5ajPksBrlJpsOdEkCX6">
+      <select id="singleTrendVariety" onchange="renderSingleTrend()" aria-label="选择品种" data-page-node-id="1lwdSG9AD7YqBVFkVER2Tr"></select>
+      <div class="seg" id="singleTrendRange" data-page-node-id="Fh7vHkFkzRSuxvoqzvjN9S">
+        <button type="button" class="seg-btn active" data-range="month" onclick="setSingleTrendRange('month')" data-page-node-id="q6dmAi8SLhYR2MjdGkLvzI">本月</button>
+        <button type="button" class="seg-btn" data-range="3month" onclick="setSingleTrendRange('3month')" data-page-node-id="MkSa12ijIamDZF99ktFMQH">近3月</button>
+        <button type="button" class="seg-btn" data-range="ytd" onclick="setSingleTrendRange('ytd')" data-page-node-id="AAypwGlKxwPpD3CaOnTO4Z">今年</button>
       </div>
-      <span id="singleTrendMeta" class="trend-meta"></span>
+      <span id="singleTrendMeta" class="trend-meta" data-page-node-id="sHFvWNOPDM8mX9DXQK6FQK"></span>
     </div>
-    <div class="chart-wrap" style="height:320px"><canvas id="singleTrendChart"></canvas></div>
+    <div class="chart-wrap" style="height:320px" data-page-node-id="f4O4UGe4yKxQFhHYfIUmVu"><canvas id="singleTrendChart" data-page-node-id="kAcEG8H14QDBp5hXeXryHe"></canvas></div>
   </div>
 </div>
 
-<hr class="section-divider">
+<hr class="section-divider" data-page-node-id="cUiw1fFGCETK88VPYK10Lh">
 
 <!-- ===== 月维度 ===== -->
-<div class="section monthly">
-  <div class="section-label monthly"><span class="bar"></span>月维度</div>
+<div class="section monthly" data-page-node-id="BteEMZVapDbBFVRYHlHwaq">
+  <div class="section-label monthly" data-page-node-id="kLfGF8OZkWGymEvXVQKoY5"><span class="bar" data-page-node-id="jegloaDt5fVm3GsJqty6TA"></span>月维度</div>
 
-  <div class="card">
-    <div class="collapsible-header" onclick="toggleAvgTable()">
-      <h3>📋 月度均价明细表 <span class="badge badge-monthly">月度</span> <span class="badge badge-cross">含环比</span></h3>
-      <span class="toggle-icon" id="avgToggleIcon">▶ 点击展开</span>
+  <div class="card" data-page-node-id="Kmb9QFcCIjTip8TVPSFJg8">
+    <div class="collapsible-header" onclick="toggleAvgTable()" data-page-node-id="FhmlHDpheW4iyuNIlV16t1">
+      <h3 data-page-node-id="SOCATd2cT3Hlg2OXlVLMlo">📋 月度均价明细表 <span class="badge badge-monthly" data-page-node-id="TAJKqQXz41PwB7ThqXKBZ7">月度</span> <span class="badge badge-cross" data-page-node-id="ZT8TlBLrZkzDIn0Qg1TjF5">含环比</span></h3>
+      <span class="toggle-icon" id="avgToggleIcon" data-page-node-id="owYtaeSvzBtUq6Qk4ut0XC">▶ 点击展开</span>
     </div>
-    <div class="collapsible-body" id="avgTableBody" style="display:none">
-      <div class="ms" id="msAvgWrap">
-        <button class="ms-trigger" type="button" onclick="toggleMs('msAvg')"><span id="msAvgLabel">选择品种（可多选）</span><span class="ms-caret">▾</span></button>
-        <div class="ms-panel" id="msAvg" style="display:none">
-          <input class="ms-search" placeholder="搜索品种" oninput="filterMs('msAvg', this.value)">
-          <div class="ms-list" id="msAvgList"></div>
-          <div class="ms-foot"><button type="button" onclick="msAll('msAvg')">全选</button><button type="button" onclick="msClear('msAvg')">清空</button></div>
+    <div class="collapsible-body" id="avgTableBody" style="display:none" data-page-node-id="tmAbCoaAAAiHgoqwTb6IjT">
+      <div class="ms" id="msAvgWrap" data-page-node-id="nIGpMoBmHyAJbBPZ1tQL0Q">
+        <button class="ms-trigger" type="button" onclick="toggleMs('msAvg')" data-page-node-id="wGEEwIGz4TEhabN75C3WVB"><span id="msAvgLabel" data-page-node-id="33B7oRfsWsIGjPCytRSz32">选择品种（可多选）</span><span class="ms-caret" data-page-node-id="RE3gnxCSTSLg2re6cuhyu0">▾</span></button>
+        <div class="ms-panel" id="msAvg" style="display:none" data-page-node-id="SlxEDC5gtVcDDJDOb6Mra8">
+          <input class="ms-search" placeholder="搜索品种" oninput="filterMs('msAvg', this.value)" data-page-node-id="QsyxVh3vm3By97zHeSSTwk">
+          <div class="ms-list" id="msAvgList" data-page-node-id="EVcAFUl6LL9q6QCR4K84X8"></div>
+          <div class="ms-foot" data-page-node-id="Z7WdA07mXUSsdEW7xikbO3"><button type="button" onclick="msAll('msAvg')" data-page-node-id="TRnTkEMCVKEEQEhrZZO3W5">全选</button><button type="button" onclick="msClear('msAvg')" data-page-node-id="LfvduFkSJCK9nXW7NHgCGb">清空</button></div>
         </div>
       </div>
-      <div class="avg-table-wrap" id="avgTableContainer"></div>
+      <div class="avg-table-wrap" id="avgTableContainer" data-page-node-id="ukTxbZMbQF4dgatUsGGorh"></div>
     </div>
   </div>
 
-  <div class="dual-charts">
-    <div class="card">
-      <h3>📊 月度波动趋势 <span class="badge badge-monthly">区间</span></h3>
-      <div class="ms" id="msVolWrap">
-        <button class="ms-trigger" type="button" onclick="toggleMs('msVol')"><span id="msVolLabel">选择品种（可多选）</span><span class="ms-caret">▾</span></button>
-        <div class="ms-panel" id="msVol" style="display:none">
-          <input class="ms-search" placeholder="搜索品种" oninput="filterMs('msVol', this.value)">
-          <div class="ms-list" id="msVolList"></div>
-          <div class="ms-foot"><button type="button" onclick="msAll('msVol')">全选</button><button type="button" onclick="msClear('msVol')">清空</button></div>
+  <div class="dual-charts" data-page-node-id="eG99w1L2iDd15FYsXMHccy">
+    <div class="card" data-page-node-id="nQ3lZCsiLnDwm9qeWJAIzX">
+      <h3 data-page-node-id="MKAMQIHeKz4YQhQHLNjvVh">📊 月度波动趋势 <span class="badge badge-monthly" data-page-node-id="GMg5vPMmPRKpOAOHAz9jAe">区间</span></h3>
+      <div class="ms" id="msVolWrap" data-page-node-id="yZUDENdDVmCsRjDpMP2sur">
+        <button class="ms-trigger" type="button" onclick="toggleMs('msVol')" data-page-node-id="5ATIhqlyYAfiD4ASEzyvJf"><span id="msVolLabel" data-page-node-id="C2j2iTpOc7S46CQPZtelhH">选择品种（可多选）</span><span class="ms-caret" data-page-node-id="XmZVM7dWA1yZYBHYMrAeE6">▾</span></button>
+        <div class="ms-panel" id="msVol" style="display:none" data-page-node-id="oAkgbwe5huKeO1IP7E9eFF">
+          <input class="ms-search" placeholder="搜索品种" oninput="filterMs('msVol', this.value)" data-page-node-id="636uianxc2r23BcU3dqETR">
+          <div class="ms-list" id="msVolList" data-page-node-id="s0i8njJfftyCNYG3bydpLV"></div>
+          <div class="ms-foot" data-page-node-id="OhJoWhmobZ5urwHegWrQlF"><button type="button" onclick="msAll('msVol')" data-page-node-id="UxrpILstDhahN0X4qeaNLH">全选</button><button type="button" onclick="msClear('msVol')" data-page-node-id="3YiUfuJJ3yoRCvZyMnc5i3">清空</button></div>
         </div>
       </div>
-      <div class="chart-wrap compact" style="height:280px"><canvas id="volatilityChart"></canvas></div>
+      <div class="chart-wrap compact" style="height:280px" data-page-node-id="0DHl4mVOjnxHzWRyiHKydD"><canvas id="volatilityChart" data-page-node-id="wmjOM8aecGeSkFUImabzdS"></canvas></div>
     </div>
-    <div class="card">
-      <h3>🔮 下月价格预测 <span class="badge badge-predict">预测</span></h3>
-      <div style="margin-bottom:8px">
-        <select id="predVariety" onchange="renderPrediction()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer"></select>
+    <div class="card" data-page-node-id="aJHPUvcfYx9eyuXQybyFvm">
+      <h3 data-page-node-id="vJ2QyHDRrqU08YI6lLw3yR">🔮 下月价格预测 <span class="badge badge-predict" data-page-node-id="6BBbRPtSKtuoBJTYfQlgi6">预测</span></h3>
+      <div style="margin-bottom:8px" data-page-node-id="9EeWVcFFnILYb8aHW4recJ">
+        <select id="predVariety" onchange="renderPrediction()" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer" data-page-node-id="rkmrWjS8pzUVi5QPwGfbUE"></select>
       </div>
-      <div class="chart-wrap compact" style="height:280px"><canvas id="predictionChart"></canvas></div>
-      <div class="prediction-note" id="predictionNote"></div>
+      <div class="chart-wrap compact" style="height:280px" data-page-node-id="hlAdtFEoGBKXvb8kmRDBaN"><canvas id="predictionChart" data-page-node-id="ufxKBwYL9Cu0AmrbyBXdNx"></canvas></div>
+      <div class="prediction-note" id="predictionNote" data-page-node-id="S0HVfQzggK4HSRInM14CyJ"></div>
     </div>
   </div>
 </div>
@@ -296,11 +296,11 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <script>
 // ===== DATA =====
 let ALL_DATA = {};
-const VARIETY_NAMES = {"PC2405": "科思创PC2405", "PC1225Y": "帝人PC1225Y", "PC1201-15": "LG PC1201-15", "ABS_GP22": "苯领ABS GP-22", "ABS_AG12A1": "台化ABS AG12A1-H", "ABS_PA757K": "镇江奇美PA-757K", "PP_SP179": "华锦PP SP179", "PP_4220": "燕山石化PPR4220", "PP_EPC30R": "镇海炼化PP EPC30R", "PP_EP548R": "镇海炼化PP EP548R", "POE_7467": "陶氏POE 7467", "PA6_YH400": "巴陵PA6 YH400"};
+const VARIETY_NAMES = {"PC2405": "科思创PC2405", "PC1225Y": "帝人PC1225Y", "PC1201-15": "LG PC1201-15", "ABS_GP22": "苯领ABS GP-22", "ABS_AG12A1": "台化ABS AG12A1-H", "ABS_PA757K": "镇江奇美PA-757K", "PP_SP179": "华锦PP SP179", "PP_4220": "燕山石化PPR4220", "PP_EPC30R": "镇海炼化PP EPC30R", "PP_EP548R": "镇海炼化PP EP548R", "PP_K8003": "独山子石化PP K8003", "POE_7467": "陶氏POE 7467", "PA6_YH400": "巴陵PA6 YH400"};
 const VARIETY_UNITS = {};
-const VARIETY_SOURCES = {"PC2405": "中塑在线", "PC1225Y": "中塑在线", "PC1201-15": "中塑在线", "ABS_GP22": "中塑在线", "ABS_AG12A1": "中塑在线", "ABS_PA757K": "中塑在线", "PP_SP179": "中塑在线", "PP_4220": "中塑在线", "PP_EPC30R": "中塑在线", "PP_EP548R": "中塑在线", "POE_7467": "中塑在线", "PA6_YH400": "中塑在线"};
-const CATEGORIES = [{"name": "PC 聚碳酸酯", "codes": ["PC2405", "PC1225Y", "PC1201-15"]}, {"name": "ABS 树脂", "codes": ["ABS_GP22", "ABS_AG12A1", "ABS_PA757K"]}, {"name": "PP 聚丙烯", "codes": ["PP_SP179", "PP_4220", "PP_EPC30R", "PP_EP548R"]}, {"name": "POE/PA 橡塑", "codes": ["POE_7467", "PA6_YH400"]}];
-const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#9333ea", "#0891b2", "#ea580c", "#4f46e5", "#be123c", "#0d9488", "#d97706", "#7c3aed"];
+const VARIETY_SOURCES = {"PC2405": "中塑在线", "PC1225Y": "中塑在线", "PC1201-15": "中塑在线", "ABS_GP22": "中塑在线", "ABS_AG12A1": "中塑在线", "ABS_PA757K": "中塑在线", "PP_SP179": "中塑在线", "PP_4220": "中塑在线", "PP_EPC30R": "中塑在线", "PP_EP548R": "中塑在线", "PP_K8003": "中塑在线", "POE_7467": "中塑在线", "PA6_YH400": "中塑在线"};
+const CATEGORIES = [{"name": "PC 聚碳酸酯", "codes": ["PC2405", "PC1225Y", "PC1201-15"]}, {"name": "ABS 树脂", "codes": ["ABS_GP22", "ABS_AG12A1", "ABS_PA757K"]}, {"name": "PP 聚丙烯", "codes": ["PP_SP179", "PP_4220", "PP_EPC30R", "PP_EP548R", "PP_K8003"]}, {"name": "POE/PA 橡塑", "codes": ["POE_7467", "PA6_YH400"]}];
+const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#9333ea", "#0891b2", "#ea580c", "#4f46e5", "#be123c", "#0d9488", "#d97706", "#7c3aed", "#65a30d"];
 const CHART_IDS = [];
 const MS_STATE = { msAvg: null, msVol: null };
 const MS_ONCHANGE = {};

@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-backfill_plastic.py — 中塑在线塑料/橡塑牌号历史回填（12 牌号）
+backfill_plastic.py — 中塑在线塑料/橡塑牌号历史回填
 ====================================================================
 从 2026-01-01 起逐交易日抓取，生成 docs/plastic/data.json（格式对齐精工看板）。
-用法：python3 jinggong_monitor/backfill_plastic.py
+
+用法：
+  python3 jinggong_monitor/backfill_plastic.py                      # 全量重建（TARGETS 全部牌号）
+  python3 jinggong_monitor/backfill_plastic.py --only PP_K8003       # 增量：只回填指定牌号，合并进现有 data.json
+        （新增牌号时用增量模式，避免全量重跑；多个 key 用逗号分隔）
 """
 import json
 import os
@@ -63,12 +67,38 @@ def fetch_history(pid):
 
 def main():
     os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-    data = {}  # date -> {key: price}
-    meta = {}
+
+    # --only KEY1,KEY2：增量模式，只回填指定牌号并合并进现有 data.json
+    only_keys = None
+    if "--only" in sys.argv:
+        i = sys.argv.index("--only")
+        if i + 1 >= len(sys.argv):
+            print("用法：--only PP_K8003[,PP_XXXX]")
+            sys.exit(1)
+        only_keys = {k.strip() for k in sys.argv[i + 1].split(",") if k.strip()}
+    targets = [t for t in TARGETS if only_keys is None or t[0] in only_keys]
+    if only_keys and not targets:
+        print(f"✗ --only 指定的 key 不在 TARGETS 中：{sorted(only_keys)}")
+        sys.exit(1)
+
+    if only_keys:
+        if not os.path.exists(DATA_FILE):
+            print(f"✗ 增量模式需先有 {DATA_FILE}，请先全量回填")
+            sys.exit(1)
+        with open(DATA_FILE, encoding="utf-8") as f:
+            base = json.load(f)
+        data = base.get("data", {})        # date -> {key: price}
+        meta = base.get("meta", {})
+        print(f"○ 增量模式：基底 {len(data)} 天 / {len(base.get('varieties', []))} 牌号，"
+              f"本次仅回填 {[t[0] for t in targets]}")
+    else:
+        data = {}  # date -> {key: price}
+        meta = {}
+
     print("=" * 70)
-    print(f"中塑在线 {len(TARGETS)} 牌号历史回填（起点 {START}）")
+    print(f"中塑在线 {len(targets)} 牌号历史回填（起点 {START}）")
     print("=" * 70)
-    for key, keyword, brand_kw, prefer, name in TARGETS:
+    for key, keyword, brand_kw, prefer, name in targets:
         print(f"\n▶ {name} ({key})")
         pid = resolve_pid(keyword, brand_kw, prefer)
         if not pid:
