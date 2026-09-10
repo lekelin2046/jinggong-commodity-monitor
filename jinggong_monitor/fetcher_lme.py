@@ -59,6 +59,9 @@ class LmeFetcher(BaseFetcher):
 
     def fetch(self, target_date: Optional[str] = None) -> dict:
         """返回 {"LME_AL": Cash Ask, "_date_of_data": 官方数据日}"""
+        # 铁律：定时任务跑 Playwright 前必须清掉 NODE_OPTIONS，否则 driver 连接失败
+        import os
+        os.environ.pop("NODE_OPTIONS", None)
         # 延迟 import：playwright 较重，且避免模块加载顺序影响其它 fetcher
         try:
             from playwright.sync_api import sync_playwright
