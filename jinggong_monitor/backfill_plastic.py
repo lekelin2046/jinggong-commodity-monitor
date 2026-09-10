@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-backfill_plastic.py — 中塑在线 9 个塑料/橡塑牌号历史回填
+backfill_plastic.py — 中塑在线塑料/橡塑牌号历史回填（12 牌号）
 ====================================================================
-从 2026-06-01 起逐交易日抓取，生成 docs/plastic/data.json（格式对齐精工看板）。
+从 2026-01-01 起逐交易日抓取，生成 docs/plastic/data.json（格式对齐精工看板）。
 用法：python3 jinggong_monitor/backfill_plastic.py
 """
 import json
@@ -16,7 +16,7 @@ from fetcher_21cp import (TARGETS, DISPLAY_NAMES, search_detail_ids,
                           parse_detail, match_brand, prefer_match,
                           safe_get, _parse_price_rows, DETAIL_URL)
 
-START = "2026-06-01"
+START = "2026-01-01"
 DATA_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                          "docs", "plastic", "data.json")
 
@@ -40,9 +40,10 @@ def resolve_pid(keyword, brand_kw, prefer):
 
 
 def fetch_history(pid):
-    """翻页抓历史，返回 [(date, price)] 新→旧，覆盖到 START 之前即停"""
+    """翻页抓历史，返回 [(date, price)] 新→旧，覆盖到 START 之前即停
+    注：每页 10 条，回填至 2026-01-01 约需 18 页，上限设 30 页留余量"""
     rows_all = []
-    for page in range(1, 10):
+    for page in range(1, 31):
         if page == 1:
             url = DETAIL_URL.format(pid=pid)
         else:
@@ -65,7 +66,7 @@ def main():
     data = {}  # date -> {key: price}
     meta = {}
     print("=" * 70)
-    print(f"中塑在线 9 牌号历史回填（起点 {START}）")
+    print(f"中塑在线 {len(TARGETS)} 牌号历史回填（起点 {START}）")
     print("=" * 70)
     for key, keyword, brand_kw, prefer, name in TARGETS:
         print(f"\n▶ {name} ({key})")

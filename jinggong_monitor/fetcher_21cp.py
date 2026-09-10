@@ -30,6 +30,7 @@ DETAIL_URL = BASE + "/market/detail/{pid}--.html"
 
 # 牌号 -> (key, 搜索关键词, 品牌过滤关键字, 优先产地关键字, 显示名)
 # 注：PP M100RHC(镇海炼化) 中塑未收录，不在此列
+# 注：扬子 C4018、中沙 EP548RQ 中塑在线未收录（2026-09-10 核查），不在此列
 TARGETS = [
     ("PC2405",     "2405",   ["covestro", "科思创", "拜耳"], [], "科思创PC2405"),
     ("PC1225Y",    "1225Y",  ["teijin", "帝人"], [], "帝人PC1225Y"),
@@ -38,6 +39,9 @@ TARGETS = [
     ("ABS_AG12A1", "AG12A1", ["formosa", "台化"], [], "台化ABS AG12A1-H"),
     ("ABS_PA757K", "PA-757K", ["chi mei", "chimei", "奇美"], ["zhenjiang", "镇江"], "镇江奇美PA-757K"),
     ("PP_SP179",   "SP179",  ["huajin", "华锦"], [], "华锦PP SP179"),
+    ("PP_4220",    "4220",   ["yanshan", "燕山"], [], "燕山石化PPR4220"),
+    ("PP_EPC30R",  "EPC30R", ["zhenhai", "镇海"], [], "镇海炼化PP EPC30R"),
+    ("PP_EP548R",  "EP548R", ["zhenhai", "镇海"], [], "镇海炼化PP EP548R"),
     ("POE_7467",   "7467",   ["dow", "陶氏", "dupont"], [], "陶氏POE 7467"),
     ("PA6_YH400",  "YH400",  ["baling", "巴陵", "yueyang", "岳化", "岳阳"], [], "巴陵PA6 YH400"),
 ]

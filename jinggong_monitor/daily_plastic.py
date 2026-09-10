@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-daily_plastic.py — 塑料/橡塑 9 牌号每日增量更新
+daily_plastic.py — 塑料/橡塑 12 牌号每日增量更新
 ====================================================================
-抓取 9 牌号最新市场参考价，追加到 docs/plastic/data.json。
+抓取 12 牌号最新市场参考价，追加到 docs/plastic/data.json。
 - 某牌号当日无新价（未发布/非交易日）则跳过该牌号，不编造、不沿用前值（铁律）
 - 幂等：若最新日期已存在则跳过，不会重复写
 用法：python3 jinggong_monitor/daily_plastic.py
@@ -49,7 +49,7 @@ def main():
 
     today = {}
     print("=" * 70)
-    print("塑料/橡塑 9 牌号每日更新")
+    print(f"塑料/橡塑 {len(TARGETS)} 牌号每日更新")
     print("=" * 70)
     for key, keyword, brand_kw, prefer, name in TARGETS:
         pid = resolve_pid(keyword, brand_kw, prefer)
