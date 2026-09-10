@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """
-5PM 补抓检查 — 检查今日全品种（25项）是否填全，缺则补抓
+5PM 补抓检查 — 检查今日全品种（26项）是否填全，缺则补抓
 
 用法: python3 daily_check_missed.py
+
+说明：
+- 仅工作日运行；周末/法定节假日市场休市，直接退出，不误触发补抓。
+- 覆盖 Excel 列 2-27（26 个品种，含 2026-09-08 新增的 LME 铝第 27 列）。
 """
 
 import sys, datetime
@@ -10,6 +14,9 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
+
+# 工作日 / 法定节假日判定（与主抓取共用同一交易日历）
+from jinggong_monitor.trading_calendar import is_trading_day, skip_reason
 
 try:
     import openpyxl
@@ -21,10 +28,17 @@ EXCEL_PATH = SCRIPT_DIR / "2026年有色金属市场价格.xlsx"
 SHEET_NAME = "日均价（2026年市场）"
 SMM_COLS = [2,3,4,5,14,15,13]  # SMM: 2-5, 13-15
 CCMN_COLS = [6,7,8,9,10,11,12]  # CCMN: 6-12
-TOTAL = 25  # 全品种数（列2-26）
-ALL_COLS = list(range(2, 27))  # 2-26（覆盖全部 25 品种）
+TOTAL = 26  # 全品种数（列2-27，含 LME 铝）
+ALL_COLS = list(range(2, 28))  # 2-27（覆盖全部 26 品种）
 
 today = datetime.date.today()
+
+# ===== 周末及法定节假日跳过 =====
+# 非交易日市场休市，Excel 无当日行属正常，不应误判为"缺失"而触发补抓。
+if not is_trading_day(today):
+    print(f"⏸️  今日为{skip_reason(today)}（{today}），市场休市，跳过补抓检查。")
+    sys.exit(0)
+
 wb = openpyxl.load_workbook(EXCEL_PATH)
 ws = wb[SHEET_NAME]
 
@@ -52,7 +66,8 @@ missing_labels = {2:"ADC12",3:"A380",4:"AlSi9Cu3",5:"A356",
     6:"A00_AL",7:"CU",8:"SI_441",9:"SI_3303",10:"MG",11:"MN",
     12:"SI_331",13:"Wenxi_MG",14:"AM60B",15:"AZ91D",16:"W",17:"WTI",
     18:"IRON_ORE",19:"COKE",20:"SS_304",21:"SS_409",22:"SS_439",
-    23:"SS_441",24:"NICKEL_IRON",25:"HIGH_CARBON_FECR",26:"ADC12_JAPAN_CIF"}
+    23:"SS_441",24:"NICKEL_IRON",25:"HIGH_CARBON_FECR",26:"ADC12_JAPAN_CIF",
+    27:"LME_AL"}
 
 missing_names = [missing_labels.get(c, f"col{c}") for c in missing]
 print(f"→ 今日 #{target_row} 行缺 {len(missing)}/{TOTAL} 品种: {', '.join(missing_names)}，触发补抓")

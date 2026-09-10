@@ -9,6 +9,7 @@ daily_plastic.py — 塑料/橡塑 12 牌号每日增量更新
 用法：python3 jinggong_monitor/daily_plastic.py
 """
 import json
+import datetime
 import os
 import sys
 import time
@@ -17,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fetcher_21cp import (TARGETS, search_detail_ids, parse_detail,
                           match_brand, prefer_match, safe_get,
                           _parse_price_rows, DETAIL_URL)
+from trading_calendar import is_trading_day, skip_reason
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                          "docs", "plastic", "data.json")
@@ -41,6 +43,12 @@ def resolve_pid(keyword, brand_kw, prefer):
 
 
 def main():
+    # ===== 周末及法定节假日跳过 =====
+    # 中塑在线为现货市场报价，周末/法定节假日休市；与主抓取共用同一交易日历。
+    today_d = datetime.date.today()
+    if not is_trading_day(today_d):
+        print(f"⏸️  今日为{skip_reason(today_d)}（{today_d.isoformat()}），现货市场休市，跳过抓取。")
+        return
     if not os.path.exists(DATA_FILE):
         print(f"✗ 找不到 {DATA_FILE}，请先运行 backfill_plastic.py")
         sys.exit(1)
