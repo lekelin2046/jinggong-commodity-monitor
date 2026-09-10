@@ -15690,6 +15690,16 @@
       "source": "manual_xlsx",
       "editor": "—",
       "commit": ""
+    },
+    {
+      "ts": "2026-09-10T09:16:39",
+      "date_row": "2026-09-08",
+      "code": "LME_AL",
+      "old": 3279.37,
+      "new": null,
+      "source": "manual_xlsx",
+      "editor": "—",
+      "commit": ""
     }
   ]
 }
