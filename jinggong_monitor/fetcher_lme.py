@@ -145,12 +145,32 @@ class LmeFetcher(BaseFetcher):
         return self._last_success
 
 
+def _run_sync_fetch() -> dict:
+    """纯同步抓取（内部使用）"""
+    return LmeFetcher().fetch()
+
+
 def fetch_lme() -> dict:
-    """便捷函数：抓取 LME 官方铝价（Cash Ask，USD/吨），写入当天行"""
+    """便捷函数：抓取 LME 官方铝价（Cash Ask，USD/吨），写入当天行
+
+    2026-09-10 加固：Playwright Sync API 不能在已运行的 asyncio 事件循环内调用
+    （报 "Sync API inside the asyncio loop"）。这里主动探测，若处于事件循环中
+    则自动派发到工作线程执行，保证任何调用方（含异步主流程）都可用。
+    """
     print("  LME（铝, 官网官方 Cash Ask）...", end="", flush=True)
     try:
-        fetcher = LmeFetcher()
-        res = fetcher.fetch()
+        import asyncio
+        try:
+            asyncio.get_running_loop()
+            in_loop = True
+        except RuntimeError:
+            in_loop = False
+        if in_loop:
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                res = ex.submit(_run_sync_fetch).result()
+        else:
+            res = _run_sync_fetch()
         if res and "LME_AL" in res:
             dod = res.get("_date_of_data", "?")
             print(f" {res['LME_AL']} USD/t (官方价数据日={dod})")

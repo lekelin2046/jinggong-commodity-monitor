@@ -314,7 +314,10 @@ def export_and_push(row: int):
     print("  导出 data.json...")
     subprocess.run([sys.executable, str(SCRIPT_DIR / "export_excel_to_json.py")],
         cwd=str(SCRIPT_DIR), capture_output=True, text=True)
-    r = run_git(["add", "docs/data.json"])
+    # 2026-09-11 修正：changelog.json 由 write_excel 写入，此前未纳入 git add，
+    # 导致自动抓取的变更留痕永远上不了线上 changelog 页（09-08 / 09-10 / 09-11 连续三次踩坑，
+    # 每次都要人工补提交）。此处与 data.json 一并提交。
+    r = run_git(["add", "docs/data.json", "docs/changelog.json"])
     if r.returncode != 0:
         print(f"  ⚠️ git add: {(r.stdout + r.stderr).strip()}")
         return False
@@ -326,6 +329,15 @@ def export_and_push(row: int):
     if r is None or (r.returncode != 0 and "nothing to commit" not in (r.stdout + r.stderr).lower()):
         print(f"  ⚠️ git push 失败: {((r.stdout + r.stderr).strip() if r else 'timeout')}")
         return False
+    # 2026-09-11 加固：push 可能"静默失败"（commit 成功、网络抖动导致推送未达），
+    # 表观现象是本地领先远端 1 个提交而线上仍停在前一日。此处显式核验。
+    v = run_git(["rev-list", "--left-right", "--count", "HEAD...origin/main"],
+                timeout=30, retries=2)
+    if v is not None and v.returncode == 0:
+        counts = v.stdout.split()
+        if counts[:2] != ["0", "0"]:
+            print(f"  ⚠️ 推送后本地/远端不一致（{v.stdout.strip()}），需手动补推")
+            return False
     print("  ✅ 推送成功")
     return True
 
@@ -376,8 +388,11 @@ async def main():
     if sci99: all_prices.update(sci99)
     print()
     # LME 铝（第 27 列）2026-09-08 新增；延迟 import 与其它源写法一致
+    # 2026-09-10 修复：fetch_lme 走 Playwright Sync API，不能在 asyncio 事件循环内直接调用
+    # （否则报 "It looks like you are using Playwright Sync API inside the asyncio loop"），
+    # 必须丢到工作线程执行——该线程无运行中的事件循环，sync_playwright 可正常工作。
     from jinggong_monitor.fetcher_lme import fetch_lme
-    lme = fetch_lme()
+    lme = await asyncio.to_thread(fetch_lme)
     if lme: all_prices.update(lme)
     print()
 
