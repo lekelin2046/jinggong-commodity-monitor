@@ -16240,6 +16240,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "d0f7743736fcea26feb11f362846640c491eea8f"
+    },
+    {
+      "ts": "2026-09-11T17:19:05",
+      "date_row": "2026-09-11",
+      "code": "W",
+      "old": null,
+      "new": 900.0,
+      "source": "manual_xlsx",
+      "editor": "主人",
+      "commit": ""
     }
   ]
 }
