@@ -70,8 +70,14 @@ def fetch_official(pw, hold_s: float):
         if res["status"] != 200:
             return None
         doc = json.loads(res["body"])
-        OUT_JSON.parent.mkdir(exist_ok=True)
-        OUT_JSON.write_text(res["body"], encoding="utf-8")
+        # 目录已存在时不再调用 mkdir：某些受限执行环境（沙箱）会拦截 mkdir 系统调用，
+        # 即便 exist_ok=True 也可能被拒；此处只关心"最终能否写"，不存在才建。
+        if not OUT_JSON.parent.exists():
+            OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            OUT_JSON.write_text(res["body"], encoding="utf-8")
+        except OSError as e:
+            print(f"  ⚠️ 原始响应落盘失败（不影响解析）: {e}")
         return doc
     finally:
         if hold_s:
