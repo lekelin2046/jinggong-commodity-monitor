@@ -17050,6 +17050,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "221734d4c3e61caaba684990a102beb902ce475b"
+    },
+    {
+      "ts": "2026-09-16T15:22:34",
+      "date_row": "2026-09-16",
+      "code": "W",
+      "old": null,
+      "new": 900.0,
+      "source": "manual_xlsx",
+      "editor": "主人",
+      "commit": "a98ae455abd9c8d8eace4859c449433e0d05b8d6"
     }
   ]
 }
