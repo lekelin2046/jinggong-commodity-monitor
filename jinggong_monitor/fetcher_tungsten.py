@@ -178,16 +178,30 @@ def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: s
         return None
 
     w, h = img.size
-    # 钨粉行在报价表数据区大约第 7 行；基于 710×499 原图，y 比例约 0.48-0.54
-    # 为兼容模板微调，扫描多个起始比例
-    for y0_ratio in (0.46, 0.48, 0.50, 0.52, 0.54):
-        y0 = int(h * y0_ratio)
-        y1 = int(h * (y0_ratio + 0.06))
-        if y1 > h:
-            y1 = h
-        if y1 <= y0:
-            continue
+    # 钨粉行位于报价表数据区中上部（原图 710×499 时 y 比例约 0.44~0.52）。
+    # ⚠️ 2026-09-16 实测：裁剪窗口高度对 OCR 极度敏感——同一行 y1 仅差 1px，
+    # 结果就从「≥99.9%, 2-10um | 900」变成「鳝|zggk2tm | 900」（规格锚点丢失）。
+    # 旧实现用 int(h*(y0_ratio+0.06)) 定窗高，恰好落在坏区间导致兜底失效。
+    # 现改为「多窗口扫描 + 投票」：起始 y、窗高、纵向微扰三者组合。
+    # 取值规则（守铁律：宁可留空绝不取错行）：
+    #   ① 同一价格 ≥2 票 ⇒ 直接采用；
+    #   ② 否则取纵向最靠上（表内更靠前）的可信单票——钨粉行在碳化钨粉行之上；
+    #   ③ 文本含「碳化」的窗口一律排除（碳化钨粉是另一行、另一价格）；
+    #   ④ 全部窗口被排除或无命中 ⇒ 返回 None 留空，由 17:00 补抓/人工兜底。
 
+    _SPEC_ANCHORS = (
+        # "2-10μm"（OCR 常读成 210m / 2-10mm / 2-10m）+ 其后最近的价格数字
+        re.compile(r"(?:2\s*[-–—]\s*10|210)\s*[muμmM]{1,3}[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)"),
+        # 备选：μm/mm 单位后取数字
+        re.compile(r"[μu]m[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)"),
+        # 再备选：直接出现 "钨粉/转粉" 字样后取数字
+        re.compile(r"(?:钨粉|转粉)[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)"),
+    )
+
+    def _ocr_window(y0: int, y1: int):
+        """裁一条横向窗做预处理 + OCR，返回 (价格或None, 原始文本)。"""
+        if y1 - y0 < 8:
+            return None, ""
         crop = img.crop((0, y0, w, y1))
         # 放大、增强对比度、二值化——这是让 tesseract 读准的关键
         crop = crop.resize((crop.width * 3, crop.height * 3), Image.LANCZOS)
@@ -196,9 +210,9 @@ def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: s
 
         # tesseract 在 macOS 沙盒/子进程中对 /tmp 访问受限，放到项目目录更稳
         tmp_dir = os.path.dirname(os.path.abspath(__file__))
-        with tempfile.NamedTemporaryFile(dir=tmp_dir, suffix=".png", delete=False) as f:
-            crop.save(f.name)
-            tmp_path = f.name
+        with tempfile.NamedTemporaryFile(dir=tmp_dir, suffix=".png", delete=False) as fh:
+            crop.save(fh.name)
+            tmp_path = fh.name
         try:
             result = subprocess.run(
                 ["tesseract", tmp_path, "stdout", "-l", "chi_sim+eng", "--psm", "6"],
@@ -211,30 +225,60 @@ def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: s
             except OSError:
                 pass
 
-        # 钨粉规格关键词："2-10μm"（OCR 常读成 210m / 2-10mm / 2-10m）。
-        # 用规格作为锚点，取其后最近的价格数字，避免误取规格里的 99.9/299.9。
-        # 优先匹配 "210m" / "2-10mm" 这类带单位的规格表达。
-        m = re.search(
-            r"(?:2\s*[-–—]\s*10|210)\s*[muμmM]{1,3}[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)",
-            txt,
-        )
-        if not m:
-            # 备选：μm/mm 单位后取数字
-            m = re.search(r"[μu]m[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)", txt)
-        if not m:
-            # 再备选：直接出现 "钨粉/转粉" 字样后取数字
-            m = re.search(r"(?:钨粉|转粉)[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)", txt)
-        if m:
-            n_clean = m.group(1).replace(",", "")
+        for pat in _SPEC_ANCHORS:
+            m = pat.search(txt)
+            if not m:
+                continue
             try:
-                val = float(n_clean)
+                val = float(m.group(1).replace(",", ""))
             except ValueError:
                 continue
             # 钨粉近年价格区间大致 200~5000 元/千克
             if 200 <= val <= 5000:
-                logger.info("中钨在线 W(钨粉): %.2f (来自报价表图片 OCR)", val)
-                return round(val, 2)
+                return round(val, 2), txt
+        return None, txt
 
+    votes = {}          # val -> 票数（不含「碳化」窗口）
+    suspect = False     # 是否出现过仅因「碳化」被排除的命中
+    first_hit = None    # (y0, val) 纵向最靠上的可信命中
+    calls = 0
+    MAX_CALLS = 45      # 兜底路径耗时上限（每次 OCR 约 0.5~1s）
+    for y0_ratio in (0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48,
+                     0.49, 0.50, 0.51, 0.52, 0.54, 0.56):
+        y0 = int(h * y0_ratio)
+        for row_h_ratio, dy in ((0.06, 0), (0.055, 0), (0.065, 0),
+                                (0.06, -2), (0.06, 2)):
+            calls += 1
+            if calls > MAX_CALLS:
+                break
+            y1 = min(h, y0 + int(h * row_h_ratio) + dy)
+            val, txt = _ocr_window(y0, y1)
+            if val is None:
+                continue
+            if "碳化" in txt:
+                suspect = True
+                logger.debug("跳过含「碳化」窗口 y0=%s y1=%s val=%s", y0, y1, val)
+                continue
+            votes[val] = votes.get(val, 0) + 1
+            if first_hit is None:
+                first_hit = (y0, val)
+        # ≥2 票一致 ⇒ 证据充分，提前收工
+        if votes and max(votes.values()) >= 2:
+            break
+        # 首个命中后多扫 3 个带仍无第二票 ⇒ 收工省时
+        if first_hit is not None and y0_ratio >= first_hit[0] / h + 0.03:
+            break
+
+    if votes:
+        best_val, best_n = max(votes.items(), key=lambda kv: kv[1])
+        if best_n >= 2:
+            logger.info("中钨在线 W(钨粉): %.2f (报价表图片 OCR，%d 票一致)", best_val, best_n)
+            return best_val
+        logger.info("中钨在线 W(钨粉): %.2f (报价表图片 OCR，单票 y0=%s)",
+                    first_hit[1], first_hit[0])
+        return first_hit[1]
+    if suspect:
+        logger.warning("报价表图片 OCR 命中价均来自含「碳化」窗口，为防取错行放弃")
     return None
 
 
