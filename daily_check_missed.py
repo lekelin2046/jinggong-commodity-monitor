@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """
-5PM 补抓检查 — 检查今日全品种（26项）是否填全，缺则补抓
+5PM 补抓检查 — 检查今日全品种（25项）是否填全，缺则补抓
 
 用法: python3 daily_check_missed.py
 
 说明：
 - 仅工作日运行；周末/法定节假日市场休市，直接退出，不误触发补抓。
-- 覆盖 Excel 列 2-27（26 个品种，含 2026-09-08 新增的 LME 铝第 27 列）。
+- 覆盖 Excel 列 2-26（25 个品种）。
+- 第 27 列 LME 铝不参与「缺失」判定：2026-09-16 起该列由次日 9:00 的
+  backfill_lme_official.py 按「官方数据日」回填，当日为空属预期。
+  本脚本另做一道零成本兜底：若上一数据行该列仍为空，则触发 backfill_lme_official.py。
 """
 
 import sys, datetime
@@ -28,8 +31,9 @@ EXCEL_PATH = SCRIPT_DIR / "2026年有色金属市场价格.xlsx"
 SHEET_NAME = "日均价（2026年市场）"
 SMM_COLS = [2,3,4,5,14,15,13]  # SMM: 2-5, 13-15
 CCMN_COLS = [6,7,8,9,10,11,12]  # CCMN: 6-12
-TOTAL = 26  # 全品种数（列2-27，含 LME 铝）
-ALL_COLS = list(range(2, 28))  # 2-27（覆盖全部 26 品种）
+TOTAL = 25  # 15:00 抓取的品种数（列 2-26）
+ALL_COLS = list(range(2, 27))  # 2-26（25 品种）
+LME_COL = 27  # LME 铝：次日 9:00 回填，不参与缺失判定
 
 today = datetime.date.today()
 
@@ -41,6 +45,25 @@ if not is_trading_day(today):
 
 wb = openpyxl.load_workbook(EXCEL_PATH)
 ws = wb[SHEET_NAME]
+
+# ===== LME 铝兜底（2026-09-16 新增）=====
+# 主回填在次日 9:00（backfill_lme_official.py）。官方接口只提供「最新一个数据日」，
+# 若 9:00 那次失败（休眠/断网/CF 拦截），该官方价将永久取不回 → 这里加一道 17:00 保险。
+# 零成本预检：上一数据行该列已有值则直接跳过，不启动 Playwright。
+prev_row = None
+for _r in range(2, ws.max_row + 1):
+    _v = ws.cell(_r, 1).value
+    if isinstance(_v, datetime.datetime) and _v.date() < today:
+        prev_row = _r
+if prev_row is not None:
+    _prev_val = ws.cell(prev_row, LME_COL).value
+    if _prev_val is not None:
+        print(f"✓ LME 铝：上一数据行 #{prev_row} 已回填（{_prev_val}），无需兜底")
+    else:
+        print(f"→ LME 铝：上一数据行 #{prev_row} 仍为空（次日 9:00 回填未成功？），触发兜底")
+        import subprocess
+        subprocess.run([sys.executable, str(SCRIPT_DIR / "backfill_lme_official.py")],
+                       cwd=str(SCRIPT_DIR))
 
 # 找今天行
 target_row = None

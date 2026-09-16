@@ -17060,6 +17060,16 @@
       "source": "manual_xlsx",
       "editor": "主人",
       "commit": "a98ae455abd9c8d8eace4859c449433e0d05b8d6"
+    },
+    {
+      "ts": "2026-09-16T15:55:52",
+      "date_row": "2026-09-16",
+      "code": "LME_AL",
+      "old": 3260.0,
+      "new": null,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "b18f7bb2927f9f24894998af0ced78d13dec7d40"
     }
   ]
 }

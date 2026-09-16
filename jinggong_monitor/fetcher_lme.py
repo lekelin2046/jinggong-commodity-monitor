@@ -90,7 +90,14 @@ class LmeFetcher(BaseFetcher):
 
     def _one_attempt(self, pw) -> Optional[dict]:
         """单次尝试：headed 过 CF → 页面内 fetch → 解析。成功返回带 LME_AL 的 dict"""
-        PROFILE_DIR.parent.mkdir(exist_ok=True)
+        # 2026-09-16 加固：受限执行环境下 mkdir(exist_ok=True) 会被文件策略拦截，
+        # 即使 cookies/ 已存在也抛 EEXIST，直接打断整个 Playwright 环节（与
+        # probe_lme_official.py 早前踩的同一个坑）。改为「不存在才建」+ 容错。
+        if not PROFILE_DIR.parent.exists():
+            try:
+                PROFILE_DIR.parent.mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                logger.warning("cookies 目录创建失败（可能已存在，忽略）: %s", e)
         ctx = pw.chromium.launch_persistent_context(
             user_data_dir=str(PROFILE_DIR),
             headless=False,            # headless 会被 CF 拦截，必须 headed

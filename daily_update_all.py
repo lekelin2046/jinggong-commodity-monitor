@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """
-全品种每日抓取脚本（26 项，仅工作日）
+全品种每日抓取脚本（25 项，仅工作日）
 覆盖: ccmn(7) + SMM(7，含 ADC12日本CIF) + 亚洲金属网闻喜镁锭(1) + 中钨在线钨粉(1)
-      + akshare WTI(1) + 钢铁(2) + 卓创(6) + LME官网官方铝(1) = 26 品种
+      + akshare WTI(1) + 钢铁(2) + 卓创(6) = 25 品种
 交易日：由 jinggong_monitor/trading_calendar.py 统一判定，周末/法定节假日自动跳过。
+
+LME 铝（第 27 列）：2026-09-16 起改为【次日 9:00 按「官方数据日」回填】，
+见 backfill_lme_official.py。原因：LME 官方价伦敦 12:30 定价、北京 19:30-20:30
+才发布，15:00 抓到的最新值必然是前一伦敦交易日的官方价；若写进当日行会造成
+「表上日期 ≠ 官方数据日」的错位。故 15:00 该列留空，由次日 9:00 定时任务补进
+上一个官方数据日那一行。合计全表仍为 26 品种。
 
 用法: python3 daily_update_all.py
 """
@@ -54,6 +60,11 @@ COL_MAP = {
     26: ("ADC12_JAPAN_CIF", "smm"),
     27: ("LME_AL",   "lme"),
 }
+
+# 延后回填的品种：15:00 不抓、单元格留空，由次日 9:00 的 backfill_lme_official.py
+# 按「官方数据日」写入对应行（2026-09-16 主人定口径）。写表时单独归类，
+# 不计入「缺失」告警，避免每日日志出现假失败。
+DEFERRED_CODES = {"LME_AL"}
 
 # CCMN 返回 key → 品种代码
 CCMN_KEYS = {
@@ -253,7 +264,7 @@ def write_excel(all_prices: dict) -> int:
     wb = openpyxl.load_workbook(EXCEL_PATH)
     ws = wb[SHEET_NAME]
     row = get_row(ws)
-    written, skipped = [], []
+    written, skipped, deferred = [], [], []
     diffs = []
 
     # 日期行标识（用于变更记录）
@@ -274,9 +285,13 @@ def write_excel(all_prices: dict) -> int:
             if old_val != new_val:
                 diffs.append({"date_row": date_str, "code": code, "old": old_val, "new": new_val})
         else:
-            skipped.append(code)
+            # 延后回填的品种（如 LME_AL）不算「缺失」，避免每日假告警
+            (deferred if code in DEFERRED_CODES else skipped).append(code)
     wb.save(EXCEL_PATH)
-    print(f"  行 {row}: 写入 {len(written)}/{len(COL_MAP)} 项")
+    active_total = len(COL_MAP) - len(DEFERRED_CODES)
+    print(f"  行 {row}: 写入 {len(written)}/{active_total} 项")
+    if deferred:
+        print(f"  延后: {', '.join(deferred)}（次日 9:00 按官方数据日回填）")
     if skipped:
         print(f"  缺: {', '.join(skipped)}")
 
@@ -387,14 +402,11 @@ async def main():
     sci99 = await fetch_sci99()
     if sci99: all_prices.update(sci99)
     print()
-    # LME 铝（第 27 列）2026-09-08 新增；延迟 import 与其它源写法一致
-    # 2026-09-10 修复：fetch_lme 走 Playwright Sync API，不能在 asyncio 事件循环内直接调用
-    # （否则报 "It looks like you are using Playwright Sync API inside the asyncio loop"），
-    # 必须丢到工作线程执行——该线程无运行中的事件循环，sync_playwright 可正常工作。
-    from jinggong_monitor.fetcher_lme import fetch_lme
-    lme = await asyncio.to_thread(fetch_lme)
-    if lme: all_prices.update(lme)
-    print()
+    # ===== LME 铝：2026-09-16 起不在 15:00 抓取 =====
+    # 该源为 day-delayed 官方价（伦敦 12:30 定价、北京 19:30-20:30 发布），15:00
+    # 只能拿到前一伦敦交易日值，写入当日行会造成日期错位。现改为次日 9:00 由
+    # backfill_lme_official.py 按「官方数据日」回填 → 此处第 27 列留空。
+    print("  LME（铝）... 延后：15:00 不抓，次日 9:00 按官方数据日回填（backfill_lme_official.py）")
 
     print(f"[写表] ", end="")
     row = write_excel(all_prices)
@@ -402,7 +414,8 @@ async def main():
     print(f"[发布] ", end="")
     export_and_push(row)
 
-    print(f"\n  已更新 {len(all_prices)}/{len(COL_MAP)} 品种")
+    active_total = len(COL_MAP) - len(DEFERRED_CODES)
+    print(f"\n  已更新 {len(all_prices)}/{active_total} 品种（LME_AL 另由次日 9:00 回填）")
     print(f"  看板: https://lekelin2046.github.io/jinggong-commodity-monitor/\n")
 
 
