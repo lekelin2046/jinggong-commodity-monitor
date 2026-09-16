@@ -7,8 +7,12 @@
   取最新含「钨」的文章正文解析即可（早期注释称 CONN_REFUSED 已过期，现已恢复）。
 """
 
+import io
 import logging
+import os
 import re
+import subprocess
+import tempfile
 from typing import Optional
 
 import requests
@@ -119,6 +123,117 @@ def _extract_w_from_table(html: str) -> Optional[float]:
                 # 合理性：钨粉近年价格区间大致 200~2000 元/千克
                 if 100 < price < 5000:
                     return round(price, 2)
+
+    return None
+
+
+def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: str) -> Optional[float]:
+    """当 HTML 中无文本化报价表时，对文章内嵌的报价表图片做 OCR 取钨粉价。
+
+    2026-09-16 实测：中钨在线已将每日报价表渲染为 JPG 图片
+    （如 tungsten-price-YYYYMMDD.jpg），HTML 源码里无文本价格单元格。
+    整图直接 OCR（tesseract）会乱码；把钨粉那一行裁出来、放大、二值化后
+    能稳定读出数字。本函数即封装该兜底流程。
+    """
+    # 1. 定位报价表图片 URL
+    img_url: Optional[str] = None
+    m = re.search(r'<img[^>]*alt="[^"]*钨制品价格图片[^"]*"[^>]*src="([^"]+)"', html, re.I)
+    if m:
+        img_url = m.group(1)
+    if not img_url:
+        m = re.search(r'<img[^>]*src="([^"]*tungsten-price-[^"]+\.jpe?g)"', html, re.I)
+        if m:
+            img_url = m.group(1)
+    if not img_url:
+        return None
+    if img_url.startswith("/"):
+        img_url = "http://news.chinatungsten.com" + img_url
+
+    # 2. 检查 tesseract 是否可用
+    try:
+        subprocess.run(["tesseract", "--version"], capture_output=True, timeout=5)
+    except Exception as e:
+        logger.warning("tesseract 未安装或不可用，跳过图片 OCR: %s", e)
+        return None
+
+    # 3. 下载图片
+    try:
+        r = fetcher._session.get(img_url, headers={"Referer": referer}, timeout=20)
+        r.raise_for_status()
+    except Exception as e:
+        logger.warning("下载报价表图片失败 %s: %s", img_url, e)
+        return None
+
+    # 4. 打开并 OCR
+    try:
+        from PIL import Image, ImageEnhance, ImageOps
+    except ImportError:
+        logger.warning("Pillow 未安装，跳过图片 OCR")
+        return None
+
+    try:
+        img = Image.open(io.BytesIO(r.content)).convert("L")
+    except Exception as e:
+        logger.warning("打开报价表图片失败: %s", e)
+        return None
+
+    w, h = img.size
+    # 钨粉行在报价表数据区大约第 7 行；基于 710×499 原图，y 比例约 0.48-0.54
+    # 为兼容模板微调，扫描多个起始比例
+    for y0_ratio in (0.46, 0.48, 0.50, 0.52, 0.54):
+        y0 = int(h * y0_ratio)
+        y1 = int(h * (y0_ratio + 0.06))
+        if y1 > h:
+            y1 = h
+        if y1 <= y0:
+            continue
+
+        crop = img.crop((0, y0, w, y1))
+        # 放大、增强对比度、二值化——这是让 tesseract 读准的关键
+        crop = crop.resize((crop.width * 3, crop.height * 3), Image.LANCZOS)
+        crop = ImageEnhance.Contrast(crop).enhance(2.0)
+        crop = crop.point(lambda p: 255 if p > 180 else 0)
+
+        # tesseract 在 macOS 沙盒/子进程中对 /tmp 访问受限，放到项目目录更稳
+        tmp_dir = os.path.dirname(os.path.abspath(__file__))
+        with tempfile.NamedTemporaryFile(dir=tmp_dir, suffix=".png", delete=False) as f:
+            crop.save(f.name)
+            tmp_path = f.name
+        try:
+            result = subprocess.run(
+                ["tesseract", tmp_path, "stdout", "-l", "chi_sim+eng", "--psm", "6"],
+                capture_output=True, timeout=15
+            )
+            txt = result.stdout.decode("utf-8", errors="ignore")
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+        # 钨粉规格关键词："2-10μm"（OCR 常读成 210m / 2-10mm / 2-10m）。
+        # 用规格作为锚点，取其后最近的价格数字，避免误取规格里的 99.9/299.9。
+        # 优先匹配 "210m" / "2-10mm" 这类带单位的规格表达。
+        m = re.search(
+            r"(?:2\s*[-–—]\s*10|210)\s*[muμmM]{1,3}[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)",
+            txt,
+        )
+        if not m:
+            # 备选：μm/mm 单位后取数字
+            m = re.search(r"[μu]m[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)", txt)
+        if not m:
+            # 再备选：直接出现 "钨粉/转粉" 字样后取数字
+            m = re.search(r"(?:钨粉|转粉)[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)", txt)
+        if m:
+            n_clean = m.group(1).replace(",", "")
+            try:
+                val = float(n_clean)
+            except ValueError:
+                continue
+            # 钨粉近年价格区间大致 200~5000 元/千克
+            if 200 <= val <= 5000:
+                logger.info("中钨在线 W(钨粉): %.2f (来自报价表图片 OCR)", val)
+                return round(val, 2)
 
     return None
 
@@ -294,6 +409,12 @@ class ChinatungstenFetcher(BaseFetcher):
                             break
                         except ValueError:
                             continue
+
+            # 2.3 散文正则也失败 → 对报价表图片 OCR 兜底
+            if "W" not in results:
+                image_price = _extract_w_from_image(text, self, article_url)
+                if image_price is not None:
+                    results["W"] = image_price
 
             # 钨粉拿到就跳出（这是主要需求）
             if "W" in results:
