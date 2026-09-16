@@ -3,8 +3,10 @@
 数据源：LME 官网官方「Official prices」数据接口
 - API: https://www.lme.com/api/trading-data/day-delayed?datasourceId=5ec6a4fc-6bd2-4fb0-b7f5-6ac0f3e68d1d
 - 口径: Cash Ask（官方现货卖出价，USD/t）= 页面表格 Cash 列 Ask = Values[1]
-- 发布节奏: 伦敦每个交易日收市后公布（约北京 20:25 后更新）；北京 15:00 抓取时
-  DateOfData 为前一伦敦交易日（日延一日口径），写入当天行，看板有注说明。
+- 发布节奏: 伦敦每个交易日收市后公布（约北京 20:25 后更新）。**2026-09-16 起**：
+  本 fetcher 不再由 15:00 主流程调用，改由次日 09:00 的 backfill_lme_official.py
+  调用，并按返回的 DateOfData（官方数据日）写入**该数据日所在行**（原「日延一日
+  写入当天行」口径已废止）。
 - 取值规则: 官方值缺失（'-'）或接口不可得 → 抛 FetchError，当日留空（守铁律不编造）。
 
 技术路线（2026-09-10 实验验证，见 probe_lme_official.py）：
