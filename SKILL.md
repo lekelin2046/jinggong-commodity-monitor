@@ -798,16 +798,27 @@ fatal: … Operation too slow. Less than 10 bytes/sec transferred the last 45 se
 fatal: Failed to connect to github.com port 443 after 75002 ms
 ```
 
-**首选解法**（实测一次通过）：
+**两个条件缺一不可** —— ① 清代理，② 重试（**清代理 ≠ 能推成功**）：
 
 ```bash
-env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy -u ALL_PROXY -u all_proxy \
-    git push origin main
+# ① 清变量；② 循环重试（直连 GitHub 是间歇性的，实测 8 次里第 2 次才成功）
+for i in 1 2 3 4 5 6; do
+  env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy -u ALL_PROXY -u all_proxy \
+    git -c http.lowSpeedLimit=10 -c http.lowSpeedTime=45 push origin main && break
+  sleep 4
+done
 ```
 
-排查顺序：① 上面这条 → ② `-c http.proxy=http://127.0.0.1:7890`（Clash，需已启动）→ ③ `-c http.lowSpeedLimit=10 -c http.lowSpeedTime=45` + 循环重试。
+诊断当前是否可达：
 
-⚠️ 此前记录的「可用路径每日翻转」很可能是误判 —— 真正的变量是**代理环境是否干扰**，而非网络本身在变。收尾仍须核 `git rev-list --left-right --count HEAD...origin/main` 为 `0 0`。
+```bash
+curl --noproxy '*' -o /dev/null -w "%{http_code}\n" \
+  https://github.com/<owner>/<repo>.git/info/refs?service=git-receive-pack   # 000 = 不可达，等窗口
+```
+
+✅ **已根治**：`git_helper.py` 三处已修 —— `_detect_proxy()` 不再盲信环境变量（任何代理都必须 `_probe()` 实测能通 GitHub 才采用）、`_git_env()` 先清代理变量（不分大小写）、`git_push()` 自动重试 6 次。**走该模块的定时任务无需再手工处理。**
+
+⚠️ 此前记录的「可用路径每日翻转」**已作废** —— 真正的变量是①沙箱代理变量干扰 + ②直连本身间歇，与"路径"无关。收尾仍须核 `git rev-list --left-right --count HEAD...origin/main` 为 `0 0`。
 
 ## C.5 Python 依赖
 
