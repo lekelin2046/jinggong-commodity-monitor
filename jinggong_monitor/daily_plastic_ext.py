@@ -156,6 +156,8 @@ def fetch_lz() -> dict[str, tuple[str, float]]:
 def main():
     ap = argparse.ArgumentParser(description="塑料看板扩品类每日更新（20 项）")
     ap.add_argument("--dry-run", action="store_true", help="只抓取不写文件")
+    ap.add_argument("--refresh", action="store_true",
+                    help="覆盖本脚本 20 项的已有值（口径调整后重算用；不影响 13 个塑料牌号）")
     ap.add_argument("--only", default="smm,bai,lz", help="只跑指定源，逗号分隔")
     args = ap.parse_args()
     sources = {s.strip() for s in args.only.split(",") if s.strip()}
@@ -225,7 +227,7 @@ def main():
     with open(DATA_FILE, encoding="utf-8") as f:
         db = json.load(f)
 
-    added_to_existing, new_days = 0, 0
+    added_to_existing, new_days, overwritten = 0, 0, 0
     for dk, (d, p) in got.items():
         if d not in db["data"]:
             db["data"][d] = {}
@@ -233,6 +235,12 @@ def main():
         if dk not in db["data"][d]:
             db["data"][d][dk] = p
             added_to_existing += 1
+        elif args.refresh:
+            old = db["data"][d][dk]
+            db["data"][d][dk] = p
+            if abs(float(old) - p) > 1e-9:
+                overwritten += 1
+                print(f"    ↻ 覆盖 {NEW_VARIETIES[dk]['name']:18s} {old:>8,.0f} → {p:>8,.0f}（{d}）")
 
     # ---- 同步品种登记（幂等）----
     vlist = db.setdefault("varieties", [])
@@ -254,7 +262,8 @@ def main():
         json.dump(db, f, ensure_ascii=False, indent=1)
 
     print(f"✓ 写入完成：本次新增 {added_to_existing} 个数据点"
-          f"（新交易日 {new_days} 个）| 现共 {db['total_days']} 天 | 最新 {db['last_updated']}")
+          f"（新交易日 {new_days} 个，覆盖 {overwritten} 个）"
+          f"| 现共 {db['total_days']} 天 | 最新 {db['last_updated']}")
 
     # ---- 与前一交易日对比 ----
     print("-" * 74)

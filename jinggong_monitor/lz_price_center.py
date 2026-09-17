@@ -77,6 +77,12 @@ TOKEN_COOKIE = "_member_user_tonken_"
 #   vid/bt/tlbt : 品种与价格类型定位
 #   specs       : 规格名候选（**精确匹配**，避免 DM/TMTD/M 互相误命中）
 #   markets     : 市场/地区优先级（取第一个有值的；None = 不限，取首行）
+#   strict      : True = **只在 markets 内取**，取不到即留空，不跨市场兜底
+#                 False（默认）= markets 全未命中时退到首个匹配行
+#
+# strict 的意义：主人指定口径的品种用 True。否则一旦指定市场当日无报价，
+# 会静默滑到别的市场，看板上只显示数字、看不出市场已漂移 —— 那比留空更危险。
+# 未指定口径的品种保持 False，以免某市场缺报时整体断档。
 # ---------------------------------------------------------------------------
 VARIETY_MAP: dict[str, dict[str, Any]] = {
     # ---- 化工 ----
@@ -84,20 +90,24 @@ VARIETY_MAP: dict[str, dict[str, Any]] = {
         "name": "乙烯", "unit": "元/吨", "vid": 196, "bt": 3, "tlbt": 0,
         "specs": None, "markets": ["华东", "山东"],
     },
+    # 主人指定「华北」；隆众丙烯无「华北」市场名，山东系为地理最接近项
+    # （隆众的「华北地区」标签只覆盖河北/山西/天津，丙烯在这三地无数据）
     "PROPYLENE": {
         "name": "丙烯", "unit": "元/吨", "vid": 116, "bt": 3, "tlbt": 0,
-        "specs": None, "markets": ["华东", "苏南", "浙江宁波"],
+        "specs": None, "markets": ["山东"], "strict": True,
     },
     # ---- 炭黑 ----
     "CARBON_BLACK_N550": {
         "name": "炭黑 N550", "unit": "元/吨", "vid": 242, "bt": 3, "tlbt": 0,
-        "specs": ["N550"], "markets": ["山东", "江浙沪", "青岛"],
+        "specs": ["N550"], "markets": ["山东"], "strict": True,
     },
     # ---- 天然橡胶（隆众品种名为「干胶」）----
+    # SCRWF = 国产全乳胶，主人指定云南昆明产地口径
     "NR_SCRWF": {
         "name": "天然橡胶 SCRWF", "unit": "元/吨", "vid": 259, "bt": 3, "tlbt": 0,
-        "specs": ["SCRWF"], "markets": ["上海", "浙江", "山东"],
+        "specs": ["SCRWF"], "markets": ["昆明"], "strict": True,
     },
+    # RSS3 = 泰国进口烟片胶，无昆明口径，维持原多市场优先级
     "NR_RSS3": {
         "name": "天然橡胶 RSS3", "unit": "元/吨", "vid": 259, "bt": 3, "tlbt": 0,
         "specs": ["RSS3"], "markets": ["上海", "浙江", "山东"],
@@ -116,21 +126,24 @@ VARIETY_MAP: dict[str, dict[str, Any]] = {
         "name": "防老剂 4020", "unit": "元/吨", "vid": 282, "bt": 3, "tlbt": 0,
         "specs": ["4020"], "markets": ["华东", "衡水", "广州"],
     },
+    # 主人指定促进剂取山东。但山东只有 D/DZ/NS/CZ/DM 五个规格：
+    #   · DM / CZ → 山东有，strict 单市场
+    #   · M / TMTD → 山东**无此规格**，退到同为华北的衡水（价格与上海/杭州一致）
     "ACCEL_DM": {
         "name": "促进剂 DM", "unit": "元/吨", "vid": 281, "bt": 3, "tlbt": 0,
-        "specs": ["DM"], "markets": ["杭州", "衡水", "山东"],
+        "specs": ["DM"], "markets": ["山东"], "strict": True,
     },
     "ACCEL_CZ": {
         "name": "促进剂 CZ", "unit": "元/吨", "vid": 281, "bt": 3, "tlbt": 0,
-        "specs": ["CZ"], "markets": ["常州", "衡水", "山东"],
+        "specs": ["CZ"], "markets": ["山东"], "strict": True,
     },
     "ACCEL_M": {
         "name": "促进剂 M", "unit": "元/吨", "vid": 281, "bt": 3, "tlbt": 0,
-        "specs": ["M"], "markets": ["上海", "杭州", "常州"],
+        "specs": ["M"], "markets": ["衡水"], "strict": True,
     },
     "ACCEL_TMTD": {
         "name": "促进剂 TMTD", "unit": "元/吨", "vid": 281, "bt": 3, "tlbt": 0,
-        "specs": ["TMTD"], "markets": ["杭州", "衡水", "广州"],
+        "specs": ["TMTD"], "markets": ["衡水"], "strict": True,
     },
     # ---- 三元乙丙橡胶（牌号级）----
     "EPDM_6950C": {
@@ -247,13 +260,15 @@ def _spec_ok(spec_cell: str, specs: Optional[list[str]], exact: bool = True) -> 
 
 def parse_series(resp: dict, specs: Optional[list[str]] = None,
                  markets: Optional[list[str]] = None,
-                 exact: bool = True) -> tuple[dict[str, Optional[float]], str]:
+                 exact: bool = True, strict: bool = False) -> tuple[dict[str, Optional[float]], str]:
     """从响应取「日期 → 价格」，返回 (序列, 实际采用的「市场|规格」标签)。
 
     取值优先级：
       1) markets 里第一个能取到有效值的市场
-      2) 若 markets 全未命中，则取首个匹配行（避免静默丢失，但会在标签里标出）
-    未授权/空值一律记 None。
+      2) strict=False 时，若 markets 全未命中，退到首个匹配行（避免整体断档，
+         但口径会漂移 —— 故仅对主人未指定口径的品种启用）
+         strict=True 时**不兜底**：markets 内取不到就返回全 None（留空），
+         并打 WARNING 说明是哪个市场缺报 —— 看板显示「—」比显示错市场的值更安全
     """
     rows = _iter_rows(resp)
     dates = list(resp.get("dateList") or [])
@@ -286,13 +301,20 @@ def parse_series(resp: dict, specs: Optional[list[str]] = None,
             for r in cand:
                 if m in _row_label(r)[0]:
                     order.append(r)
-    order += [r for r in cand if r not in order]
+    if not strict:
+        order += [r for r in cand if r not in order]
 
     for r in order:
         s = series_of(r)
         if any(v is not None for v in s.values()):
             mkt, sp = _row_label(r)
             return s, f"{mkt}|{sp}"
+
+    if strict and markets:
+        logger.warning("指定市场 %r 无有效报价（候选含 %r）——按铁律留空",
+                       markets,
+                       sorted({_row_label(r)[0] for r in cand}))
+        return {d: None for d in dates}, f"{'/'.join(markets)}|(缺报)"
 
     mkt, sp = _row_label(cand[0])
     return series_of(cand[0]), f"{mkt}|{sp}"
@@ -357,7 +379,8 @@ def fetch_variety(key: str, cookie: Optional[str] = None,
             return out
         resp = doc.get("response") or {}
         out["auth"] = auth_state(resp)
-        series, src = parse_series(resp, cfg.get("specs"), cfg.get("markets"))
+        series, src = parse_series(resp, cfg.get("specs"), cfg.get("markets"),
+                                   strict=bool(cfg.get("strict")))
         out["series"] = series
         out["source"] = src
         dates = sorted(series)
@@ -444,7 +467,8 @@ async def fetch_variety_pw(page, key: str) -> dict[str, Optional[float]]:
     resp = doc.get("response") or {}
     if not is_authorized(resp):
         logger.warning("%s: 服务端未放行（see=false）", cfg["name"])
-    series, _src = parse_series(resp, cfg.get("specs"), cfg.get("markets"))
+    series, _src = parse_series(resp, cfg.get("specs"), cfg.get("markets"),
+                                strict=bool(cfg.get("strict")))
     return series
 
 
