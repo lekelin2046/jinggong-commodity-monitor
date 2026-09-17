@@ -89,7 +89,15 @@ class CcmnFetcher(BaseFetcher):
 
         Returns:
             {品种标准ID: 均价}  eg. {"A00_AL": 22850.0, "CU": 101180.0}
+
+        ⚠️ 重要（2026-09-17 实测）：本端点的 `publishDate` 参数**不生效**，
+           它**恒返回最新一日**的数据。证据：请求 2026-01-05 与未来日期
+           2027-06-30，响应体与当日请求**字节级完全相同**（md5 一致），
+           体内 `publishDate` 恒为今日。
+           故本方法**不能**用于历史回填；需要历史请用会员接口
+           `POST /metalquote/query`（见下方 _history_guard 说明）。
         """
+        requested = target_date
         if target_date is None:
             target_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -127,6 +135,20 @@ class CcmnFetcher(BaseFetcher):
 
         price_list = data.get("body", {}).get("priceList", [])
         logger.info("ccmn %s 长江现货返回 %d 个品种", target_date, len(price_list))
+
+        # 防御：显式请求历史日期时校验实际数据日，避免静默产出「假历史」。
+        # 仅当调用方明确传入非今日的日期才校验 —— 今日请求在早间可能拿到前一日
+        # 已发布数据（源未更新），那属正常，不应误报。
+        today = datetime.now().strftime("%Y-%m-%d")
+        if requested and requested != today:
+            actual = price_list[0].get("publishDate") if price_list else None
+            if actual != requested:
+                self._raise(
+                    f"ccmn 端点的 publishDate 参数不生效：请求 {requested}，"
+                    f"实际返回 {actual}。该端点只提供最新一日，无法用于历史回填。"
+                    f"历史数据需走会员接口 /metalquote/query（返回 isLogin=false 即未登录）。"
+                )
+                return {}
 
         # 按品种名映射
         for item in price_list:
