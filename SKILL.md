@@ -864,9 +864,13 @@ pyyaml>=6.0
 | `jinggong_monitor/daily_plastic.py` | 工作日 15:30 增量抓 13 牌号 → 追加 `docs/plastic/data.json`（幂等） |
 | `jinggong_monitor/backfill_plastic.py` | 历史回填；`--only <KEY>` 增量合并单牌号（约 40s vs 全量 10+min）|
 | `docs/plastic/data.json` | `{日期:{牌号:价}}` 内层为 dict 非数组；`total_days`/`last_updated` 在顶层 |
-| `docs/plastic/index.html` | Chart.js 看板；**CATEGORIES / VARIETY_NAMES / UNITS / SOURCES / COLORS 全部硬编码，不读 data.json** |
+| `docs/plastic/index.html` | Chart.js 看板；**CATEGORIES / VARIETY_NAMES / UNITS / SOURCES / COLORS 全部硬编码，不读 data.json**。但 `allCodes` 由 `CATEGORIES.flatMap()` 动态派生 → **只需改常量，KPI 卡/多选器/下拉框自动跟随** |
+| `jinggong_monitor/daily_plastic_ext.py` | 工作日 15:40 增量抓**扩品类 20 项**（SMM 铝 4 / 百川煤焦油 1 / 隆众 15）→ 写同一 data.json。⚠️ **必须与 daily_plastic.py 错开运行**（同文件并写会互相覆盖） |
+| `jinggong_monitor/lz_price_center.py` | 隆众 `dc.oilchem.net` 结构化价格库封装（cookie 直连），详见 E.2 |
+| `jinggong_monitor/fetcher_baiinfo.py` | 百川盈孚煤焦油抓取（免登录 SSR） |
 
-- 13 牌号 = PC×3、ABS×3、PP×5、POE×1、PA6×1；口径＝余姚中国塑料城市场参考价（元/吨）。
+- **现共 33 品种 = 塑料 13 + 扩品类 20**（2026-09-17 扩充并上线）。塑料 13（PC×3、ABS×3、PP×5、POE×1、PA6×1）口径＝余姚中国塑料城市场参考价（元/吨）；扩品类 20 的源与口径见 E.2。
+- 看板 11 个分组：PC｜ABS｜PP｜POE·PA6｜铝｜化工｜三元乙丙｜天然橡胶｜合成橡胶｜炭黑及原料｜橡胶助剂。
 - 反爬：全站 SafeLine WAF，普通 UA 一律 468；**Googlebot UA 对 `/market/detail/` 放行**，须低频（每日 1 次、间隔 ≥2s）。
 - ⚠️ 同名陷阱：`K8003` 同名牌号极多，必须用 `dushanzi`/`独山子` 过滤。
 - ⚠️ 中塑对**部分牌号发布不同步**，同一天可能出现多个日期，属正常，勿强行拉平。
