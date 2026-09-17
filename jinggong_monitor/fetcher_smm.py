@@ -146,18 +146,56 @@ async def _login_and_save_cookies(ctx) -> bool:
         await page.close()
 
 
-async def _fetch_page_text(ctx, page_url: str, wait_ms: int = 9000) -> str:
+# 价格表格特征：形如「24300~24400」的低~高价区间。
+# 用作"页面是否已渲染出价格"的兜底判据（当某页没有配置品种正则时）。
+_PRICE_TABLE_RE = re.compile(r"\d{4,6}~\d{4,6}")
+
+# 页面就绪判据（2026-09-17 加固）：按「该页所辖品种自身的正则」判断 SSR 是否已就绪。
+# 比通用「数字~数字」更精确——如 alloy_chart 页的 ADC12 日本 CIF 用「3090-3110 3100」
+# 连字符格式，通用区间判据在该页永不命中，会造成无谓轮询。
+_PAGE_READY_RE: dict = {}
+for _cfg in SMM_VARIETIES.values():
+    _PAGE_READY_RE.setdefault(_cfg["page"], []).append(re.compile(_cfg["pattern"]))
+
+
+async def _fetch_page_text(ctx, page_url: str, page_name: Optional[str] = None,
+                           wait_ms: int = 9000, poll_ms: int = 3000,
+                           max_poll: int = 8) -> str:
     """用 cookies 访问页面，返回 body innerText
 
     Args:
-        wait_ms: 等待 SSR 渲染的毫秒数。SMM aluminum 页偶发渲染较慢，
-        5s 不足以让全部牌号进入 DOM，故默认提到 9s。
+        page_name: 页面标识（aluminum/magnesium/alloy_chart），用于选取就绪判据。
+        wait_ms: 首轮等待（等 SSR 基本成型）。
+        poll_ms: 轮询间隔；首轮未就绪时按此间隔复查。
+        max_poll: 轮询上限次数（总等待约 wait_ms + poll_ms*max_poll）。
+
+    2026-09-17 加固：原实现为「固定 sleep 9s 后读一次」，当日 15:00 铝/镁两页
+    均读到无价格表的文本 → 触发内部重登录 → 又被外层 90s 超时掐断 → SMM 12 键
+    全空（事后复测页面与 cookies 均正常，属时点性渲染慢）。改为轮询到价格表出现
+    即返回：正常情况更快（早退），渲染慢时容忍度更高（不误判为 cookies 失效）。
     """
+    def _ready(text: str) -> bool:
+        pats = _PAGE_READY_RE.get(page_name or "")
+        if pats:
+            return any(p.search(text) for p in pats)
+        return bool(_PRICE_TABLE_RE.search(text))
+
     page = await ctx.new_page()
     try:
         await page.goto(page_url, timeout=30000, wait_until="domcontentloaded")
         await page.wait_for_timeout(wait_ms)  # 等 SSR 渲染
-        return await page.inner_text("body")
+        text = await page.inner_text("body")
+        if _ready(text):
+            return text
+        # 首轮未就绪 → 轮询复查，避免把"渲染慢"误判成"cookies 失效"
+        for _ in range(max_poll):
+            await page.wait_for_timeout(poll_ms)
+            text = await page.inner_text("body")
+            if _ready(text):
+                logger.info(f"{page_name} 页价格表延迟渲染，轮询后已就绪")
+                return text
+        logger.warning(f"{page_name} 页轮询 {max_poll} 次后仍未就绪（返回当前文本）")
+        return text
     finally:
         await page.close()
 
@@ -186,7 +224,7 @@ async def _fetch_smm_raw(target_date: Optional[str] = None) -> dict:
             texts = {}
             for page_name, url in SMM_PAGES.items():
                 try:
-                    texts[page_name] = await _fetch_page_text(ctx, url)
+                    texts[page_name] = await _fetch_page_text(ctx, url, page_name)
                 except Exception as e:
                     logger.warning(f"抓 {page_name} 页失败: {e}")
                     texts[page_name] = ""
@@ -199,7 +237,7 @@ async def _fetch_smm_raw(target_date: Optional[str] = None) -> dict:
             alum_keys = {"ADC12", "A380", "A356", "AlSi9Cu3"}
             if not alum_keys.issubset(results.keys()) and texts.get("aluminum"):
                 logger.warning("铝合金关键品种缺失，重试 aluminum 页(更长等待)...")
-                texts["aluminum"] = await _fetch_page_text(ctx, SMM_PAGES["aluminum"], wait_ms=12000)
+                texts["aluminum"] = await _fetch_page_text(ctx, SMM_PAGES["aluminum"], "aluminum", wait_ms=12000)
                 results.update(_parse_prices({"aluminum": texts["aluminum"]}))
 
             # 若一个都没拿到，可能 cookies 过期，重新登录
@@ -209,7 +247,7 @@ async def _fetch_smm_raw(target_date: Optional[str] = None) -> dict:
                 # 重新抓
                 for page_name, url in SMM_PAGES.items():
                     try:
-                        texts[page_name] = await _fetch_page_text(ctx, url)
+                        texts[page_name] = await _fetch_page_text(ctx, url, page_name)
                     except Exception as e:
                         logger.warning(f"重试抓 {page_name} 页失败: {e}")
                         texts[page_name] = ""

@@ -108,10 +108,13 @@ async def fetch_ccmn() -> dict:
 async def fetch_smm() -> dict:
     print("  SMM 上海有色...", end="", flush=True)
     from jinggong_monitor.fetcher_smm import _fetch_smm_raw
+    # 2026-09-17 加固：原 90s 会掐断 fetcher 内部的「cookies 失效 → 重登录」路径
+    # （两页抓取约 20s + 重登录约 40s + 重抓约 20s），超时被取消后 SMM 全列归零。
+    # 提到 260s，给重登录留足余量；正常路径仍只需 10-20s，不受影响。
     try:
-        prices = await asyncio.wait_for(_fetch_smm_raw(), timeout=90)
+        prices = await asyncio.wait_for(_fetch_smm_raw(), timeout=260)
     except asyncio.TimeoutError:
-        print(" 超时（90s）")
+        print(" 超时（260s）")
         return {}
     mapped = {}
     for k, v in prices.items():
