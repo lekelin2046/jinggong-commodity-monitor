@@ -786,6 +786,29 @@ export no_proxy="$NO_PROXY"
 
 **为什么不硬编码到代码里** — 防止代码换机器跑时环境变量缺失导致无网络。主人按需塞 `~/.zshrc` 或 `run.sh`。
 
+### 🔴 git push 被代理变量拦截（2026-09-17 定位根因）
+
+WorkBuddy 沙箱会注入**透明代理环境变量** `HTTP_PROXY` / `HTTPS_PROXY` / `http_proxy` / `https_proxy`（指向内部代理，如 `127.0.0.1:57474`）。
+
+`git push` 会**继承**这些变量，而 `-c http.proxy=`（空值）**覆盖不掉环境变量**，表现为：
+
+```
+fatal: unable to access '…': Empty reply from server
+fatal: … Operation too slow. Less than 10 bytes/sec transferred the last 45 seconds
+fatal: Failed to connect to github.com port 443 after 75002 ms
+```
+
+**首选解法**（实测一次通过）：
+
+```bash
+env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy -u ALL_PROXY -u all_proxy \
+    git push origin main
+```
+
+排查顺序：① 上面这条 → ② `-c http.proxy=http://127.0.0.1:7890`（Clash，需已启动）→ ③ `-c http.lowSpeedLimit=10 -c http.lowSpeedTime=45` + 循环重试。
+
+⚠️ 此前记录的「可用路径每日翻转」很可能是误判 —— 真正的变量是**代理环境是否干扰**，而非网络本身在变。收尾仍须核 `git rev-list --left-right --count HEAD...origin/main` 为 `0 0`。
+
 ## C.5 Python 依赖
 
 ```
@@ -881,7 +904,7 @@ pyyaml>=6.0
 |---|---|---|
 | **SMM `hq.smm.cn/aluminum`** | ✅ 免新账号 | 复用 `data/smm_cookies.json`。页面另含 **A00铝 / ZLD104铝合金**（`fetch_smm` 现仅取 A380/AlSi9Cu3/ADC12/A356）。匹配「低碳ZLD104铝合金」需防误命中 |
 | **百川盈孚 `baiinfo.com`** | ✅ 免登录 | 品种页如 `/meijiaohua/gaowenmeijiaoyou`。价格是 SSR 内嵌的**「百川盈孚提示」句**：`YYYY年M月D日，<品种>市场均价 NNNN元/吨，相较于上一工作日上调/下调 N 元/吨`。同页另有 CCTX 指数 |
-| **隆众资讯** | ✅ **已验证可抓**（2026-09-17 实登实测，13 牌号全取到真实价） | ⚠️ 分两层，别只测一层就下结论：<br>① **文章正文**（`www.oilchem.net/xx-xxxx-…html`）＝会员墙，正文被整体替换为「注册为会员可获得相关产品 15 天的免费浏览权…400-658-1688」，`元/吨` 命中 0（9/9 抽样：日评/周评/月评/早间提示/价格一览表）。标题/发布时间仍公开。<br>② **结构化价格库**（`dc.oilchem.net/page/`）＝真正的入口。`POST https://dc.oilchem.net/ndc/price/list/queryPricePage`，body `{"varietiesId":<id>,"businessType":"2\|3\|4","twoLevelBusinessType":<int>,"timeType":0,"pageNum":1,"pageSize":100}`，头需 `Referer: https://dc.oilchem.net/page/`+`Origin`+`Content-Type: application/json`。<br>　⚠️ `twoLevelBusinessType` 必须是**数字** `0`（字符串校验不过）；⚠️ **pageSize 上限 100**，超限报「pageSize数值超限」且**静默无行**（易误判无数据）。<br>　**登录门槛在后端数据层**：未登录也返 200 + 完整行结构（行=市场+规格，列=日期），但价格值被替换为 `"请登录"`，并带 `pricePowerBO={see:false}` → **登录后服务端自动回填真实价，解析代码无需改**。<br>　`businessType`：2=企业价 3=市场价 4=国际价。原油(110)无市场价只能走 bt=4（tlbt 22=期货/23=国际市场/27=现货/28=远期现货）。<br>　品种 id：原油110、乙烯196、丙烯116、高温煤焦油133、炭黑242、**干胶259（＝天然橡胶，库里不叫"天然橡胶"）**、顺丁267、丁苯266、防老剂282、促进剂281、三元乙丙275。<br>　登录＝`POST passport.oilchem.net/member/login/`（password 前端 MD5）+ 网易易盾 → 走**人工登录 + 持久化 profile**（同 `cookies/lme_official_profile`，已稳定 9 天）。<br>　封装模块：`jinggong_monitor/lz_price_center.py`（`VARIETY_MAP`；cookie 直连为默认路径，Playwright 降为回退）、`lz_login_setup.py`（自动填表+提交+验证码检测+权限体检）。<br>　**登录实测（2026-09-17）**：全自动登录**未触发网易易盾**，一次通过。cookie 落 `cookies/lz.json`（`.gitignore:56` 已忽略，**严禁入 git**）；核心 `_member_user_tonken_` **有效期约 30 天**，到期需重登。取数**不必启动浏览器**——urllib 带 Cookie 头即可，11 品种全通。<br>　🔴 **权限是「分品种」的，不是账号级开关**——同一账号实测 `see=true`：乙烯/丙烯/炭黑/**干胶(天胶)**/顺丁/丁苯/防老剂/促进剂/三元乙丙；`see=false`：柴油/原油/高温煤焦油。<br>　**三态判据（排障必用）**：价格值＝`"请登录"` → 匿名；＝`"无权限"` → 登录有效但该品种无订阅；＝真实数值 且 `see=true` → 正常。**判定账号权限必须逐品种扫，单点外推会得出错误结论**（曾只测柴油差点误判整账号无权限）。<br>　⚠️ 牌号匹配必须**精确**：促进剂同 vid(281) 下 DM/M/TMTD 混排，包含匹配时 `M` 会误命中 TMTD 与 DM；丁苯需兼容 `1712`/`SBR1712` 两种写法。<br>　⚠️ 同一牌号多地区报价语义有差异（如 SCRWF 上海 18450 / 山东 18250），取值口径由 `VARIETY_MAP[*]["markets"]` 优先级列表决定，实际取值市场回写在返回的 `source` 字段 |
+| **隆众资讯** | ✅ **已验证可抓**（2026-09-17 实登实测，13 牌号全取到真实价） | ⚠️ 分两层，别只测一层就下结论：<br>① **文章正文**（`www.oilchem.net/xx-xxxx-…html`）＝会员墙，正文被整体替换为「注册为会员可获得相关产品 15 天的免费浏览权…400-658-1688」，`元/吨` 命中 0（9/9 抽样：日评/周评/月评/早间提示/价格一览表）。标题/发布时间仍公开。<br>② **结构化价格库**（`dc.oilchem.net/page/`）＝真正的入口。`POST https://dc.oilchem.net/ndc/price/list/queryPricePage`，body `{"varietiesId":<id>,"businessType":"2\|3\|4","twoLevelBusinessType":<int>,"timeType":0,"pageNum":1,"pageSize":100}`，头需 `Referer: https://dc.oilchem.net/page/`+`Origin`+`Content-Type: application/json`。<br>　⚠️ `twoLevelBusinessType` 必须是**数字** `0`（字符串校验不过）；⚠️ **pageSize 上限 100**，超限报「pageSize数值超限」且**静默无行**（易误判无数据）。<br>　**登录门槛在后端数据层**：未登录也返 200 + 完整行结构（行=市场+规格，列=日期），但价格值被替换为 `"请登录"`，并带 `pricePowerBO={see:false}` → **登录后服务端自动回填真实价，解析代码无需改**。<br>　`businessType`：2=企业价 3=市场价 4=国际价。原油(110)无市场价只能走 bt=4（tlbt 22=期货/23=国际市场/27=现货/28=远期现货）。<br>　品种 id：原油110、乙烯196、丙烯116、高温煤焦油133、炭黑242、**干胶259（＝天然橡胶，库里不叫"天然橡胶"）**、顺丁267、丁苯266、防老剂282、促进剂281、三元乙丙275。<br>　登录＝`POST passport.oilchem.net/member/login/`（password 前端 MD5）+ 网易易盾 → 走**人工登录 + 持久化 profile**（同 `cookies/lme_official_profile`，已稳定 9 天）。<br>　封装模块：`jinggong_monitor/lz_price_center.py`（`VARIETY_MAP`；cookie 直连为默认路径，Playwright 降为回退）、`lz_login_setup.py`（自动填表+提交+验证码检测+权限体检）。<br>　**登录实测（2026-09-17）**：全自动登录**未触发网易易盾**，一次通过。cookie 落 `cookies/lz.json`（`.gitignore:56` 已忽略，**严禁入 git**）；核心 `_member_user_tonken_` **有效期约 30 天**，到期需重登。取数**不必启动浏览器**——urllib 带 Cookie 头即可，11 品种全通。<br>　🔴 **权限是「分品种」的，不是账号级开关**——同一账号实测 `see=true`：乙烯/丙烯/炭黑/**干胶(天胶)**/顺丁/丁苯/防老剂/促进剂/三元乙丙；`see=false`：柴油/原油/高温煤焦油。<br>　**三态判据（排障必用）**：价格值＝`"请登录"` → 匿名；＝`"无权限"` → 登录有效但该品种无订阅；＝真实数值 且 `see=true` → 正常。**判定账号权限必须逐品种扫，单点外推会得出错误结论**（曾只测柴油差点误判整账号无权限）。<br>　⚠️ 牌号匹配必须**精确**：促进剂同 vid(281) 下 DM/M/TMTD 混排，包含匹配时 `M` 会误命中 TMTD 与 DM；丁苯需兼容 `1712`/`SBR1712` 两种写法。<br>　⚠️ 同一牌号多地区报价语义有差异（如 SCRWF 昆明 18100 / 上海 18450 / 山东 18250），取值口径由 `VARIETY_MAP[*]["markets"]` 决定，实际取值市场回写在 `source` 字段。<br>　**`strict` 语义（2026-09-17 新增）**：`strict=True` = 只在 `markets` 内取，取不到即留空，**绝不跨市场兜底**。理由：否则指定市场缺报时会静默滑到别处，看板只显示数字、看不出市场已漂移 —— 比留空更危险。主人指定口径的 7 项用 True；未指定的（RSS3/顺丁/丁苯/防老剂/乙烯/EPDM）保持 False 以免整体断档。<br>　**主人指定口径（2026-09-17）**：SCRWF→**昆明**｜丙烯→**山东**（隆众无「华北」市场名，其「华北地区」只含河北/山西/天津，山东被单列「山东省」）｜炭黑 N550→**山东**｜促进剂 DM/CZ→**山东**（25,000/28,000）、M/TMTD→**衡水**（各 21,500；⚠️ 山东只有 D/DZ/NS/CZ/DM 五规格，**没有 M 和 TMTD**） |
 | **同花顺 `10jqka.com.cn`** | ❌ 无外盘 | `goodsfu` 期货页为 JS 渲染 SPA + GBK 编码，HTML 内无任何外盘/布伦特字符串；`q.10jqka.com.cn/global/` 301；外盘接口 404 |
 | **生意社 `www.100ppi.com`** | ⚠️ 可用但口径不同 | 首次响应含 JS 校验，读 `HW_CHECK=<md5>` 写入 cookie 后重取即 200。分品种页 `mprice/plist-1-<id>-1.html`：天胶56/顺丁371/丁苯930/炭黑398/防老剂2315/乙烯51/丙烯362/促进剂M=15657/TMTD=3555。**但"报价中心"＝企业贸易商挂牌价，非市场均价**；且**无三元乙丙** |
 
