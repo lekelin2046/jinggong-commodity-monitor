@@ -27,7 +27,9 @@ dc.oilchem.net 提供完整 REST 接口，且接口层不拦匿名调用。真�
   · 不同品种的 businessType 差异很大：原油只有「国际价格(4)」，
     没有「市场价格(3)」——用错类型会得到 "未查询到指标"
   · priceBodyMap 结构有两种：按地区分组 dict（国内价）或 list（国际价）
-  · 价格取值路径：row["YYYY/MM/DD"]["price"]["主流价"]
+  · 价格取值：`pick_price(row["YYYY/MM/DD"]["price"])`，按
+    **主流价 > 最低价 > 最高价** 优先级（见 PRICE_KEY_ORDER）。
+    ⚠️ 勿按 dict 首键取：三键齐全时会取到区间下沿。
   · 涨跌方向另在 row["YYYY/MM/DD"]["dataRiseOrFall"]，取值 -1/0/1
   · 行标识：国内价用 internalMarketName + specificationsName + standard；
     国际价用 marketName + specificationsName
@@ -247,6 +249,32 @@ def to_number(raw: Any) -> Optional[float]:
         return None
 
 
+# 价格字段取值优先级（2026-09-17 实测修正）
+#   隆众 price 字典有三种形态：
+#     · 只有「主流价」            → 乙烯 / SCRWF / RSS3
+#     · 只有「最低价/最高价」      → 丙烯 / 炭黑N550 / 促进剂 / 防老剂
+#     · 三键齐全                  → 顺丁 / 丁苯 / 三元乙丙
+#   原先按 dict 首键取值，遇到「三键齐全」会取到**区间下沿**而非主流价
+#   （顺丁取 15300 而主流价是 15400）。现改为显式优先级：主流价 > 最低价 > 最高价。
+PRICE_KEY_ORDER = ("主流价", "最低价", "最高价")
+
+
+def pick_price(price_map: Any) -> Optional[float]:
+    """从一个日期的 price 字典里按优先级取值；全无效 → None（铁律）"""
+    if not isinstance(price_map, dict) or not price_map:
+        return None
+    for k in PRICE_KEY_ORDER:
+        if k in price_map:
+            v = to_number(price_map[k])
+            if v is not None:
+                return v
+    for v in price_map.values():          # 兜底：未知字段名
+        n = to_number(v)
+        if n is not None:
+            return n
+    return None
+
+
 def _spec_ok(spec_cell: str, specs: Optional[list[str]], exact: bool = True) -> bool:
     if not specs:
         return True
@@ -287,12 +315,7 @@ def parse_series(resp: dict, specs: Optional[list[str]] = None,
                 out[d] = None
                 continue
             pm = cell.get("price") or {}
-            val = None
-            for _k, v in pm.items():
-                val = to_number(v)
-                if val is not None:
-                    break
-            out[d] = val
+            out[d] = pick_price(pm)
         return out
 
     order: list[dict] = []
