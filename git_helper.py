@@ -188,6 +188,23 @@ def git_push(cwd=None, retries: int = 6) -> bool:
     return False
 
 
+def ahead_count(cwd=None) -> int:
+    """本地领先 origin/main 的提交数。
+
+    这是判断「是否真的需要推送」的唯一依据 —— 只看本次有没有产生新 commit
+    是不够的：本地可能残留历史未推送的 commit（见 publish_to_github 的说明）。
+    """
+    code, out, err = git_with_proxy(
+        ["rev-list", "--count", "origin/main..HEAD"], cwd=cwd, timeout=15,
+    )
+    if code != 0:
+        return 0
+    try:
+        return int((out or "0").strip())
+    except ValueError:
+        return 0
+
+
 def publish_to_github(files, commit_msg, cwd=None):
     """一站式发布：add → commit → pull --rebase → push
 
@@ -197,7 +214,13 @@ def publish_to_github(files, commit_msg, cwd=None):
         cwd: 工作目录（默认项目根目录）
 
     Returns:
-        True 成功, False 失败
+        True 成功（且确认无未推送残留）, False 失败
+
+    ⚠️ 历史缺陷（2026-09-17 修复）：原实现在「本次无新变化」时直接 return True，
+       不检查本地是否残留**此前已提交但未推送**的 commit。后果是调用方拿到 True
+       并打印「已推送」，而远程其实没更新 —— 数据静默丢失、看板不更新，
+       且难以察觉（因为脚本一切"正常"）。
+       现改为：无新提交也要核对 ahead，落后即照常走 pull --rebase + push。
     """
     if cwd is None:
         cwd = str(PROJECT_DIR)
@@ -213,25 +236,33 @@ def publish_to_github(files, commit_msg, cwd=None):
         return False
 
     # 2. git commit（检查是否真的有变化）
-    code, out, err = git_with_proxy(["diff", "--cached", "--quiet"], cwd=cwd, timeout=10)
-    if code == 0:
-        print("  (无变化，跳过提交)")
-        return True
+    has_staged = git_with_proxy(
+        ["diff", "--cached", "--quiet"], cwd=cwd, timeout=10,
+    )[0] != 0
 
-    code, out, err = git_with_proxy(
-        ["commit", "-m", commit_msg], cwd=cwd, timeout=30,
-    )
-    if code != 0:
-        msg = out + err
-        if "nothing to commit" in msg.lower():
+    if has_staged:
+        code, out, err = git_with_proxy(
+            ["commit", "-m", commit_msg], cwd=cwd, timeout=30,
+        )
+        if code != 0:
+            msg = out + err
+            if "nothing to commit" not in msg.lower():
+                print(f"  ❌ git commit 失败: {msg[:200]}")
+                return False
             print("  (无变化，跳过提交)")
-            return True
-        print(f"  ❌ git commit 失败: {(out+err)[:200]}")
-        return False
+    else:
+        print("  (无新增变更，跳过提交)")
+
+    # 2.5 无新提交 ≠ 无需推送：核对是否残留未推送提交
+    ahead = ahead_count(cwd)
+    if ahead == 0:
+        print("  ✅ 远程已是最新，无需推送")
+        return True
+    print(f"  → 本地待推送 {ahead} 个提交")
 
     # 3. pull --rebase（冲突自动 abort）
     if not git_pull_rebase(cwd):
-        print("  ⚠️ pull 失败或冲突，跳过 push（commit 已在本地）")
+        print("  ⚠️ pull 失败或冲突，跳过 push（commit 已在本地，下次会重试）")
         return False
 
     # 4. push
