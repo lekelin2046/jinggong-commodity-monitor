@@ -2,9 +2,15 @@
 name: 精工有色金属共享表自动化填写
 description: 精工板块每日有色金属市场均价采集与 Excel 填写。覆盖 26 项品种（Excel 列 2–27）、7 类数据源（ccmn 公开 AJAX / SMM 登录态 / 亚洲金属网登录态 / 卓创 Cookie / akshare / 中钨在线 OCR / LME 官方价）。每日 15:00 主抓 + 17:00 补抓 + 次日 09:00 LME 回填，均由平台定时任务触发。
 agent_created: true
-version: 3.1
+version: 3.2
 last_updated: 2026-09-17
 changelog:
+  v3.2 (2026-09-17 晚):
+    - 诺博板块**拆页面·共用数据**：新增 `docs/rubber/`（诺博橡胶 21 项），`docs/plastic/` 收敛为诺博内外饰 13 牌号；两者共用 `docs/plastic/data.json`
+    - + `jinggong_monitor/bridge_jinggong.py`：精工→诺博数据接续（原油每日；`--history` 借同源 SMM 铝历史）
+    - 历史回填扩至一年：隆众 15 项 249 个交易日、中塑 13 牌号回溯至 2025-09-17（源站为**滚动一年窗口**）
+    - 修：前端 KPI「今日更新品种/月均价环比」按本页 CATEGORIES 过滤（共用 data.json 会串算对方品种）
+    - 修：`backfill_plastic.py` 增量模式丢失扩品类品种表的问题；`MAX_PAGES` 30→36
   v3.1 (2026-09-17):
     - + 附录 E：塑料/橡胶模块（13 牌号、docs/plastic/ 看板、backfill --only）——此前 SKILL 完全未覆盖
     - + 附录 E.2：5 个候选源的可行性实测结论（SMM 扩品类 / 百川免登录 / 隆众 dc 结构化 API 需登录 / 同花顺无外盘 / 生意社口径差异）
@@ -33,7 +39,8 @@ changelog:
 
 每天 **15:00** 全品种自动抓价格填入 Excel（`daily_update_all.py`）→ **17:00** 补抓漏项（`daily_check_missed.py`）→ **次日 09:00** LME 铝按官方数据日回填（`backfill_lme_official.py`）。**ccmn + akshare + 中钨在线 + LME 不需登录**，**SMM + 亚洲金属网需登录，卓创需 Cookie**——登录态过期时抓取脚本会自动重登（内置于 `jinggong_monitor/fetcher_smm.py`）。截图/证据保存到 `screenshots/{日期}/` 供后期追溯。
 
-> 本 SKILL 只覆盖**精工板块**。诺博（橡胶/塑料原料）与曼德（铜铝/工程塑料）两个板块见项目内 `docs/plastic/`、`docs/mand/`，说明文档见 Obsidian `raw/工作/大宗原材料监控/`。
+> 本 SKILL 只覆盖**精工板块**。另两个板块见项目内 `docs/rubber/`（诺博**橡胶**：铝/化工/三元乙丙/炭黑/天然橡胶/合成橡胶/助剂 21 项）、`docs/plastic/`（诺博**内外饰**：PC/ABS/PP/POE/PA6 共 13 牌号）、`docs/mand/`（曼德），说明文档见 Obsidian `raw/工作/大宗原材料监控/`。
+> ⚠️ `docs/rubber/` 与 `docs/plastic/` **共用同一份 `docs/plastic/data.json`**（抓取与推送仍各一次，故障面不增加）。两边前端各自只用 `CATEGORIES` 声明自己的品种，**页面是分开的、链接可以分别发人**。
 
 ## 📊 26 个品种 × 7 类数据源（Excel 列 2–27）
 
@@ -858,14 +865,16 @@ pyyaml>=6.0
 | `jinggong_monitor/daily_plastic.py` | 工作日 15:30 增量抓 13 牌号 → 追加 `docs/plastic/data.json`（幂等） |
 | `jinggong_monitor/backfill_plastic.py` | 历史回填；`--only <KEY>` 增量合并单牌号（约 40s vs 全量 10+min）|
 | `docs/plastic/data.json` | `{日期:{牌号:价}}` 内层为 dict 非数组；`total_days`/`last_updated` 在顶层 |
-| `docs/plastic/index.html` | Chart.js 看板；**CATEGORIES / VARIETY_NAMES / UNITS / SOURCES / COLORS 全部硬编码，不读 data.json**。但 `allCodes` 由 `CATEGORIES.flatMap()` 动态派生 → **只需改常量，KPI 卡/多选器/下拉框自动跟随** |
-| `jinggong_monitor/daily_plastic_ext.py` | 工作日 15:40 增量抓**扩品类 20 项**（SMM 铝 4 / 百川煤焦油 1 / 隆众 15）→ 写同一 data.json。⚠️ **必须与 daily_plastic.py 错开运行**（同文件并写会互相覆盖） |
+| `docs/plastic/index.html` | **诺博内外饰**看板（13 牌号）。Chart.js；**CATEGORIES / VARIETY_NAMES / UNITS / SOURCES / COLORS 全部硬编码，不读 data.json**。但 `allCodes` 由 `CATEGORIES.flatMap()` 动态派生 → **只需改常量，KPI 卡/多选器/下拉框自动跟随** |
+| `docs/rubber/index.html` | **诺博橡胶**看板（21 项）。由 plastic 页复制而来，差异仅：标题、`CATEGORIES`(8 组 21 项)、`KPI_KEY_CODES`、`VARIETY_UNITS`(原油=美元/桶)、数据路径 `../plastic/data.json` |
+| `jinggong_monitor/bridge_jinggong.py` | 精工→诺博**数据接续**（原油每日；`--history` 借 SMM 铝历史）。**只接同源同口径**，默认幂等只补空 |
+| `jinggong_monitor/daily_plastic_ext.py` | 工作日 15:40 增量抓**扩品类 20 项**（SMM 铝 4 / 百川煤焦油 1 / 隆众 15）→ 写同一 data.json，末尾自动调 `bridge_jinggong.sync()` 接上原油。⚠️ **必须与 daily_plastic.py 错开运行**（同文件并写会互相覆盖） |
 | `jinggong_monitor/lz_price_center.py` | 隆众 `dc.oilchem.net` 结构化价格库封装（cookie 直连），详见 E.2 |
-| `jinggong_monitor/backfill_plastic_ext.py` | 扩品类**历史回填**（隆众 15 项，走 `getSingleCurve` 曲线接口）。`--from 2026-07-01 [--to] [--only KEY] [--dry-run] [--refresh]`；默认幂等只补空缺。SMM 铝 4 项 / 百川煤焦油 1 项源站无免费历史，**不在范围** |
+| `jinggong_monitor/backfill_plastic_ext.py` | 扩品类**历史回填**（隆众 15 项，走 `getSingleCurve` 曲线接口）。`--from 2025-09-17 [--to] [--only KEY] [--dry-run] [--refresh]`；默认幂等只补空缺。SMM 铝 4 项 / 百川煤焦油 1 项源站无免费历史，**不在范围**（铝改由 `bridge_jinggong --history` 借精工同源历史）|
 | `jinggong_monitor/fetcher_baiinfo.py` | 百川盈孚煤焦油抓取（免登录 SSR） |
 
-- **现共 33 品种 = 塑料 13 + 扩品类 20**（2026-09-17 扩充并上线）。塑料 13（PC×3、ABS×3、PP×5、POE×1、PA6×1）口径＝余姚中国塑料城市场参考价（元/吨）；扩品类 20 的源与口径见 E.2。
-- 看板 11 个分组：PC｜ABS｜PP｜POE·PA6｜铝｜化工｜三元乙丙｜天然橡胶｜合成橡胶｜炭黑及原料｜橡胶助剂。
+- **data.json 现共 33 品种 = 塑料 13 + 扩品类 20**（2026-09-17 扩充并上线），另经 `bridge_jinggong` 接上原油 1 项。塑料 13（PC×3、ABS×3、PP×5、POE×1、PA6×1）口径＝余姚中国塑料城市场参考价（元/吨）；扩品类 20 的源与口径见 E.2。
+- **两页拆分（2026-09-17）**：`docs/plastic/`＝内外饰（13 牌号，4 组）；`docs/rubber/`＝橡胶（21 项，8 组）。**共用 data.json**。⚠️ 前端 KPI 的「今日更新品种」「月均价环比」必须按**本页** `CATEGORIES` 过滤——data.json 是共用的，不过滤会把对方品种算进来（曾出现「33 / 21」这种计数）。
 - 反爬：全站 SafeLine WAF，普通 UA 一律 468；**Googlebot UA 对 `/market/detail/` 放行**，须低频（每日 1 次、间隔 ≥2s）。
 - ⚠️ 同名陷阱：`K8003` 同名牌号极多，必须用 `dushanzi`/`独山子` 过滤。
 - ⚠️ 中塑对**部分牌号发布不同步**，同一天可能出现多个日期，属正常，勿强行拉平。
@@ -911,7 +920,8 @@ pyyaml>=6.0
 
 **单仓库、单 Pages、单次推送。** 精工 / 塑料 / 曼德共享 `trading_calendar`、`git_helper`、fetcher、`export_excel_to_json`、Chart.js vendor：
 - 拆仓库 → **推送故障面 ×3**（推送是本项目最高频故障）；SMM fetcher 内部键是精工命名 `A380`/`ADC12`、曼德靠 `SMM_KEY_MAP` 映射，拆库必然产生两份漂移。
-- 现在已是**逻辑分家**：`docs/plastic/`、`docs/mand/` 独立子目录 + 独立前端常量 + 独立定时任务（15:30 / 15:35 / 15:40）。
+- 现在已是**逻辑分家**：`docs/plastic/`（内外饰）、`docs/rubber/`（橡胶）、`docs/mand/` 独立子目录 + 独立前端常量 + 独立定时任务（15:30 / 15:35 / 15:40；**橡胶与内外饰共用同一份数据，不需要新定时任务**）。
+  · **2026-09-17 新增「拆页面·共用数据」的实践**：客户方要分开看（诺博橡胶 vs 诺博内外饰），拆的是**页面**不是数据层——抓取 1 次、推送 1 次，故障面不增加；两个链接可分别发人。
 - **唯一该拆的信号**：要给不同人不同权限（如曼德只给曼德同事看）——那时拆的是**发布通道**，不是代码。
 
 **另**：第三方/客户提供的原始图表与报告统一放仓库根 `references/`（已加入 `.gitignore`），**严禁入 git**——含对方业务数据，与 `screenshots/`、`*.pdf`、`长城有色日价格查询/` 同属不外传一类。

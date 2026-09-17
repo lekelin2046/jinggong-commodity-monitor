@@ -265,6 +265,16 @@ def main():
           f"（新交易日 {new_days} 个，覆盖 {overwritten} 个）"
           f"| 现共 {db['total_days']} 天 | 最新 {db['last_updated']}")
 
+    # ---- 精工 → 诺博 接续（原油）----
+    # 原油的抓取在精工板块（akshare 那条线），诺博看板不重复抓，只接同源同口径的序列
+    print("-" * 74)
+    try:
+        from jinggong_monitor.bridge_jinggong import sync as bridge_sync
+        bridge_sync(history=False)
+    except Exception as e:                                    # noqa: BLE001
+        logger.error("精工接续失败（不影响本页其余 20 项）：%s: %s",
+                     type(e).__name__, e)
+
     # ---- 与前一交易日对比 ----
     print("-" * 74)
     print("较前值涨跌：")

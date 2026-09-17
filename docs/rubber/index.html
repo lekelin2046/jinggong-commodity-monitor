@@ -3,7 +3,7 @@
 <head data-page-node-id="jVv98PAc3o3AXx9sBX03Du">
 <meta charset="UTF-8" data-page-node-id="7mgjqNTVDFEWdyjzqgS65Q">
 <meta name="viewport" content="width=device-width,initial-scale=1" data-page-node-id="S2qovWx7lY0d4keudqbqAH">
-<title>诺博内外饰大宗原材料价格看板</title>
+<title>诺博橡胶大宗原材料价格看板</title>
 <script src="../vendor/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -188,7 +188,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <body data-page-node-id="6ms7kpgDfj8KvPk21FRIY2">
 
 <div class="header" data-page-node-id="TWYILIuUVd9CPNiPnagcV6">
-  <h1 data-page-node-id="KTPI4s1ybbLhQBqZnd2yfQ">📊 诺博内外饰大宗原材料价格看板</h1>
+  <h1 data-page-node-id="KTPI4s1ybbLhQBqZnd2yfQ">📊 诺博橡胶大宗原材料价格看板</h1>
   <span class="updated" id="updatedTime" data-page-node-id="dPCtOIdylMDFYXFIEpjSms">加载中...</span>
 </div>
 
@@ -298,18 +298,18 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <script>
 // ===== DATA =====
 let ALL_DATA = {};
-const VARIETY_NAMES = {"PC2405": "科思创PC2405", "PC1225Y": "帝人PC1225Y", "PC1201-15": "LG PC1201-15", "ABS_GP22": "苯领ABS GP-22", "ABS_AG12A1": "台化ABS AG12A1-H", "ABS_PA757K": "镇江奇美PA-757K", "PP_SP179": "华锦PP SP179", "PP_4220": "燕山石化PPR4220", "PP_EPC30R": "镇海炼化PP EPC30R", "PP_EP548R": "镇海炼化PP EP548R", "PP_K8003": "独山子石化PP K8003", "POE_7467": "陶氏POE 7467", "PA6_YH400": "巴陵PA6 YH400", "AL_A00": "A00铝", "AL_A380": "A380铝合金", "AL_ZLD104": "ZLD104铝合金", "AL_ALSI9CU3": "AlSi9Cu3铝合金", "C2_ETHYLENE": "乙烯", "C3_PROPYLENE": "丙烯", "EPDM_6950C": "三元乙丙 6950C", "EPDM_3110M": "三元乙丙 3110M", "EPDM_13561C": "三元乙丙 13561C", "NR_SCRWF": "天然橡胶 SCRWF", "NR_RSS3": "天然橡胶 RSS3", "BR9000": "顺丁橡胶 9000", "SBR1712": "丁苯橡胶 1712", "CB_COALTAR": "高温煤焦油", "CB_N550": "炭黑 N550", "AO_4020": "防老剂 4020", "ACC_DM": "促进剂 DM", "ACC_CZ": "促进剂 CZ", "ACC_M": "促进剂 M", "ACC_TMTD": "促进剂 TMTD"};
-const VARIETY_UNITS = {};
-const VARIETY_SOURCES = {"PC2405": "中塑在线", "PC1225Y": "中塑在线", "PC1201-15": "中塑在线", "ABS_GP22": "中塑在线", "ABS_AG12A1": "中塑在线", "ABS_PA757K": "中塑在线", "PP_SP179": "中塑在线", "PP_4220": "中塑在线", "PP_EPC30R": "中塑在线", "PP_EP548R": "中塑在线", "PP_K8003": "中塑在线", "POE_7467": "中塑在线", "PA6_YH400": "中塑在线", "AL_A00": "SMM 上海有色", "AL_A380": "SMM 上海有色", "AL_ZLD104": "SMM 上海有色", "AL_ALSI9CU3": "SMM 上海有色", "CB_COALTAR": "百川盈孚", "C2_ETHYLENE": "隆众资讯", "C3_PROPYLENE": "隆众资讯", "EPDM_6950C": "隆众资讯", "EPDM_3110M": "隆众资讯", "EPDM_13561C": "隆众资讯", "NR_SCRWF": "隆众资讯", "NR_RSS3": "隆众资讯", "CB_N550": "隆众资讯", "BR9000": "隆众资讯", "SBR1712": "隆众资讯", "AO_4020": "隆众资讯", "ACC_DM": "隆众资讯", "ACC_CZ": "隆众资讯", "ACC_M": "隆众资讯", "ACC_TMTD": "隆众资讯"};
-const VARIETY_MARKETS = {"PC2405": "余姚塑料城", "PC1225Y": "余姚塑料城", "PC1201-15": "余姚塑料城", "ABS_GP22": "余姚塑料城", "ABS_AG12A1": "余姚塑料城", "ABS_PA757K": "余姚塑料城", "PP_SP179": "余姚塑料城", "PP_4220": "余姚塑料城", "PP_EPC30R": "余姚塑料城", "PP_EP548R": "余姚塑料城", "PP_K8003": "余姚塑料城", "POE_7467": "余姚塑料城", "PA6_YH400": "余姚塑料城", "AL_A00": "SMM 现货", "AL_A380": "SMM 现货", "AL_ZLD104": "SMM 现货", "AL_ALSI9CU3": "SMM 现货", "C2_ETHYLENE": "华东", "C3_PROPYLENE": "山东", "EPDM_6950C": "上海", "EPDM_3110M": "上海", "EPDM_13561C": "上海", "NR_SCRWF": "昆明", "NR_RSS3": "上海", "BR9000": "上海", "SBR1712": "江苏", "CB_COALTAR": "全国均价", "CB_N550": "山东", "AO_4020": "华东", "ACC_DM": "山东", "ACC_CZ": "山东", "ACC_M": "衡水", "ACC_TMTD": "衡水"};
+const VARIETY_NAMES = {"OIL_WTI": "WTI 原油", "AL_A00": "A00铝", "AL_A380": "A380铝合金", "AL_ZLD104": "ZLD104铝合金", "AL_ALSI9CU3": "AlSi9Cu3铝合金", "C2_ETHYLENE": "乙烯", "C3_PROPYLENE": "丙烯", "EPDM_6950C": "三元乙丙 6950C", "EPDM_3110M": "三元乙丙 3110M", "EPDM_13561C": "三元乙丙 13561C", "CB_COALTAR": "高温煤焦油", "CB_N550": "炭黑 N550", "NR_SCRWF": "天然橡胶 SCRWF", "NR_RSS3": "天然橡胶 RSS3", "BR9000": "顺丁橡胶 9000", "SBR1712": "丁苯橡胶 1712", "AO_4020": "防老剂 4020", "ACC_DM": "促进剂 DM", "ACC_CZ": "促进剂 CZ", "ACC_M": "促进剂 M", "ACC_TMTD": "促进剂 TMTD"};
+const VARIETY_UNITS = {"OIL_WTI": "美元/桶"};
+const VARIETY_SOURCES = {"OIL_WTI": "akshare（同精工板块）", "AL_A00": "SMM 上海有色", "AL_A380": "SMM 上海有色", "AL_ZLD104": "SMM 上海有色", "AL_ALSI9CU3": "SMM 上海有色", "C2_ETHYLENE": "隆众资讯", "C3_PROPYLENE": "隆众资讯", "EPDM_6950C": "隆众资讯", "EPDM_3110M": "隆众资讯", "EPDM_13561C": "隆众资讯", "CB_COALTAR": "百川盈孚", "CB_N550": "隆众资讯", "NR_SCRWF": "隆众资讯", "NR_RSS3": "隆众资讯", "BR9000": "隆众资讯", "SBR1712": "隆众资讯", "AO_4020": "隆众资讯", "ACC_DM": "隆众资讯", "ACC_CZ": "隆众资讯", "ACC_M": "隆众资讯", "ACC_TMTD": "隆众资讯"};
+const VARIETY_MARKETS = {"OIL_WTI": "纽约轻质原油", "AL_A00": "SMM 现货", "AL_A380": "SMM 现货", "AL_ZLD104": "SMM 现货", "AL_ALSI9CU3": "SMM 现货", "C2_ETHYLENE": "华东", "C3_PROPYLENE": "山东", "EPDM_6950C": "上海", "EPDM_3110M": "上海", "EPDM_13561C": "上海", "CB_COALTAR": "全国均价", "CB_N550": "山东", "NR_SCRWF": "昆明", "NR_RSS3": "上海", "BR9000": "上海", "SBR1712": "江苏", "AO_4020": "华东", "ACC_DM": "山东", "ACC_CZ": "山东", "ACC_M": "衡水", "ACC_TMTD": "衡水"};
 // KPI 关键品种卡（参考精工看板：只列代表品种，避免全品种铺开造成视觉噪音）
 // 顺序即展示顺序；增删改这里即可，其余品种仍在下方明细表中完整可见
-const KPI_KEY_CODES = ["PC2405", "ABS_PA757K", "PP_K8003", "POE_7467", "PA6_YH400"];
+const KPI_KEY_CODES = ["AL_A380", "NR_SCRWF", "CB_N550", "EPDM_6950C", "ACC_DM"];
 function marketTag(code) {
   const m = VARIETY_MARKETS[code];
   return m ? '<span class="variety-market">' + m + '</span>' : "";
 }
-const CATEGORIES = [{"name": "PC 聚碳酸酯", "codes": ["PC2405", "PC1225Y", "PC1201-15"]}, {"name": "ABS 树脂", "codes": ["ABS_GP22", "ABS_AG12A1", "ABS_PA757K"]}, {"name": "PP 聚丙烯", "codes": ["PP_SP179", "PP_4220", "PP_EPC30R", "PP_EP548R", "PP_K8003"]}, {"name": "POE / PA6", "codes": ["POE_7467", "PA6_YH400"]}];
+const CATEGORIES = [{"name": "原油", "codes": ["OIL_WTI"]}, {"name": "铝及铝合金", "codes": ["AL_A00", "AL_A380", "AL_ZLD104", "AL_ALSI9CU3"]}, {"name": "化工", "codes": ["C2_ETHYLENE", "C3_PROPYLENE"]}, {"name": "三元乙丙橡胶", "codes": ["EPDM_6950C", "EPDM_3110M", "EPDM_13561C"]}, {"name": "炭黑及原料（炭黑-原料）", "codes": ["CB_COALTAR", "CB_N550"]}, {"name": "天然橡胶", "codes": ["NR_SCRWF", "NR_RSS3"]}, {"name": "合成橡胶", "codes": ["BR9000", "SBR1712"]}, {"name": "橡胶助剂（防老剂/促进剂）", "codes": ["AO_4020", "ACC_DM", "ACC_CZ", "ACC_M", "ACC_TMTD"]}];
 const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#9333ea", "#0891b2", "#ea580c", "#4f46e5", "#be123c", "#0d9488", "#d97706", "#7c3aed", "#65a30d", "#0ea5e9", "#f43f5e", "#22c55e", "#a855f7", "#06b6d4", "#f97316", "#6366f1", "#e11d48", "#14b8a6", "#f59e0b", "#8b5cf6", "#84cc16", "#1d4ed8", "#b91c1c", "#15803d", "#a16207", "#7e22ce", "#0e7490", "#c2410c", "#4338ca"];
 const CHART_IDS = [];
 const MS_STATE = { msAvg: null, msVol: null };
@@ -317,7 +317,7 @@ const MS_ONCHANGE = {};
 let singleTrendRange = "month";
 
 const DEFAULT_UNIT = "元/吨";
-const EXPORT_BASENAME = "诺博内外饰塑料价格";
+const EXPORT_BASENAME = "诺博橡胶原料价格";
 
 // ===== SELECTOR =====
 function initSelectors() {
@@ -686,7 +686,7 @@ function renderKPIs(year, month) {
       const mkt = VARIETY_MARKETS[code] || "";
       return `<div class="kpi-card" style="border-left-color:${accent}">
         <div class="kpi-label">${nm} · 最新</div>
-        <div class="kpi-value">${cur != null ? Math.round(cur).toLocaleString() : "—"}<span class="unit">元/吨</span>${fmtChg(cur, prev)}</div>
+        <div class="kpi-value">${cur != null ? Math.round(cur).toLocaleString() : "—"}<span class="unit">${VARIETY_UNITS[code] || DEFAULT_UNIT}</span>${fmtChg(cur, prev)}</div>
         <div class="kpi-sub">${mkt}${mkt ? " · " : ""}月均${avg ? Math.round(avg).toLocaleString() : "—"}${fmtChg(avg, pAvg)}</div>
       </div>`;
     }).join("")}
@@ -995,7 +995,7 @@ function isWorkingDay(d) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    const resp = await fetch("data.json?ts=" + Date.now());
+    const resp = await fetch("../plastic/data.json?ts=" + Date.now());
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const json = await resp.json();
     ALL_DATA = json.data;

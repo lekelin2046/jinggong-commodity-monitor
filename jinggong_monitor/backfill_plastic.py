@@ -20,7 +20,10 @@ from fetcher_21cp import (TARGETS, DISPLAY_NAMES, search_detail_ids,
                           parse_detail, match_brand, prefer_match,
                           safe_get, _parse_price_rows, DETAIL_URL)
 
-START = "2026-01-01"
+# 中塑在线详情页是「滚动一年窗口」：翻到最老一页恰好是 T-1 年
+# （2026-09-17 实测：13 个牌号最老页统一落在 2025-09-17 / p23~p25）
+START = "2025-09-17"
+MAX_PAGES = 36          # 一年约需 25 页（每页 10 条），留足余量
 DATA_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                          "docs", "plastic", "data.json")
 
@@ -45,9 +48,9 @@ def resolve_pid(keyword, brand_kw, prefer):
 
 def fetch_history(pid):
     """翻页抓历史，返回 [(date, price)] 新→旧，覆盖到 START 之前即停
-    注：每页 10 条，回填至 2026-01-01 约需 18 页，上限设 30 页留余量"""
+    注：每页 10 条；回填满一年（约 245 个交易日）需 25 页，上限 MAX_PAGES"""
     rows_all = []
-    for page in range(1, 31):
+    for page in range(1, MAX_PAGES + 1):
         if page == 1:
             url = DETAIL_URL.format(pid=pid)
         else:
@@ -89,11 +92,16 @@ def main():
             base = json.load(f)
         data = base.get("data", {})        # date -> {key: price}
         meta = base.get("meta", {})
-        print(f"○ 增量模式：基底 {len(data)} 天 / {len(base.get('varieties', []))} 牌号，"
+        # ⚠️ 增量模式**必须继承**已有品种表：data.json 里除 13 个中塑牌号外
+        #    还有扩品类 20 项（铝/隆众/百川），若用 TARGETS 重建会把它们抹掉
+        base_varieties = list(base.get("varieties", []))
+        base_names = dict(base.get("display_names", {}))
+        print(f"○ 增量模式：基底 {len(data)} 天 / {len(base_varieties)} 品种，"
               f"本次仅回填 {[t[0] for t in targets]}")
     else:
         data = {}  # date -> {key: price}
         meta = {}
+        base_varieties, base_names = [], {}
 
     print("=" * 70)
     print(f"中塑在线 {len(targets)} 牌号历史回填（起点 {START}）")
@@ -120,13 +128,19 @@ def main():
         time.sleep(1.2)
 
     data_sorted = {d: data[d] for d in sorted(data)}
+    # 品种表 = 既有（含扩品类 20 项）+ 本次回填的 13 个中塑牌号
+    varieties = [v for v in base_varieties]
+    for t in TARGETS:
+        if t[0] not in varieties:
+            varieties.append(t[0])
+    display_names = {**base_names, **DISPLAY_NAMES}
     out = {
         "source": "中塑在线市场参考价（余姚中国塑料城，人民币含税现货，交易日日更）",
         "unit": "元/吨",
         "last_updated": max(data_sorted) if data_sorted else "",
         "total_days": len(data_sorted),
-        "varieties": [t[0] for t in TARGETS],
-        "display_names": DISPLAY_NAMES,
+        "varieties": varieties,
+        "display_names": display_names,
         "meta": meta,
         "data": data_sorted,
     }
