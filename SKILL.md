@@ -2,11 +2,17 @@
 name: 精工有色金属共享表自动化填写
 description: 精工板块每日有色金属市场均价采集与 Excel 填写。覆盖 26 项品种（Excel 列 2–27）、7 类数据源（ccmn 公开 AJAX / SMM 登录态 / 亚洲金属网登录态 / 卓创 Cookie / akshare / 中钨在线 OCR / LME 官方价）。每日 15:00 主抓 + 17:00 补抓 + 次日 09:00 LME 回填，均由平台定时任务触发。
 agent_created: true
-version: 3.3
+version: 3.4
 last_updated: 2026-09-17
 changelog:
+  v3.4 (2026-09-17 夜):
+    - **分组分析模块接入内外饰页**：`docs/plastic/index.html` 也接入 `../board-analysis.js`（接线仅 3 处：script 引用、`analysisContainer` 区块、`renderAll()` 末尾 `renderAnalysis()`）。⚠️ **同一 HTML 文件切勿并行发多个编辑**，后写会基于旧快照覆盖前写
+    - + **分析表 CSV 导出**：每组卡右上「导出CSV」导单组；「统计口径」卡右上「导出全部分析表 CSV」导全部；页面导出菜单也加了「分组分析表 (.csv)」入口。导出取屏幕表格同一快照（`exportStore`），含 BOM + CRLF、附口径与覆盖说明；无数据留空不写 0
+    - 引言改为可传参：`docRef`（橡胶页传原文档全名，内外饰页用通用表述）；**删去引言里橡胶专属分组名**（铝/三元乙丙/炭黑/天然胶/助剂），避免放到内外饰页语义错位
+    - 修：区间说明「窗口内 N 个交易日」→「其中 N 个交易日有数据」（原值取整条轴宽，跨品种时会虚高）
+    - 记：内外饰页年度对比**只有 2025 一行**（中塑为滚动一年窗口），且为部分年度 —— 事实限制，非漏做
   v3.3 (2026-09-17 夜):
-    - + **分组分析模块** `docs/board-analysis.js`（仅接 `docs/rubber/`）：复刻《诺博橡胶大宗物料价格走势-2026.xlsx》工作表「原材料价格走势-周报」的形态——每组=折线图+统计表+自动摘要；指标行＝本周/上周均价、本周/上月均价、年度均价、较上周/较上月/较各历史年均价涨幅
+    - + **分组分析模块** `docs/board-analysis.js`（复刻《诺博橡胶大宗物料价格走势-2026.xlsx》工作表「原材料价格走势-周报」的形态）：每组=折线图+统计表+自动摘要；指标行＝本周/上周均价、本月/上月均价、年度均价、较上周/较上月/较各历史年均价涨幅
     - 隆众 15 项历史**回溯到 2020-07-01**（`backfill_plastic_ext --from 2020-07-01`，+14508 点），data.json 现 **1552 个交易日**，年度对比行才跑得满
     - ⚠️ `backfill_plastic.py` **不带 `--only` 是全量重建**，会覆盖 data.json 并丢失隆众长历史 / 桥接品种 / 煤焦油 —— 已写入脚本 docstring 警示
     - 口径修正（未照搬原表缺陷）：原表「周均价」窗口内多数只有 2 个交易日有值、「月均价」部分为 10 日均价、各板块截止日不一致（8/18 vs 6/12）
@@ -870,9 +876,9 @@ pyyaml>=6.0
 | `jinggong_monitor/daily_plastic.py` | 工作日 15:30 增量抓 13 牌号 → 追加 `docs/plastic/data.json`（幂等） |
 | `jinggong_monitor/backfill_plastic.py` | 历史回填；`--only <KEY>` 增量合并单牌号（约 40s vs 全量 10+min）|
 | `docs/plastic/data.json` | `{日期:{牌号:价}}` 内层为 dict 非数组；`total_days`/`last_updated` 在顶层 |
-| `docs/plastic/index.html` | **诺博内外饰**看板（13 牌号）。Chart.js；**CATEGORIES / VARIETY_NAMES / UNITS / SOURCES / COLORS 全部硬编码，不读 data.json**。但 `allCodes` 由 `CATEGORIES.flatMap()` 动态派生 → **只需改常量，KPI 卡/多选器/下拉框自动跟随** |
-| `docs/rubber/index.html` | **诺博橡胶**看板（21 项）。由 plastic 页复制而来，差异仅：标题、`CATEGORIES`(8 组 21 项)、`KPI_KEY_CODES`、`VARIETY_UNITS`(原油=美元/桶)、数据路径 `../plastic/data.json`。**已接入 `../board-analysis.js` 分组分析模块**（在 `renderAll()` 末尾调 `renderAnalysis()`；分析卡插在「日维度」之后、「月维度」之前） |
-| `docs/board-analysis.js` | **分组分析模块（周报形态）**，复刻自诺博橡胶 Excel「原材料价格走势-周报」。入口 `BoardAnalysis.render({containerId,categories,data,names,units,sources,markets,colors,defaultUnit})`。每组渲染折线图＋统计表＋自动摘要＋覆盖说明。⚠️ **画布 ID 必须用分组下标**——分组名全是中文，做正则转义后会全塌成 `_` 而互相撞车（Chart.js 会报 "Canvas is already in use"）。⚠️ `renderAll()` 里的 `destroyCharts()` 会销毁**全部** Chart 实例，所以必须由 `renderAll()` 末尾重建，不能只在 DOMContentLoaded 里渲染一次 |
+| `docs/plastic/index.html` | **诺博内外饰**看板（13 牌号）。Chart.js；**CATEGORIES / VARIETY_NAMES / UNITS / SOURCES / COLORS 全部硬编码，不读 data.json**。但 `allCodes` 由 `CATEGORIES.flatMap()` 动态派生 → **只需改常量，KPI 卡/多选器/下拉框自动跟随**。**已接入 `../board-analysis.js`**（同 rubber 页 3 处接线） |
+| `docs/rubber/index.html` | **诺博橡胶**看板（21 项）。由 plastic 页复制而来，差异仅：标题、`CATEGORIES`(8 组 21 项)、`KPI_KEY_CODES`、`VARIETY_UNITS`(原油=美元/桶)、数据路径 `../plastic/data.json`、`docRef`。**已接入 `../board-analysis.js` 分组分析模块**（在 `renderAll()` 末尾调 `renderAnalysis()`；分析卡插在「日维度」之后、「月维度」之前） |
+| `docs/board-analysis.js` | **分组分析模块（周报形态，rubber/plastic 共用）**，复刻自诺博橡胶 Excel「原材料价格走势-周报」。入口 `BoardAnalysis.render({containerId,categories,data,names,units,sources,markets,colors,defaultUnit,fileBase,docRef})`。每组渲染折线图＋统计表＋自动摘要＋覆盖说明。<br>**新页接入只需 3 处**：① `<script src="../board-analysis.js">`；② 在「日维度」后插 `<div class="section analysis"><div class="section-label analysis">分组分析</div><div id="analysisContainer"></div></div>`；③ `renderAll()` 末尾加 `renderAnalysis()`（模块自注入 CSS，无需改页面样式）。<br>**CSV 导出**：`BoardAnalysis.exportCSV(idx)` 单组 / `exportCSVAll()` 全部；导出取屏幕表格同一份 `exportStore` 快照，不重算。<br>⚠️ **画布 ID 必须用分组下标**——分组名全是中文，做正则转义后会全塌成 `_` 而互相撞车（Chart.js 会报 "Canvas is already in use"）。⚠️ `renderAll()` 里的 `destroyCharts()` 会销毁**全部** Chart 实例，所以必须由 `renderAll()` 末尾重建，不能只在 DOMContentLoaded 里渲染一次。⚠️ 年度对比行需要该品种跨年历史，只有隆众（2020-07 起）撑得住；中塑是滚动一年窗口 → 只有 2025 一行 |
 | `jinggong_monitor/bridge_jinggong.py` | 精工→诺博**数据接续**（原油每日；`--history` 借 SMM 铝历史）。**只接同源同口径**，默认幂等只补空 |
 | `jinggong_monitor/daily_plastic_ext.py` | 工作日 15:40 增量抓**扩品类 20 项**（SMM 铝 4 / 百川煤焦油 1 / 隆众 15）→ 写同一 data.json，末尾自动调 `bridge_jinggong.sync()` 接上原油。⚠️ **必须与 daily_plastic.py 错开运行**（同文件并写会互相覆盖） |
 | `jinggong_monitor/lz_price_center.py` | 隆众 `dc.oilchem.net` 结构化价格库封装（cookie 直连），详见 E.2 |

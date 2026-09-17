@@ -19,6 +19,10 @@
 
    铁律：抓不到就留空（显示 “-”），绝不推算、不沿用前值。
 
+   CSV 导出：每组卡右上「导出CSV」= 单组；「分组分析 · 统计口径」卡右上 = 全部。
+             导出内容取自屏幕表格的同一份快照（exportStore），不重算。
+             文件名前缀由调用方 `fileBase` 决定。
+
    依赖：Chart.js（页面已通过 vendor 引入）
    ========================================================================== */
 (function (global) {
@@ -37,7 +41,8 @@
 
   var state = {};    // { 分组名: rangeKey }
   var charts = {};   // { 分组名: Chart 实例 }
-  var ctxRef = null; // 最近一次 render 的上下文
+  var ctxRef = null;    // 最近一次 render 的上下文
+  var exportStore = []; // 每组导出快照：与屏幕表格同源取值，杜绝口径漂移
 
   /* ------------------------------------------------------------------ 工具 */
   function uniq(arr) {
@@ -185,7 +190,10 @@
       ".ba-sum .ba-sum-title{font-weight:600;color:#0f766e}",
       ".ba-sum .ba-dim{color:#94a3b8}",
       ".ba-empty{padding:18px;color:#94a3b8;font-size:12px}",
-      "@media print{.ba-seg{display:none!important}.ba-chart{height:180px!important}.ba-card{break-inside:avoid;page-break-inside:avoid;box-shadow:none;border:1px solid #e2e8f0}}"
+      ".ba-btn{appearance:none;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:11px;line-height:1;padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap}",
+      ".ba-btn:hover{border-color:#0f766e;color:#0f766e;background:#f0fdfa}",
+      ".ba-export-all{margin-left:auto}",
+      "@media print{.ba-seg{display:none!important}.ba-btn{display:none!important}.ba-chart{height:180px!important}.ba-card{break-inside:avoid;page-break-inside:avoid;box-shadow:none;border:1px solid #e2e8f0}}"
     ].join("");
     document.head.appendChild(st);
   }
@@ -272,13 +280,13 @@
     });
 
     if (capEl) {
-      var firstD = null, lastD = null;
+      var firstD = null, lastD = null, nData = 0;
       for (var k = 0; k < win.length; k++) {
         var has = datasets.some(function (ds) { return ds.data[k] !== null; });
-        if (has) { if (!firstD) firstD = win[k]; lastD = win[k]; }
+        if (has) { if (!firstD) firstD = win[k]; lastD = win[k]; nData++; }
       }
       capEl.textContent = firstD
-        ? "显示区间 " + firstD + " ~ " + lastD + "（窗口内 " + win.length + " 个交易日）"
+        ? "显示区间 " + firstD + " ~ " + lastD + "（其中 " + nData + " 个交易日有数据）"
         : "";
     }
   }
@@ -394,13 +402,18 @@
       });
     });
 
+    var expRows = [];
     var body = "<tbody>";
     rows.forEach(function (r) {
+      var vals = codes.map(function (c) {
+        var st = statsMap[c];
+        return st ? r.get(st) : null;
+      });
+      expRows.push({ label: r.label, sub: r.sub || "", kind: r.kind, vals: vals });
       body += "<tr class=\"" + (r.emph ? "ba-emph" : "") + (r.base ? " ba-base" : "") + "\">";
       body += "<td>" + esc(r.label) + (r.sub ? "<span class=\"ba-sub\">" + esc(r.sub) + "</span>" : "") + "</td>";
-      codes.forEach(function (c) {
-        var st = statsMap[c];
-        var v = st ? r.get(st) : null;
+      codes.forEach(function (c, vi) {
+        var v = vals[vi];
         if (r.kind === "price") {
           body += "<td>" + fmtPrice(v) + "</td>";
         } else {
@@ -411,11 +424,11 @@
     });
     body += "</tbody>";
 
-    /* ---- 覆盖说明 ---- */
+    /* ---- 覆盖说明（此处保留原文，HTML 注入处统一 esc，CSV 直接复用同一份）---- */
     var covParts = codes.map(function (c) {
       var st = statsMap[c];
-      if (!st || !st.n) return esc(ctx.names[c] || c) + " 无数据";
-      return esc(ctx.names[c] || c) + " " + st.n + " 天（" + st.first + " ~ " + st.anchor + "）";
+      if (!st || !st.n) return (ctx.names[c] || c) + " 无数据";
+      return (ctx.names[c] || c) + " " + st.n + " 天（" + st.first + " ~ " + st.anchor + "）";
     });
 
     var caveats = ["数据覆盖：" + covParts.join("　·　")];
@@ -453,6 +466,16 @@
       caveats.push("⚠ 各品种最新有值日不同（" + anchors.join(" / ") + "），原表此处亦不一致，已按品种各自锚定，未强行对齐。");
     }
 
+    exportStore.push({
+      group: cat.name,
+      codes: codes,
+      names: codes.map(function (c) { return ctx.names[c] || c; }),
+      units: codes.map(function (c) { return ctx.units[c] || ctx.defaultUnit; }),
+      rows: expRows,
+      caveats: caveats,
+      anchor: anchorGlobal
+    });
+
     return "<div class=\"ba-card\">" +
       "<div class=\"ba-head\"><h3>" + esc("📈 " + cat.name + " 分析") + "</h3>" +
       (allSameUnit ? "<span class=\"ba-unit\">" + esc(unit) + "</span>" : "") +
@@ -461,7 +484,10 @@
         return "<button type=\"button\" class=\"" + (r.key === rangeKey ? "active" : "") +
           "\" onclick=\"BoardAnalysis.setRange(" + idx + ",'" + r.key + "')\">" + r.label + "</button>";
       }).join("") +
-      "</div></div>" +
+      "</div>" +
+      "<button type=\"button\" class=\"ba-btn\" title=\"导出本组分析表（CSV，Excel 可直接打开）\"" +
+      " onclick=\"BoardAnalysis.exportCSV(" + idx + ")\">导出CSV</button>" +
+      "</div>" +
       "<div class=\"ba-chart\"><canvas id=\"" + canvasId + "\"></canvas></div>" +
       "<div class=\"ba-chart-cap\" id=\"" + canvasId + "_cap\"></div>" +
       "<div class=\"ba-table-wrap\"><table class=\"ba-table\">" + head + body + "</table></div>" +
@@ -475,6 +501,7 @@
     ensureStyle();
     var container = document.getElementById(opts.containerId);
     if (!container) return;
+    exportStore = [];
 
     var dates = Object.keys(opts.data || {}).sort();
     if (!dates.length) {
@@ -495,19 +522,25 @@
       data: opts.data, dates: dates, categories: opts.categories,
       names: opts.names || {}, units: opts.units || {}, sources: opts.sources || {},
       markets: opts.markets || {}, colors: opts.colors || ["#2563eb"],
-      defaultUnit: opts.defaultUnit || "", allCodes: allCodes, seriesMap: seriesMap
+      defaultUnit: opts.defaultUnit || "", allCodes: allCodes, seriesMap: seriesMap,
+      fileBase: opts.fileBase || "分析表", anchorDate: dates[dates.length - 1]
     };
 
+    var docRef = opts.docRef || "客户分析文档（工作表「原材料价格走势-周报」）";
+
     var intro = "<div class=\"ba-card ba-intro\">" +
-      "<div class=\"ba-head\"><h3>📑 分组分析 · 统计口径</h3></div>" +
+      "<div class=\"ba-head\"><h3>📑 分组分析 · 统计口径</h3>" +
+      "<button type=\"button\" class=\"ba-btn ba-export-all\" title=\"导出全部分组分析表（CSV）\"" +
+      " onclick=\"BoardAnalysis.exportCSVAll()\">导出全部分析表 CSV</button>" +
+      "</div>" +
       "<div class=\"ba-note\" style=\"margin-top:0\">" +
-      "形态复刻自《诺博橡胶大宗物料价格走势-2026.xlsx》工作表「原材料价格走势-周报」：每个分组 = 折线走势图 + 统计表 + 摘要。" +
+      "形态复刻自 " + esc(docRef) + "：每个分组 = 折线走势图 + 统计表 + 摘要。" +
       "<br>① <b>本周 / 上周</b>＝最近 5 个 / 前 5 个有值交易日（严格窗口，不足 5 天不计算）；" +
       "② <b>本月 / 上月</b>＝自然月内全部有值日均值；" +
       "③ <b>年度均价</b>＝该年 1 月 1 日至各品种最新有值日；" +
       "④ <b>涨幅</b>＝(本期 − 基期) ÷ 基期，2 位小数，红涨绿跌。" +
-      "<br>口径已修正原表缺陷：原表「周均价」窗口内多数只有 2 个交易日有值、部分「月均价」实为 10 日均价、且各板块数据截止日不一致（铝/三元乙丙/炭黑 锚定 8/18，天然胶/助剂锚定 6/12）。本页统一按各品种自身最新有值日锚定。" +
-      "<br>抓不到即留空显示 <b>-</b>，不推算、不沿用前值。" +
+      "<br>口径已修正参考表缺陷：原表「周均价」窗口内多数只有 2 个交易日有值（实为 2 日均价）、部分「月均价」实为 10 日均价、且各板块数据截止日不一致。本页统一按各品种自身最新有值日锚定，未强行对齐。" +
+      "<br>抓不到即留空显示 <b>-</b>，不推算、不沿用前值。每组卡片右上可导出本组 CSV，「统计口径」卡右上可导出全部分组。" +
       "</div></div>";
 
     var body = "";
@@ -545,6 +578,79 @@
     return "";
   }
 
-  global.BoardAnalysis = { render: render, setRange: setRange, RANGES: RANGES };
+  /* ---------------------------------------------------------- CSV 导出 */
+  /* 导出内容与屏幕表格同源（exportStore 快照），不重算，避免口径漂移 */
+  function csvCell(v) {
+    var s = (v === null || v === undefined) ? "" : String(v);
+    if (/[",\r\n]/.test(s)) return "\"" + s.replace(/"/g, "\"\"") + "\"";
+    return s;
+  }
+  function num2(v) {
+    if (v == null || !isFinite(v)) return "";   // 无数据留空，不写 0、不沿用前值
+    return (Math.round(v * 100) / 100).toFixed(2);
+  }
+  function stamp() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) +
+      " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+  function buildCSV(items) {
+    var base = (ctxRef && ctxRef.fileBase) || "分析表";
+    var anchor = (ctxRef && ctxRef.anchorDate) || "";
+    var L = [];
+    L.push(["# " + base + " · 分组分析表"]);
+    L.push(["# 生成时间：" + stamp() + " ｜ 最新数据日：" + anchor]);
+    L.push(["# 口径：本周/上周＝最近/前 " + WEEK_N + " 个有值交易日（不足 " + WEEK_N + " 天不计算）；" +
+      "本月/上月＝自然月内全部有值日均值；年度均价＝该年 1 月 1 日至各品种最新有值日；" +
+      "涨幅＝(本期 − 基期) ÷ 基期"]);
+    L.push(["# 说明：价格与涨幅均为数值（涨幅 1.23 表示 +1.23%）；空格表示无数据，未做任何估算或沿用"]);
+    items.forEach(function (g) {
+      L.push([]);
+      L.push(["# 分组：" + g.group]);
+      var head = ["指标", "口径", "类型"];
+      g.codes.forEach(function (c, i) { head.push(g.names[i] + "（" + g.units[i] + "）"); });
+      L.push(head);
+      g.rows.forEach(function (r) {
+        var line = [r.label, r.sub, r.kind === "price" ? "价格" : "涨幅%"];
+        r.vals.forEach(function (v) { line.push(num2(v)); });
+        L.push(line);
+      });
+      L.push([]);
+      g.caveats.forEach(function (t) { L.push([t]); });
+    });
+    return "\uFEFF" + L.map(function (row) {
+      return row.map(csvCell).join(",");
+    }).join("\r\n") + "\r\n";
+  }
+  function safeName(s) {
+    return String(s).replace(/[\\/:*?"<>|\s]+/g, "_");
+  }
+  function saveFile(content, filename) {
+    var blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+  }
+  function exportCSV(idx) {
+    var g = exportStore[idx];
+    if (!g) return;
+    var base = (ctxRef && ctxRef.fileBase) || "分析表";
+    saveFile(buildCSV([g]), safeName(base + "_分组分析_" + g.group) + ".csv");
+  }
+  function exportCSVAll() {
+    if (!exportStore.length) return;
+    var base = (ctxRef && ctxRef.fileBase) || "分析表";
+    saveFile(buildCSV(exportStore), safeName(base + "_分组分析_全部") + ".csv");
+  }
+
+  global.BoardAnalysis = {
+    render: render, setRange: setRange,
+    exportCSV: exportCSV, exportCSVAll: exportCSVAll,
+    RANGES: RANGES
+  };
 
 })(window);

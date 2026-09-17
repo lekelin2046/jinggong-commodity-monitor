@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" data-page-node-id="S2qovWx7lY0d4keudqbqAH">
 <title>诺博内外饰大宗原材料价格看板</title>
 <script src="../vendor/chart.umd.min.js"></script>
+<script src="../board-analysis.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f1f5f9;color:#1e293b;padding:16px;overflow-x:hidden}
@@ -23,6 +24,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .section-label.daily .bar{background:#2563eb}
 .section-label.monthly .bar{background:#ea580c}
 .section-label.trend .bar{background:#9333ea}
+.section-label.analysis .bar{background:#0f766e}
 .section-divider{border:none;border-top:1px dashed #cbd5e1;margin:20px 0 4px}
 /* 分区卡片左边框色 */
 .section.daily .card{border-left:3px solid #2563eb}
@@ -214,6 +216,10 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="0Jn0aDJJOsYxD0rnFjjdqo"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" data-page-node-id="RwLHkHkTMNgBsvlHwgwi4l"/><polyline points="14 2 14 8 20 8" data-page-node-id="QT7Kys87bXoGpE0S0Hw6a5"/></svg>
           Markdown (.md)
         </button>
+        <button class="export-menu-item" onclick="exportAnalysisCSVAll();closeExportMenu()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+          分组分析表 (.csv)
+        </button>
       </div>
     </div>
   </div>
@@ -247,6 +253,14 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 </div>
 
 <hr class="section-divider" data-page-node-id="cUiw1fFGCETK88VPYK10Lh">
+
+<!-- ===== 分组分析（周报形态） ===== -->
+<div class="section analysis">
+  <div class="section-label analysis"><span class="bar"></span>分组分析</div>
+  <div id="analysisContainer"></div>
+</div>
+
+<hr class="section-divider">
 
 <!-- ===== 月维度 ===== -->
 <div class="section monthly" data-page-node-id="BteEMZVapDbBFVRYHlHwaq">
@@ -373,6 +387,31 @@ function renderAll(year, month) {
   renderSingleTrend();
   renderVolatilityTrend();
   renderPrediction();
+  renderAnalysis();
+}
+
+// ===== 分组分析（周报形态，模块与 /rubber/ 共用 docs/board-analysis.js）=====
+// 注：中塑在线为滚动一年窗口，历史仅自 2025-09-17 → 年度对比只有 2025 一行（且为部分年度）
+function renderAnalysis() {
+  if (!window.BoardAnalysis) return;
+  BoardAnalysis.render({
+    containerId: "analysisContainer",
+    categories: CATEGORIES,
+    data: ALL_DATA,
+    names: VARIETY_NAMES,
+    units: VARIETY_UNITS,
+    sources: VARIETY_SOURCES,
+    markets: VARIETY_MARKETS,
+    colors: COLORS,
+    defaultUnit: DEFAULT_UNIT,
+    fileBase: EXPORT_BASENAME
+  });
+}
+
+// 导出全部分组分析表（CSV）；单组导出在每组卡片右上的「导出CSV」
+function exportAnalysisCSVAll() {
+  if (!window.BoardAnalysis || !BoardAnalysis.exportCSVAll) return;
+  BoardAnalysis.exportCSVAll();
 }
 
 // 单品日趋势图：选一个品种，只画它自己一条线

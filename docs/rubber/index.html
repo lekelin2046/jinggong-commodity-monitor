@@ -216,6 +216,10 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="0Jn0aDJJOsYxD0rnFjjdqo"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" data-page-node-id="RwLHkHkTMNgBsvlHwgwi4l"/><polyline points="14 2 14 8 20 8" data-page-node-id="QT7Kys87bXoGpE0S0Hw6a5"/></svg>
           Markdown (.md)
         </button>
+        <button class="export-menu-item" onclick="exportAnalysisCSVAll();closeExportMenu()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+          分组分析表 (.csv)
+        </button>
       </div>
     </div>
   </div>
@@ -398,8 +402,16 @@ function renderAnalysis() {
     sources: VARIETY_SOURCES,
     markets: VARIETY_MARKETS,
     colors: COLORS,
-    defaultUnit: DEFAULT_UNIT
+    defaultUnit: DEFAULT_UNIT,
+    fileBase: EXPORT_BASENAME,
+    docRef: "《诺博橡胶大宗物料价格走势-2026.xlsx》工作表「原材料价格走势-周报」"
   });
+}
+
+// 导出全部分组分析表（CSV）；单组导出在每组卡片右上的「导出CSV」
+function exportAnalysisCSVAll() {
+  if (!window.BoardAnalysis || !BoardAnalysis.exportCSVAll) return;
+  BoardAnalysis.exportCSVAll();
 }
 
 // 单品日趋势图：选一个品种，只画它自己一条线
