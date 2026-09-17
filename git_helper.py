@@ -22,64 +22,91 @@ _COMMON_PORTS = [7890, 1087, 7897, 8888, 6152]
 
 _detected_proxy = None
 
+# 所有可能承载代理的环境变量（大小写都要清）
+_PROXY_ENV_KEYS = ("http_proxy", "https_proxy", "all_proxy")
+
+
+def _clean_proxy_env() -> dict:
+    """返回一份**清除了全部代理变量**的环境副本
+
+    ⚠️ 为什么必须清：WorkBuddy 等沙箱会注入透明代理
+    （`HTTP_PROXY=http://127.0.0.1:57474`），该代理通常只通国内站点、
+    **不通 GitHub**。不清掉则 git 所有网络操作必然失败，且报错具有欺骗性
+    （`Empty reply from server` / `Operation too slow` / `Failed to connect …443`）。
+    """
+    import os
+    return {k: v for k, v in os.environ.items()
+            if k.lower() not in _PROXY_ENV_KEYS}
+
+
+def _probe(proxy: Optional[str] = None, timeout: int = 6,
+           url: str = "https://github.com") -> bool:
+    """实测某条出口能否访问 url
+
+    proxy=None 表示**直连**（显式禁用代理 —— 关键：urllib 默认会读环境变量，
+    不显式禁用的话「测直连」其实走了代理，测出来的结果是假的）。
+    """
+    import ssl
+    import urllib.request
+    handler = (urllib.request.ProxyHandler({"http": proxy, "https": proxy})
+               if proxy else urllib.request.ProxyHandler({}))
+    opener = urllib.request.build_opener(handler)
+    try:
+        resp = opener.open(
+            urllib.request.Request(url, headers={"User-Agent": "git-helper/1.0"}),
+            timeout=timeout, context=ssl.create_default_context())
+        resp.close()
+        return True
+    except Exception:
+        return False
+
 
 def _detect_proxy() -> Optional[str]:
-    """检测可用的本地代理，返回 http://127.0.0.1:PORT 或 None"""
+    """检测可用出口，返回代理 URL；返回 "" 表示**直连**
+
+    顺序：① 直连 → ② 环境变量里的代理（**必须实测能通 GitHub**）→ ③ 常见本地端口
+
+    ⚠️ 2026-09-17 修复：原实现**盲信环境变量**，直接把沙箱注入的
+    `127.0.0.1:57474` 当可用代理返回，导致所有走本模块的推送全部失败
+    （即此前记录的「_detect_proxy 会误判」的真正原因）。现在任何代理
+    都必须先通过 `_probe()` 实测，不再盲信。
+    """
     global _detected_proxy
     if _detected_proxy is not None:
         return _detected_proxy
 
     import os
-    # 优先用环境变量
+
+    # 1. 直连优先（显式禁用代理，否则测的是代理）
+    if _probe():
+        _detected_proxy = ""
+        return ""
+
+    # 2. 环境变量里的代理 —— 验证通过才采用
     for key in ("https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY"):
-        val = os.environ.get(key, "")
-        if val:
+        val = (os.environ.get(key) or "").strip()
+        if val and _probe(proxy=val):
             _detected_proxy = val
             return val
 
-    # 探测网络连通性：先试直连，再试代理
-    import urllib.request
-    import ssl
-
-    # 1. 试直连（仅一次）
-    try:
-        ctx = ssl.create_default_context()
-        req = urllib.request.Request(
-            "https://github.com",
-            headers={"User-Agent": "git-helper/1.0"},
-        )
-        urllib.request.urlopen(req, timeout=5, context=ctx)
-        _detected_proxy = ""
-        return ""
-    except Exception:
-        pass
-
-    # 2. 直连不通，逐个试代理端口
+    # 3. 逐个试常见本地代理端口
     for port in _COMMON_PORTS:
         proxy = f"http://127.0.0.1:{port}"
-        try:
-            handler = urllib.request.ProxyHandler({"https": proxy, "http": proxy})
-            opener = urllib.request.build_opener(handler)
-            ctx = ssl.create_default_context()
-            req = urllib.request.Request(
-                "https://github.com",
-                headers={"User-Agent": "git-helper/1.0"},
-            )
-            resp = opener.open(req, timeout=3)
-            resp.close()
+        if _probe(proxy=proxy):
             _detected_proxy = proxy
             return proxy
-        except Exception:
-            continue
 
     _detected_proxy = ""
     return ""
 
 
 def _git_env():
-    """构建 git 子进程的环境变量（含代理）"""
-    import os
-    env = os.environ.copy()
+    """构建 git 子进程环境：**先清掉继承的代理变量**，再按检测结果注入
+
+    旧的 `os.environ.copy()` 会把沙箱代理原样传给 git —— 即使
+    `_detect_proxy()` 判定直连，大写 `HTTP_PROXY` 仍会被 libcurl 读取。
+    """
+    env = _clean_proxy_env()
     proxy = _detect_proxy()
     if proxy:
         env["http_proxy"] = proxy
@@ -125,18 +152,40 @@ def git_pull_rebase(cwd=None) -> bool:
     return True
 
 
-def git_push(cwd=None) -> bool:
-    """git push（含代理）"""
-    code, out, err = git_with_proxy(["push"], cwd=cwd, timeout=60)
-    if code != 0:
-        err_msg = err or out
-        if "fetch first" in err_msg.lower() or "non-fast-forward" in err_msg.lower():
-            print(f"  ❌ 推送被拒（远程有新提交），请重试")
-        else:
-            print(f"  ❌ push 失败: {err_msg[:200]}")
-        return False
-    print("  ✅ push 成功")
-    return True
+def git_push(cwd=None, retries: int = 6) -> bool:
+    """git push（自动清代理 + 网络间歇时重试）
+
+    ⚠️ 直连 GitHub 是**间歇性可用**的 —— 实测同一命令连续 8 次里第 2 次才成功，
+    因此**必须重试**，不能一次失败就放弃（这是历史「推送失败」的主因之一）。
+    同时对慢速连接放宽容忍（lowSpeedLimit=10 + 45s），慢速直连常比快速失败更有效。
+
+    不重试的情形：被拒（fetch first / non-fast-forward）—— 那是本地状态问题。
+    """
+    import time
+
+    last = ""
+    for i in range(1, retries + 1):
+        code, out, err = git_with_proxy(
+            ["-c", "http.lowSpeedLimit=10", "-c", "http.lowSpeedTime=45", "push"],
+            cwd=cwd, timeout=150,
+        )
+        if code == 0:
+            print("  ✅ push 成功" + (f"（第 {i} 次尝试）" if i > 1 else ""))
+            return True
+
+        last = (err or out).strip()
+        low = last.lower()
+        if "fetch first" in low or "non-fast-forward" in low:
+            print("  ❌ 推送被拒（远程有新提交）—— 需先 pull --rebase，不重试")
+            return False
+
+        tail = last.splitlines()[-1][:110] if last else "未知错误"
+        print(f"  ⏳ 第 {i}/{retries} 次失败：{tail}")
+        if i < retries:
+            time.sleep(4)
+
+    print(f"  ❌ push 失败（已重试 {retries} 次）")
+    return False
 
 
 def publish_to_github(files, commit_msg, cwd=None):
