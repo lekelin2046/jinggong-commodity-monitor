@@ -140,4 +140,4 @@ if __name__ == "__main__":
     if not sync_to_excel():
         sys.exit(1)
     print(f"\n✓ 完成！Excel 已更新：{EXCEL_PATH.name}")
-    print(f"  打开 Excel 确认后，运行 python3 excel_to_web.py 推回线上")
+    print(f"  打开 Excel 确认后，运行 python3 export_excel_to_json.py 推回线上")

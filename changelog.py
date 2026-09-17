@@ -4,7 +4,7 @@
 
 提供三个数据写入入口共用的「变更记录器」：
 1. 线上 editor.html  → 由前端 JS 实现等效逻辑（见 editor.html）
-2. 线下 excel_to_web  → 调用 record_changes()（本模块）
+2. 线下改 Excel     → 调用 record_changes()（本模块）
 3. 自动 cron daily_update_all → 调用 record_changes()（本模块）
 
 存储：docs/changelog.json，结构 { "records": [ {ts, date_row, code, old, new, source, editor, commit}, ... ] }

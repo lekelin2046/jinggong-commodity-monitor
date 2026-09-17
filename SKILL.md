@@ -1,6 +1,6 @@
 ---
 name: 精工有色金属共享表自动化填写
-description: 精工板块每日有色金属市场均价采集与Excel填写。覆盖16项品种，5类数据源(ccmn公开AJAX/SMM登录态/亚洲金属网登录态/akshare/中钨在线)。已验证6/29跑通15+1全填+4张截图+1HTML证据。流程标准化，每日15:00（WTI）+17:00（16品种+截图）+21:00（钨粉补查）执行。
+description: 精工板块每日有色金属市场均价采集与 Excel 填写。覆盖 26 项品种（Excel 列 2–27）、7 类数据源（ccmn 公开 AJAX / SMM 登录态 / 亚洲金属网登录态 / 卓创 Cookie / akshare / 中钨在线 OCR / LME 官方价）。每日 15:00 主抓 + 17:00 补抓 + 次日 09:00 LME 回填，均由平台定时任务触发。
 agent_created: true
 version: 3.1
 last_updated: 2026-09-17
@@ -31,44 +31,35 @@ changelog:
 
 ## 🎯 一句话总览
 
-每天 15:00 全品种自动抓价格填入 Excel（`daily_update_all.py`）。**ccmn + akshare + 中钨在线不需登录**，**SMM + 亚洲金属网需登录**——但登录态过期时抓取脚本会**自动重新登录**（内置于 `jinggong_monitor/fetcher_smm.py`，无需人工介入）。截图/证据保存到 `screenshots/{日期}/` 供后期追溯。
+每天 **15:00** 全品种自动抓价格填入 Excel（`daily_update_all.py`）→ **17:00** 补抓漏项（`daily_check_missed.py`）→ **次日 09:00** LME 铝按官方数据日回填（`backfill_lme_official.py`）。**ccmn + akshare + 中钨在线 + LME 不需登录**，**SMM + 亚洲金属网需登录，卓创需 Cookie**——登录态过期时抓取脚本会自动重登（内置于 `jinggong_monitor/fetcher_smm.py`）。截图/证据保存到 `screenshots/{日期}/` 供后期追溯。
 
-## 📊 16 个品种 × 4 类数据源（6/25 跑通版）
+> 本 SKILL 只覆盖**精工板块**。诺博（橡胶/塑料原料）与曼德（铜铝/工程塑料）两个板块见项目内 `docs/plastic/`、`docs/mand/`，说明文档见 Obsidian `raw/工作/大宗原材料监控/`。
 
-| Col | 项目 | 数据源 | 抓取方式 | 登录态要求 |
-|:--:|------|--------|--------|------|
-| 2 | 上海有色 ADC12 | SMM | CDP 实测价格表 | **需登录** |
-| 3 | 上海有色 A380 | SMM | CDP 实测价格表 | **需登录** |
-| 4 | 上海有色 AlSi9Cu3 | SMM | CDP 实测价格表 | **需登录** |
-| 5 | 上海有色 A356 | SMM | CDP 实测价格表 | **需登录** |
-| 6 | 长江现货 A00 铝 | **ccmn AJAX** | requests POST | 公开 ✅ |
-| 7 | 长江现货 铜 | **ccmn AJAX** | requests POST | 公开 ✅ |
-| 8 | 长江现货 金属硅中间价441 | **ccmn AJAX** | `金属硅553#-331#` 的 **avgPrice**（非字面 441# 硅）| 公开 ✅ |
-| 9 | 长江现货 金属硅中间价3303 | **ccmn AJAX** | `金属硅3303#-2202#` 的 **minPrice**（非字面 3303# 硅）| 公开 ✅ |
-| 10 | 长江现货 镁 | **ccmn AJAX** | requests POST | 公开 ✅ |
-| 11 | 长江现货 电解锰 | **ccmn AJAX** | requests POST | 公开 ✅ |
-| 12 | 长江现货 金属硅中间价331 | **ccmn AJAX** | `金属硅553#-331#` 的 **maxPrice**（非字面 553# 硅）| 公开 ✅ |
-| 13 | 亚洲金属网 闻喜镁锭 | 亚洲金属网 | CDP 文章抓取 | **需登录** |
-| 14 | 上海有色 AM60B | SMM | CDP 实测价格表 | **需登录** |
-| 15 | 上海有色 AZ91D | SMM | CDP 实测价格表 | **需登录** |
-| 16 | 中钨在线 钨粉 | 中钨在线 | Playwright + 正则 | 公开 ✅ |
-| 17 | 英为财情 WTI 原油 | akshare | `ak.futures_foreign_commodity_realtime('CL')` | 公开 ✅ |
+## 📊 26 个品种 × 7 类数据源（Excel 列 2–27）
 
-**登录依赖统计**：8 项公开（ccmn 7 + akshare 1），8 项需登录（SMM 6 + 亚洲金属网 1 + 中钨在线 1）。
+| Col | 项目 | 数据源 | 登录态要求 |
+|:--:|------|--------|------|
+| 2–5 | 上海有色 ADC12 / A380 / AlSi9Cu3 / A356 | SMM | **需登录** |
+| 6 | 长江现货 A00 铝 | ccmn AJAX | 公开 ✅ |
+| 7 | 长江现货 铜 | ccmn AJAX | 公开 ✅ |
+| 8 | 长江现货 金属硅中间价441 | ccmn AJAX — `金属硅553#-331#` 的 **avgPrice**（非字面 441# 硅） | 公开 ✅ |
+| 9 | 长江现货 金属硅中间价3303 | ccmn AJAX — `金属硅3303#-2202#` 的 **minPrice**（非字面 3303# 硅） | 公开 ✅ |
+| 10 | 长江现货 镁 | ccmn AJAX | 公开 ✅ |
+| 11 | 长江现货 电解锰 | ccmn AJAX | 公开 ✅ |
+| 12 | 长江现货 金属硅中间价331 | ccmn AJAX — `金属硅553#-331#` 的 **maxPrice**（非字面 553# 硅） | 公开 ✅ |
+| 13 | 亚洲金属网 闻喜镁锭 | 亚洲金属网 | **需登录** |
+| 14–15 | 上海有色 AM60B / AZ91D | SMM | **需登录** |
+| 16 | 中钨在线 钨粉 | 中钨在线（报价表**已图片化**，走多窗口 OCR） | 公开 ✅ |
+| 17 | WTI 原油 | akshare `futures_foreign_commodity_realtime('CL')` | 公开 ✅ |
+| 18 | 铁矿石 卡粉65%京唐港 | SMM 钢铁 | **需登录** |
+| 19 | 一级冶金焦 MT<7 全国均价 | SMM 钢铁 | **需登录** |
+| 20–25 | 304 / 409 / 439 / 441 不锈钢板材、镍铁、高碳铬铁 | 卓创资讯 | **需 Cookie** |
+| 26 | ADC12 日本 CIF | SMM | **需登录** |
+| 27 | LME 铝 | LME 官网官方价（Cash Ask，**次日 09:00 回填**） | 公开 ✅ |
 
----
+**登录依赖统计**：10 项公开（ccmn 7 + akshare 1 + 中钨在线 1 + LME 1），16 项需凭据（SMM 9 + 亚洲金属网 1 + 卓创 6）。
 
-## 🐛 中钨在线"无新文"误判（6/26 主人纠正）
-
-**错误认知**：之前以为 6/25 钨粉"无新文"是"作者没发"，保留空。
-
-**真相**：文章是 6/25 发的，**只是发得晚**（下午晚些时候），15:00 抓取时还没挤进栏目页。6/26 早上再抓就有了（6/25 文章「钨价弱稳运行」钨粉 1200）。
-
-**应对策略**：
-- 钨粉抓取放在**次日上午**（不是当日 15:00）— 用前一日的文章填前一日 Row
-- 或当日 15:00 抓空 → 次日 09:00 补抓 → 更新当日 Row
-- 入口：`http://news.chinatungsten.com/cn/tungsten-product-news.html`（栏目页，**HTTP 不是 HTTPS**）
-- 正则：`r'钨粉价格\s*(\d+)\s*元[／/]\s*千克'`
+> ⚠️ **列映射三处必须同步**：`daily_update_all.py` 的 `COL_MAP`、`export_excel_to_json.py` 的 `COLUMN_MAP`、`sync_from_web.py` 的 `COLUMN_MAP`。漏任一处的列在「发布」或「线上编辑回写」环节会失效。
 
 ---
 
@@ -237,32 +228,26 @@ price = df.iloc[0]['最新价']  # 15:00 时点的实时价
 
 ## ⚙️ 标准执行流程
 
-### 三个 cron 任务（6/29 主人拍板）
+### 定时任务（全部走平台自动化，周一至周五）
 
-| 时间 | 跑什么 | 原因 |
+| 时间 | 脚本 | 跑什么 |
 |:--:|------|------|
-| **15:00** | WTI 原油价 | 6/29 主人原话："**之前的 3 点是说的石油价格用 3 点的价格**"—— 原油要 15:00 时点价 |
-| **17:00** | 16 品种价格 + 填表 + 截图 | 主流程（ccmn + SMM + 亚洲金属网 + 中钨 + 截图 + Excel 填写） |
-| **21:00** | 钨粉晚点补查 | 6/29 主人原话："**5 点要跑，如果没出就先标黄，等晚点时间再查**"—— 中钨在线常晚于 17:00 发文 |
-
-> **WTI 为什么分开抓**：akshare `futures_foreign_commodity_realtime` 是实时 API，如果 17:00 跑拿到的是 17:00 实时价（不同时点价）。所以拆为 15:00 WTI 单独跑、17:00 跑主流程。**主流程不会再覆盖 WTI 之前 15:00 写入的值**。
-> 
-> **钨粉为什么补查**：中钨在线是隔天发文章（且无规律），17:00 跑时可能没出，21:00 再查一次补上。
-
-### 17:00 主流程命令
+| **15:00** | `daily_update_all.py` | 主抓 25 项（LME 铝延后），写 Excel |
+| **17:00** | `daily_check_missed.py` | 补抓列 2–26 的漏项 + LME 兜底 |
+| **次日 09:00** | `backfill_lme_official.py` | LME 铝按官方数据日回填（写上一数据日那一行） |
 
 ```bash
 cd ~/Desktop/AI/jinggong-commodity-monitor
+unset NODE_OPTIONS                      # 跑 Playwright 前必须
 
-# 1. 设置网络白名单
-export NO_PROXY="sci99.com,chinatungsten.com,51bxg.com,steelcn.cn,ccmn.cn,cnfeol.com,ctia.com.cn,smm.cn,asianmetal.cn,hq.smm.cn,asianmetal.cn"
-
-# 2. 启动 Chrome 调试模式（首次或被关闭时）
-open -na "Google Chrome" --args --remote-debugging-port=9223 --user-data-dir=/Users/siqi/chrome-debug-profile
-
-# 3. 跑主抓取流程（ccmn + SMM + 亚洲金属网 + 中钨 + 截图 + Excel 填写；WTI 由 15:00 cron 提前填好）
-PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 fill_and_verify.py
+PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 daily_update_all.py
 ```
+
+> ⚠️ 项目里曾有 `run.sh` + `setup_launchd.sh` 的 launchd 方案（`fill_and_verify.py` 主流程）。**已废弃**：launchd 任务当前未加载，`fill_and_verify.py` 已无任何调用方。这些文件已移入 `_legacy/`，不要再依据它们排障。
+
+> **WTI 为什么单独讲时点**：akshare `futures_foreign_commodity_realtime` 是实时 API，取值即调用时点价。主人明确要 **15:00 时点价**，所以主流程排在 15:00。
+
+> **钨粉为什么容易空**：中钨在线报价表**已图片化**，须 OCR（见 B.5）。当日抓不到就留空，绝不沿用前值；可用 `manual_fill_tungsten.py <价>` 人工兜底。
 
 ### 登录态过期处理（已自动化，无需人工）
 
@@ -356,32 +341,32 @@ jinggong-commodity-monitor/
 
 ```
 jinggong-commodity-monitor/
-├── SKILL.md                          ← 本文件（流程定义）
-├── fill_and_verify.py                ← 采集+填表+校验+截图+OCR
-├── daily_update_all.py               ← 每日 3PM 全品种抓取主入口
-├── run.sh                            ← 一键运行脚本
-├── 2026年有色金属市场价格.xlsx        ← Excel 数据源（唯一，每天更新）
-├── screenshots/                      ← 6/29 新增：每天 17:00 抓取现场截图/证据
-│   ├── 2026-06-29/                   ← 每天一个子文件夹（日期）
-│   │   ├── ccmn_长江现货_170003.png
-│   │   ├── smm_铝页_170015.png
-│   │   ├── smm_镁页_170022.png
-│   │   ├── asianmetal_闻喜镁錠_170038.png
-│   │   └── chinatungsten_钨粉原文_170045.html
-│   └── 2026-06-30/                   ← 明天新建
+├── SKILL.md                          ← 本文件（排障与接口契约）
+├── daily_update_all.py               ← 15:00 主抓 25 项
+├── daily_check_missed.py             ← 17:00 补抓 + LME 兜底
+├── backfill_lme_official.py          ← 次日 09:00 LME 铝回填
+├── 2026年有色金属市场价格.xlsx        ← Excel 底稿（唯一，每天更新；gitignore）
+├── screenshots/{日期}/                ← 抓取现场截图/证据（gitignore）
 ├── jinggong_monitor/
-│   ├── base.py                       ← BaseFetcher + _parse_price_range 价格解析
+│   ├── base.py                       ← BaseFetcher + 价格区间解析
 │   ├── orchestrator.py               ← 多源调度
-│   ├── fetcher_akshare.py            ← akshare (WTI 实时)
-│   ├── fetcher_ccmn.py               ← ccmn AJAX (长江现货 7 项) ⭐v2
-│   ├── fetcher_smm.py                ← SMM (Col 2/3/4/5/14/15) ⭐6/25 新增
-│   ├── fetcher_asianmetal.py         ← 亚洲金属网 (闻喜镁锭) ⭐6/29 增现场截图
-│   ├── fetcher_tungsten.py           ← 中钨在线 (钨粉) ⭐6/29 增 HTML 证据保存
+│   ├── trading_calendar.py           ← 交易日历（三板块共用）
+│   ├── fetcher_ccmn.py               ← ccmn AJAX（长江现货 7 项）⭐
+│   ├── fetcher_smm.py                ← SMM（精工/诺博/曼德共用）
+│   ├── fetcher_asianmetal.py         ← 亚洲金属网（闻喜镁锭）
+│   ├── fetcher_sci99.py              ← 卓创（Cookie）
+│   ├── fetcher_steel.py              ← SMM 钢铁
+│   ├── fetcher_tungsten.py           ← 中钨在线（多窗口 OCR）
+│   ├── fetcher_akshare.py            ← akshare WTI 实时
+│   ├── fetcher_lme.py                ← LME 官方价
+│   ├── lz_price_center.py            ← 隆众结构化价格库（诺博）
 │   └── ...
-└── config/
-    ├── varieties.yaml                ← 品种-数据源映射
-    └── sources.yaml                  ← 数据源配置
+├── config/{varieties,sources}.yaml   ← 品种-数据源映射
+├── _legacy/                          ← 已废弃脚本（勿用，见其 README）
+└── docs/                             ← GitHub Pages 发布目录
 ```
+
+> 完整目录（含三个板块的全部脚本）见 `README.md`。
 
 ---
 
@@ -460,7 +445,7 @@ if price and price > 0:
         ws.cell(row=row_num, column=col, value=price)
 ```
 
-**实现位置**：`fill_and_verify.py` 的 `fill_sheet1` 写入循环内。
+**实现位置**：`daily_update_all.py` 的写入循环内。
 
 **实战验证（6/29 17:33）**：
 - 抓到 MN=6 → 跟历史 19,380 偏离 100% → 标黄不写
@@ -487,7 +472,7 @@ HEADER_FONT = Font(name='微软雅黑', size=10, bold=True)  # 标题行用 微�
 DATE_FONT = Font(name='微软雅黑', size=11, bold=False)
 ```
 
-**实现位置**：`fill_and_verify.py` 顶部 + `fill_sheet1`/`fill_sheet2` 写入时 `cell.font = DATA_FONT`。
+**实现位置**：`daily_update_all.py` 顶部常量 + 写入时 `cell.font = DATA_FONT`。
 
 **验证**：写完后 6/29 Row118 全部 17 列字体 = 微软雅黑 11。
 
@@ -529,7 +514,7 @@ elif source == "ASIANMETAL":
 3. **Chrome CDP 不稳定**（调试 Chrome 关闭后需重启，详见「故障处置手册」）
 
 ### 未来自动化方向
-1. **每日 cron 15:00 触发**：用 `openclaw cron` 加 `fill_and_verify.py`，自动跑
+1. **每日 15:00 触发**：由平台定时任务跑 `daily_update_all.py`，自动执行
 2. **登录态持续保持**：把 SMM/亚洲金属网登录态作为「主人日常」流程，每日开机自动登录
 3. ~~**登录态自动重试**~~：✅ 已实现——抓取脚本内置自动重登（`fetcher_smm.py`）
 4. **邮件/Slack 通知**：填表完成后自动发主人日报
@@ -624,28 +609,22 @@ class BaseFetcher:
 
 > **用途**：现场抓取报错时，**对症状找处置**。不要从头 debug。
 
-## B.1 Chrome 调试浏览器问题
+## B.1 浏览器 / Playwright 问题
 
 | 症状 | 根因 | 处置 |
 |------|------|------|
-| `connect ECONNREFUSED 127.0.0.1:9223` | 调试 Chrome 没开 | `open -na "Google Chrome" --args --remote-debugging-port=9223 --user-data-dir=/Users/siqi/chrome-debug-profile` |
-| `Page.navigate: net::ERR_ABORTED` | 页面未完全加载被抢 | `await page.wait_for_load_state("networkidle", timeout=15000)` |
-| CDP 连上但找不到元素 | 页面 SPA 路由跳转中 | `await page.wait_for_selector(selector, timeout=10000)` |
-| CDP 超时 30s | 网络慢或页面有大型 JS | 加 `timeout=60000` |
+| Playwright 启动异常 / Node 相关报错 | 沙箱注入了 `NODE_OPTIONS` | **跑前 `unset NODE_OPTIONS`** |
+| `FileExistsError: [Errno 17] EEXIST`，且报错**伪装成「CF 拦截 3 次失败」** | `PROFILE_DIR.parent.mkdir(exist_ok=True)` 在受限环境抛 `EEXIST` | 所有 Playwright 环节一律「不存在才 mkdir」+ `OSError` 容错 |
+| `Page.navigate: net::ERR_ABORTED` | 页面未加载完被抢 | `wait_for_load_state(timeout=15000)` |
+| 连上但找不到元素 | SPA 路由跳转中 | `wait_for_selector(selector, timeout=10000)` |
+| 超时 | 网络慢或页面 JS 大 | 加 `timeout=60000` |
+| **读到空文本 → 被判定「未登录」** | SSR 慢，不是真的掉登录 | **不要急着重导 cookie**：按品种正则轮询就绪 + 外层超时 260s |
 
-**重启 Chrome 调试模式完整命令**：
 ```bash
-# 关掉旧实例（保留 profile）
-pkill -f "remote-debugging-port=9223" || true
-sleep 2
-open -na "Google Chrome" \
-  --args \
-  --remote-debugging-port=9223 \
-  --user-data-dir=/Users/siqi/chrome-debug-profile
-sleep 3
-# 验证
-curl -s http://localhost:9223/json/version | head -3
+unset NODE_OPTIONS          # 每次跑 Playwright 前
 ```
+
+> ⚠️ 旧的「Chrome 9223 调试 profile」方案**已废弃**，不要再按它排障。现统一用 **Playwright + `cookies/` 持久化登录态**（SMM / 亚洲金属网 / 卓创 / 隆众）。
 
 ## B.2 SMM 未登录
 
@@ -653,13 +632,13 @@ curl -s http://localhost:9223/json/version | head -3
 |------|------|------|
 | 表格行显示「未登录」 | 登录态过期 | 抓取脚本自动重登（`fetcher_smm.py`）；若仍失败，检查 `.env` 凭据 |
 | SMM 页跳转 `https://account.smm.cn/...` | 同上 | 同上 |
-| 价格表为空 | 同上 | 同上 |
+| **12 个键全空** | ⚠️ **常是误判**——SSR 慢读到空文本 | **先跑 `refetch_smm_fill.py` 定向补抓**，不要急着重导 cookie |
 
-**手动登录**：
-1. 调试 Chrome 打开 `https://hq.smm.cn/aluminum`
-2. 未登录会跳 `https://account.smm.cn/...`
-3. 主人完成登录（账号密码见附录 C）
-4. 跑 `health_check_smm()` 验证（应返回 True）
+**手动重登**（仅在自动重登连续失败时）：
+1. Playwright 打开 `https://hq.smm.cn/aluminum`，未登录会跳 `https://account.smm.cn/...`
+2. 输入账号密码（见附录 C）
+3. ⚠️ 点 `#user_account_password_login_button` 之后**还须再点** `button:has-text('同意并登录')`——只点第一下不算登录
+4. cookies 落到 `data/smm_cookies.json`
 
 ## B.3 ccmn AJAX 失败
 
@@ -683,36 +662,28 @@ curl -X POST "https://www.ccmn.cn/shop/historyData/getCorpStmarketPriceList" \
 
 | 症状 | 根因 | 处置 |
 |------|------|------|
-| 文章页跳 `https://www.asianmetal.cn/login` | 登录态过期 | 调试 Chrome 完成登录 |
+| 文章页跳 `https://www.asianmetal.cn/login` | 登录态过期 | 手动重登（下） |
 | `302 Found` 重定向到 login | 同上 | 同上 |
 
-**手动登录**：调试 Chrome 打开 `https://www.asianmetal.cn/`，点右上角登录，输入账号密码。
+**手动重登**：走**顶部弹窗**，字段 `cnopenloginname` / `cnopenloginpwd` / `openloginbutn`。
+已登录时页面显示「账号在线中」，此时点 `#outlinebutn` 继续，不要再输密码。
 
-## B.5 中钨在线
+## B.5 中钨在线（钨粉）
+
+> 报价表**已图片化**（`tungsten-price-YYYYMMDD.jpg`），HTML 里没有文本价格。**旧的「抓文章正文正则」方案已失效，不要再用**。
 
 | 症状 | 根因 | 处置 |
 |------|------|------|
-| `WRONG_VERSION_NUMBER` 或 `000` 状态码 | 用 HTTPS（应为 HTTP） | 改 `http://` |
-| 栏目页找到文章但抓不到钨粉价 | 文章不是钨价文 | 跳下一条 |
-| 当日 15:00 抓空 | 文章发得晚，栏目页还没刷新 | **保留空 + 隔日 09:00 重抓** |
-| 栏目页打不开（502/timeout） | 服务器问题 | 重试 3 次，3 次仍败标黄 |
+| `WRONG_VERSION_NUMBER` | 用 HTTPS（应为 HTTP） | 改 `http://` |
+| OCR 结果离谱（如 26.0，历史区间 ~920–925） | 裁剪高度差 1px 即全盘乱码 | 必须走**多窗口扫描 + 投票**，不要单窗裁剪 |
+| 抓不到 / 全乱码 | 当日图未发或站点限流 | 当日留空；`>20 次/分` 会 Connection refused，需降频 |
+| 需要人工兜底 | — | `manual_fill_tungsten.py <价格>` |
 
-**关键代码片段**（已修复 HTTPS bug）：
-```python
-import requests
-# ⚠️ 必须是 HTTP
-url = "http://news.chinatungsten.com/cn/tungsten-product-news.html"
-resp = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0 ..."})
-soup = BeautifulSoup(resp.text, 'html.parser')
-# 找最新文章
-articles = soup.select('a[href*="/tungsten-product-news/"]')[:3]
-# 进文章抓 钨粉价格
-for a in articles:
-    article_resp = requests.get("http://news.chinatungsten.com" + a['href'], timeout=15)
-    m = re.search(r'钨粉价格\s*(\d+)\s*元[／/]\s*千克', article_resp.text)
-    if m:
-        return float(m.group(1))
-```
+**OCR 参数**（`_extract_w_from_image()`）：y 0.42~0.56 步进 0.01 × 窗高 0.055/0.06/0.065 × 微扰 ±2 → 放大 3 倍 → 二值化 → tesseract(chi_sim+eng)。
+锚点 `2-10…[muμm]`，取价区间 200–5000；同值 ≥2 票才采用，否则取最靠上单票；含「碳化」的窗口排除。
+
+> ⚠️ 临时 PNG 放 `jinggong_monitor/`（`/tmp` 受限）。**勿删 tesseract**。
+> 历史上还踩过两个坑，已修：① `_find_candidate_article_urls` 未去重导致真报价文被挤出；② `_PRICE_PATTERNS["W"]` 含钨精矿/APT 兜底正则，把「万元/吨」当钨粉（差 35 倍）。**现在 W 只认报价表 OCR 值。**
 
 ## B.6 akshare WTI 失败
 
@@ -747,9 +718,9 @@ for a in articles:
 ```
 /Users/siqi/Desktop/AI/jinggong-commodity-monitor/   ← 项目根
 ├── SKILL.md                                          ← 本文件
-├── fill_and_verify.py                                ← 采集+填表+校验+截图+OCR
+├── daily_update_all.py                               ← 15:00 主抓（当前主入口）
 ├── daily_update_all.py                               ← 每日 3PM 全品种抓取主入口
-├── run.sh                                            ← 一键运行
+├── daily_check_missed.py                             ← 17:00 补抓
 ├── 2026年有色金属市场价格.xlsx                        ← 唯一数据源 Excel
 ├── jinggong_monitor/                                 ← 代码目录
 │   ├── base.py                                       ← BaseFetcher
@@ -784,7 +755,7 @@ export NO_PROXY="sci99.com,chinatungsten.com,51bxg.com,steelcn.cn,ccmn.cn,cnfeol
 export no_proxy="$NO_PROXY"
 ```
 
-**为什么不硬编码到代码里** — 防止代码换机器跑时环境变量缺失导致无网络。主人按需塞 `~/.zshrc` 或 `run.sh`。
+**为什么不硬编码到代码里** — 防止代码换机器跑时环境变量缺失导致无网络。主人按需塞 `~/.zshrc`。
 
 ### 🔴 git push 被代理变量拦截（2026-09-17 定位根因）
 
@@ -840,48 +811,37 @@ pyyaml>=6.0
 
 ---
 
-# 📎 附录 D：项目状态与下一步（截至 2026-06-26）
+# 📎 附录 D：项目现状与接手指引（2026-09-17 更新）
 
-## D.1 当前可自动化情况
+## D.1 当前自动化程度
 
-| 数据源 | 自动化程度 | 限制 |
+| 数据源 | 自动化 | 限制 |
 |------|:--:|------|
-| ccmn AJAX | ✅ 100% | 端点稳定，公开 |
+| ccmn AJAX（7 项） | ✅ 100% | 公开，端点稳定 |
 | akshare WTI | ✅ 100% | 实时 API 偶发超时 |
-| 中钨在线 钨粉 | 🟡 次日补抓 | 6/26 确认：当日 15:00 抓不到，发得晚 |
-| SMM 6 项 | 🟡 90% | 依赖调试 Chrome 登录态，**登录态过期需主人手动重登** |
-| 亚洲金属网 1 项 | 🟡 90% | 同上 |
+| LME 官网（1 项） | ✅ 100% | 次日 09:00 按官方数据日回填 |
+| SMM（9 项） | ✅ 接近全自动 | cookies 复用；仅 cookie 真失效时才需重登 |
+| 亚洲金属网（1 项） | ✅ 接近全自动 | 同上；失败由 SMM Wenxi_MG 兜底 |
+| 卓创（6 项） | 🟡 半自动 | 有滑块验证，**cookie 过期需人工重导** |
+| 中钨在线（1 项） | 🟡 半自动 | 报价表图片化，OCR 多窗口投票；失败可人工兜底 |
 
-**结论**：**8 项公开全自动 + 8 项半自动（需主人保持 SMM + 亚洲金属网登录态）**。
+**结论**：26 项中 25 项可无人值守，卓创与中钨在线偶需人工介入。
 
-## D.2 仍待做（按优先级）
+## D.2 接手须知
 
-### P0 — 立刻
-- [ ] **修复 fetcher_tungsten.py**：HTTPS → HTTP，入口改为栏目页
-- [ ] 把 fill_and_verify.py 重构为「每个 fetcher 独立 + orchestrator 调度」
-
-### P1 — 7/1 前
-- [ ] **每日 cron 15:00 触发**（中钨粉 9:00 补抓）
-- [x] 登录态自动重试（已内置于 `fetcher_smm.py`，抓取零结果即自动重登）
-
-### P2 — 7-8 月
-- [ ] 邮件/Slack 通知
-- [ ] 历史回溯
-- [ ] 多 Excel 表支持
-
-## D.3 业务复用建议（别的 AI 接手时怎么用）
-
-1. **新接手的 AI 第一步**：读「🎯 一句话总览」+「接口契约表 附录 A」
-2. **遇到问题**：不 debug 直接查「故障处置手册 附录 B」
-3. **缺环境信息**：查「入口密码本 附录 C」
-4. **要知道项目在哪一步**：看「项目状态 附录 D」+ 相关 Obsidian 笔记（[[工作/大宗原材料监控/14-...]]）
+1. **先读**：「🎯 一句话总览」→「附录 A 接口契约表」
+2. **遇故障**：不 debug，直接查「附录 B 故障处置手册」按症状定位
+3. **缺环境信息**：查「附录 C 入口密码本」
+4. **要了解业务背景与三板块全貌**：读 Obsidian `raw/工作/大宗原材料监控/`（总览 + `章节/` + `板块/`）
 
 **复用前提**：
-- 必须有 `~/.workbuddy/binaries/python/envs/jinggong/` venv
-- 必须有 Chrome 调试 profile + SMM/亚洲金属网已登录
-- 必须有本 SKILL.md + jinggong_monitor/ 代码
+- venv：`~/.workbuddy/binaries/python/envs/jinggong/`
+- 登录态：`cookies/`（SMM / 亚洲金属网 / 卓创 / 隆众），全部 gitignore
+- 跑 Playwright 前必须 `unset NODE_OPTIONS`
 
-**不满足前提时**：先看 Obsidian 笔记「03-项目背景与需求总结」了解业务背景，再决定要不要单独搭环境。
+> ⚠️ **旧版附录 D（截至 2026-06-26）已删除**，其中的 P0/P1/P2 待办均已完结或作废：
+> fetcher_tungsten 已重写、主流程已拆为独立 fetcher + orchestrator、定时任务已迁移到平台自动化、登录态已自动重试。
+> 另：旧「Chrome 9223 调试 profile」这条依赖已废弃，现统一用 Playwright + cookies。
 
 ---
 
@@ -955,5 +915,30 @@ pyyaml>=6.0
 - **唯一该拆的信号**：要给不同人不同权限（如曼德只给曼德同事看）——那时拆的是**发布通道**，不是代码。
 
 **另**：第三方/客户提供的原始图表与报告统一放仓库根 `references/`（已加入 `.gitignore`），**严禁入 git**——含对方业务数据，与 `screenshots/`、`*.pdf`、`长城有色日价格查询/` 同属不外传一类。
+
+## F.4 人类可读文档在哪（2026-09-17 建立）
+
+本 SKILL.md 面向**排障与接口契约**（机器/AI 视角）。**业务与架构全貌**另有一份 Obsidian 文档：
+
+```
+Obsidian Vault/raw/工作/大宗原材料监控/
+├── 大宗原材料监控-总览.md      ← MOC：三板块对照 + 数据流 + 双链索引
+├── 章节/                       ← 跨板块通用内容
+│   ├── 01-架构与数据流.md
+│   ├── 02-通用组件.md          ← 交易日历 / git_helper / fetcher 复用矩阵（双链枢纽）
+│   ├── 03-数据源与登录态.md
+│   ├── 04-发布与推送.md
+│   └── 05-运维与故障处置.md    ← 定时任务 ID / 故障表 / 并发规程
+├── 板块/                       ← 各板块品种清单与口径
+│   ├── 精工.md   诺博.md   曼德.md
+├── 日报/                       ← 历史日报（6/10 ~ 8/11）
+└── _archive/                   ← 旧项目笔记与早期设计稿
+```
+
+**三者分工**：SKILL.md ＝ 排障手册；Obsidian ＝ 架构与业务说明书；`.workbuddy/memory/` ＝ 我的工作记忆。
+
+## F.5 废弃代码
+
+已废弃的主流程（`fill_and_verify.py` / `excel_to_web.py` / `run.sh` / `setup_launchd.sh`）已移入 **`_legacy/`**，附有说明 `_legacy/README.md`。**不要依据它们排障**——launchd 方案已废弃且任务未加载。
 
 

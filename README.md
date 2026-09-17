@@ -1,8 +1,8 @@
 # 精工有色金属共享表自动化填写
 
-> 每天自动抓取 **25 个有色金属/钢铁/原油品种价格** 填入 Excel「2026年有色金属市场价格.xlsx」（26 列：日期 + 25 品种）
+> 每个工作日自动抓取 **26 个有色金属 / 钢铁 / 原油品种价格**，填入 Excel「2026年有色金属市场价格.xlsx」（27 列：日期 + 26 品种），并同步发布网页看板。
 
-[![status](https://img.shields.io/badge/status-25%E5%93%81%E7%A7%8D%E6%AF%8F%E6%97%A5%E8%87%AA%E5%8A%A8-brightgreen)]()
+[![status](https://img.shields.io/badge/status-26%E5%93%81%E7%A7%8D%E6%AF%8F%E6%97%A5%E8%87%AA%E5%8A%A8-brightgreen)]()
 [![python](https://img.shields.io/badge/python-3.13-blue)]()
 [![platform](https://img.shields.io/badge/platform-macOS-lightgrey)]()
 
@@ -10,44 +10,37 @@
 
 ## 🎯 项目背景
 
-长城汽车·长城保理公司**精工板块**每天下午需要把**长江现货（ccmn）、SMM、亚洲金属网、中钨在线、akshare、卓创、SMM 钢铁** 共 7 类数据源的 25 个品种价格，填入一张 26 列的 Excel 共享表。
+长城汽车·长城保理公司**精工板块**每天需要把**长江现货（ccmn）、SMM、亚洲金属网、中钨在线、akshare、卓创、SMM 钢铁、LME 官网**共 7 类数据源的 26 个品种价格，填入一张 27 列的 Excel 共享表。
 
 **之前**：纯人工 + Excel 操作员手工填表，每天 1-2 小时。
-**现在**：阿奇（OpenClaw AI 助手）自动抓取 + 一次性写入 Excel，**主人在 Chrome 里保持 SMM/亚洲金属网登录态即可**，每天 < 10 分钟人工介入。
+**现在**：每天 15:00 由定时任务自动抓取 + 一次性写入 Excel，同步发布网页看板。
+
+> 本项目还承载另外两个板块的看板：**诺博**（橡胶/塑料原料，33 品种，`docs/plastic/`）与**曼德**（铜铝/工程塑料，13 品种，`docs/mand/`）。三个板块共享同一套底座（交易日历 / 推送 / fetcher），详见 SKILL.md 附录 F。
 
 ---
 
-## 📊 25 个品种 × 7 类数据源（Excel 列 2–26）
+## 📊 26 个品种 × 7 类数据源（Excel 列 2–27）
 
-| Col | 品种 | 数据源 | 抓取方式 | 登录态 |
-|:--:|------|--------|--------|:--:|
-| 2 | 上海有色 ADC12 | SMM | CDP/SSR 价格表 | 需登录 |
-| 3 | 上海有色 A380 | SMM | CDP/SSR 价格表 | 需登录 |
-| 4 | 上海有色 AlSi9Cu3 | SMM | CDP/SSR 价格表 | 需登录 |
-| 5 | 上海有色 A356 | SMM | CDP/SSR 价格表 | 需登录 |
-| 6 | 长江现货 A00 铝 | **ccmn** | 公开 AJAX | 公开 ✅ |
-| 7 | 长江现货 铜 | **ccmn** | 公开 AJAX | 公开 ✅ |
-| 8 | 长江现货 金属硅中间价**441** | **ccmn** | `金属硅553#-331#` 的 **avgPrice** | 公开 ✅ |
-| 9 | 长江现货 金属硅中间价**3303** | **ccmn** | `金属硅3303#-2202#` 的 **minPrice** | 公开 ✅ |
-| 10 | 长江现货 镁 | **ccmn** | 公开 AJAX | 公开 ✅ |
-| 11 | 长江现货 电解锰 | **ccmn** | 公开 AJAX | 公开 ✅ |
-| 12 | 长江现货 金属硅中间价**331** | **ccmn** | `金属硅553#-331#` 的 **maxPrice** | 公开 ✅ |
-| 13 | 亚洲金属网 闻喜镁锭 | 亚洲金属网 | CDP 文章抓取 | 需登录 |
-| 14 | 上海有色 AM60B | SMM | CDP/SSR 价格表 | 需登录 |
-| 15 | 上海有色 AZ91D | SMM | CDP/SSR 价格表 | 需登录 |
-| 16 | 中钨在线 钨粉 | 中钨在线 | HTTP 栏目页 + 正则 | 公开 ✅ |
-| 17 | WTI 原油 | akshare | realtime API | 公开 ✅ |
-| 18 | 铁矿石 卡粉65%京唐港 | SMM 钢铁 | CDP/SSR 价格表 | 需登录 |
-| 19 | 一级冶金焦 MT<7 全国均价 | SMM 钢铁 | CDP/SSR 价格表 | 需登录 |
-| 20 | 304 不锈钢板材 | 卓创 | Cookie + Playwright | 需 Cookie |
-| 21 | 409 不锈钢板材 | 卓创 | Cookie + Playwright | 需 Cookie |
-| 22 | 439 不锈钢板材 | 卓创 | Cookie + Playwright | 需 Cookie |
-| 23 | 441 不锈钢板材 | 卓创 | Cookie + Playwright | 需 Cookie |
-| 24 | 镍铁 | 卓创 | Cookie + Playwright | 需 Cookie |
-| 25 | 高碳铬铁 | 卓创 | Cookie + Playwright | 需 Cookie |
-| 26 | ADC12 日本 CIF | SMM | CDP/SSR 价格表 | 需登录 |
+| Col | 品种 | 数据源 | 登录态 |
+|:--:|------|--------|:--:|
+| 2–5 | 上海有色 ADC12 / A380 / AlSi9Cu3 / A356 | SMM | 需登录 |
+| 6 | 长江现货 A00 铝 | **ccmn** | 公开 ✅ |
+| 7 | 长江现货 铜 | **ccmn** | 公开 ✅ |
+| 8 | 长江现货 金属硅中间价**441** | **ccmn** — `金属硅553#-331#` 的 **avgPrice** | 公开 ✅ |
+| 9 | 长江现货 金属硅中间价**3303** | **ccmn** — `金属硅3303#-2202#` 的 **minPrice** | 公开 ✅ |
+| 10 | 长江现货 镁 | **ccmn** | 公开 ✅ |
+| 11 | 长江现货 电解锰 | **ccmn** | 公开 ✅ |
+| 12 | 长江现货 金属硅中间价**331** | **ccmn** — `金属硅553#-331#` 的 **maxPrice** | 公开 ✅ |
+| 13 | 亚洲金属网 闻喜镁锭 | 亚洲金属网 | 需登录 |
+| 14–15 | 上海有色 AM60B / AZ91D | SMM | 需登录 |
+| 16 | 中钨在线 钨粉（报价表**已图片化**，走多窗口 OCR） | 中钨在线 | 公开 ✅ |
+| 17 | WTI 原油 | akshare | 公开 ✅ |
+| 18–19 | 铁矿石 卡粉65%京唐港 / 一级冶金焦 MT<7 | SMM 钢铁 | 需登录 |
+| 20–25 | 304 / 409 / 439 / 441 不锈钢板材、镍铁、高碳铬铁 | 卓创 | 需 Cookie |
+| 26 | ADC12 日本 CIF | SMM | 需登录 |
+| 27 | LME 铝 | LME 官网官方价（**次日 09:00 回填**） | 公开 ✅ |
 
-**登录依赖统计**：9 项公开（ccmn 7 + 中钨在线 1 + akshare 1）+ 16 项需凭据（SMM 7 + 亚洲金属网 1 + 钢铁 2 + 卓创 6）。
+**登录依赖统计**：10 项公开（ccmn 7 + 中钨在线 1 + akshare 1 + LME 1）+ 16 项需凭据（SMM 9 + 亚洲金属网 1 + 卓创 6）。
 
 > 列映射三处必须同步：`daily_update_all.py` 的 `COL_MAP`、`export_excel_to_json.py` 的 `COLUMN_MAP`、`sync_from_web.py` 的 `COLUMN_MAP`。漏任一处的列在「发布」或「线上编辑回写」环节会失效。
 
@@ -58,37 +51,41 @@
 ### 1. 环境要求
 
 - **macOS**（已验证 14.x）
-- **Python 3.13**（workbuddy venv）
-- **Google Chrome**（调试模式，端口 9223）
-- **SMM + 亚洲金属网账号**（主人在调试 Chrome 里保持登录态）
+- **Python 3.13**：`~/.workbuddy/binaries/python/envs/jinggong/`
+- **Playwright**（SMM / 亚洲金属网 / 卓创 / LME 需要）
+- **各站登录态**：cookies 落 `cookies/`（gitignore），过期时脚本会尝试自动重登
 
-### 2. 启动 Chrome 调试模式
-
-```bash
-open -na "Google Chrome" --args \
-  --remote-debugging-port=9223 \
-  --user-data-dir=/Users/siqi/chrome-debug-profile
-```
-
-主人在 Chrome 里登录 `hq.smm.cn` 和 `asianmetal.cn`，登录态会自动保持。
-
-### 3. 一键跑
+### 2. 跑一次
 
 ```bash
 cd ~/Desktop/AI/jinggong-commodity-monitor
+unset NODE_OPTIONS          # 跑 Playwright 前必须
 
-# 设置网络白名单（避免代理拦截）
-export NO_PROXY="sci99.com,chinatungsten.com,51bxg.com,steelcn.cn,ccmn.cn,cnfeol.com,ctia.com.cn,smm.cn,asianmetal.cn,hq.smm.cn"
+# 15:00 主抓 25 项
+PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 daily_update_all.py
 
-# 跑主流程
-PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 fill_and_verify.py
+# 17:00 补抓漏项 + LME 兜底
+PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 daily_check_missed.py
 ```
 
-### 4. 登录态过期（无需手动操作）
+### 3. 自动执行
 
-SMM / 亚洲金属网登录态过期时，抓取脚本会**自动检测**（抓到零结果即判定失效）并**重新登录**，刷新后的 Cookie 自动保存到 `data/`。该逻辑内置于 `jinggong_monitor/fetcher_smm.py`（`_login_and_save_cookies`），无需人工介入。
+三个时点由**平台定时任务**驱动，无需本机常驻进程，且只在工作日跑：
 
-> 长江有色系列品种（A00 铝、铜、金属硅等）已并入主流程，通过 ccmn AJAX 公开接口抓取，不再需要独立的日报抓取脚本。
+| 时间 | 脚本 |
+| :-: | --- |
+| 15:00 | `daily_update_all.py` |
+| 17:00 | `daily_check_missed.py` |
+| 次日 09:00 | `backfill_lme_official.py`（LME 铝按官方数据日回填） |
+
+### 4. 登录态（基本无需手动操作）
+
+SMM / 亚洲金属网登录态过期时，抓取脚本会**自动检测并重登**，Cookie 保存到 `data/`。该逻辑内置于 `jinggong_monitor/fetcher_smm.py`。
+
+> ⚠️ 例外：**卓创有滑块验证，不能自动登录**，cookie 过期需人工重导。
+> ⚠️ 「读不到」≠「没登录」：SMM SSR 慢时读到空文本会被误判为掉登录，遇整块为空先用 `refetch_smm_fill.py` 定向补抓，不要急着重导 cookie。
+
+> 长江有色系列品种已并入主流程（ccmn 公开 AJAX），不再需要独立日报脚本。
 
 ---
 
@@ -97,37 +94,47 @@ SMM / 亚洲金属网登录态过期时，抓取脚本会**自动检测**（抓�
 ```
 jinggong-commodity-monitor/
 ├── README.md                       ← 本文件
-├── SKILL.md                        ← 流程定义（最新 6/26 跑通版，30 KB）
-├── fill_and_verify.py              ← 采集+填表+校验+截图+OCR
-├── daily_update_all.py             ← 每日 3PM 全品种抓取主入口（16 品种）
-├── sync_from_web.py                ← 线上编辑回写 Excel
-├── excel_to_web.py                 ← 线下改 Excel 后推送看板
+├── SKILL.md                        ← 流程定义 + 附录 A~F（排障看附录 B）
+├── daily_update_all.py             ← 15:00 主抓 25 项（精工）
+├── daily_check_missed.py           ← 17:00 补抓漏项 + LME 兜底
+├── backfill_lme_official.py        ← 次日 09:00 LME 铝按官方数据日回填
+├── daily_plastic.py                ← 诺博 13 个中塑塑料牌号（15:30）
+├── daily_plastic_ext.py            ← 诺博扩品类 20 项（15:40）
+├── mand_update.py                  ← 曼德 13 品种（15:35）
+├── gen_mand_board.py               ← 从诺博模板生成曼德看板骨架
 ├── export_excel_to_json.py         ← Excel → docs/data.json
+├── sync_from_web.py                ← 线上编辑回写 Excel
 ├── changelog.py                    ← 数据变更留痕
-├── git_helper.py                   ← 带代理的 git 推送封装
-├── run.sh                          ← 一键运行脚本（daily/wti/tungsten）
-├── 2026年有色金属市场价格.xlsx      ← 唯一数据源 Excel
-├── jinggong_monitor/               ← 核心代码（20+ 个模块）
-│   ├── base.py                     ← BaseFetcher + _parse_price_range 价格解析
+├── git_helper.py                   ← git 推送封装（代理清理 + 自动重试）
+├── manual_fill_tungsten.py         ← 钨粉 OCR 失败时人工兜底
+├── references/                     ← 第三方/客户原始素材（gitignore）
+├── _legacy/                        ← 已废弃脚本（见其 README）
+├── 2026年有色金属市场价格.xlsx      ← 精工 Excel 底稿（gitignore）
+├── jinggong_monitor/               ← 核心代码
+│   ├── base.py                     ← BaseFetcher + 价格区间解析
 │   ├── orchestrator.py             ← 多源调度
+│   ├── trading_calendar.py         ← 交易日历（三板块共用）
 │   ├── fetcher_ccmn.py             ← 长江有色 AJAX（公开 ⭐）
-│   ├── fetcher_akshare.py          ← WTI 原油
-│   ├── fetcher_asianmetal.py       ← 闻喜镁锭（CDP 登录）
-│   ├── fetcher_smm.py              ← SMM 上海有色（自动登录）
-│   ├── fetcher_tungsten.py         ← 中钨在线钨粉
+│   ├── fetcher_smm.py              ← SMM 上海有色（自动登录；精工/诺博/曼德共用）
+│   ├── fetcher_asianmetal.py       ← 闻喜镁锭
+│   ├── fetcher_sci99.py            ← 卓创（Cookie）
+│   ├── fetcher_steel.py            ← SMM 钢铁
+│   ├── fetcher_tungsten.py         ← 中钨在线钨粉（多窗口 OCR）
+│   ├── fetcher_baiinfo.py          ← 百川盈孚（诺博·煤焦油）
+│   ├── lz_price_center.py          ← 隆众结构化价格库（诺博）
+│   ├── fetcher_21cp.py             ← 中塑在线（诺博 13 牌号）
+│   ├── fetcher_lme.py              ← LME 官方价
 │   ├── excel_filler.py             ← openpyxl 写表
-│   ├── validator.py                ← 数据校验
-│   └── ...
-├── config/
-│   ├── varieties.yaml              ← 品种-数据源映射（25 个品种）
-│   └── sources.yaml                ← 数据源配置
-├── docs/                           ← GitHub Pages 看板
-│   ├── index.html                  ← 看板主页
+│   └── validator.py                ← 数据校验
+├── config/                         ← varieties.yaml / sources.yaml
+├── docs/                           ← GitHub Pages 发布目录
+│   ├── index.html  data.json       ← 精工看板
+│   ├── plastic/                    ← 诺博看板
+│   ├── mand/                       ← 曼德看板
 │   ├── editor.html                 ← 线上编辑页
-│   ├── changelog.html              ← 变更记录查询页
-│   ├── data.json                   ← 看板数据
-│   └── changelog.json              ← 变更留痕
-└── data/                           ← 运行时缓存（cookies 等）
+│   └── changelog.html / .json      ← 变更记录
+├── cookies/  data/  screenshots/   ← 登录态与抓取缓存（均 gitignore）
+└── miniprogram/                    ← 小程序版（data.json 的另一出口）
 ```
 
 ---

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Git 操作辅助工具
 
-为 fill_and_verify.py / sync_from_web.py / excel_to_web.py 提供统一的：
+为 export_excel_to_json.py / sync_from_web.py / daily_* 等脚本提供统一的：
 1. 代理自动检测（127.0.0.1:7890 / 1087 / 7897 / 8888 / 6152）
 2. rebase 冲突自动 abort（避免仓库卡在脏状态）
 3. commit + pull --rebase + push 一站式发布
