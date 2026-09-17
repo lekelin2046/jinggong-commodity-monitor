@@ -62,3 +62,6 @@ dist/
 # 临时分析产物
 jinggong-eval-*/
 项目评价报告*.html
+
+# 第三方参考资料（客户提供的原始图表/报告，含对方业务数据，严禁入 git）
+references/
