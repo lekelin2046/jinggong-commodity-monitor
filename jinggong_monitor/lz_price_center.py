@@ -419,6 +419,162 @@ def fetch_variety(key: str, cookie: Optional[str] = None,
     return out
 
 
+# ---------------------------------------------------------------------------
+# 抓取 · 曲线接口（getSingleCurve）—— 可回溯任意历史区间
+#   与 queryPricePage 的分工：
+#     · queryPricePage  列固定 **5 个日期**（以 queryEndDate 为锚向前取，不支持翻页）
+#                       —— 只适合"取最新一期"，无法回溯
+#     · getSingleCurve  传 queryStartDate/queryEndDate 返回**整段日序列**，
+#                       且每条带 lowPrice/highPrice/**middlePrice(主流价)**
+#                       —— 补历史与日常取数都用它，一次请求拿一段
+#   businessId 由行枚举（queryPricePage）得到，品种+市场+规格唯一且稳定。
+# ---------------------------------------------------------------------------
+CURVE_URL = f"{API_BASE}/ndc/price/curve/getSingleCurve"
+
+# 曲线点的取值优先级：主流价 > 最低价 > 最高价（与 pick_price 同哲学）
+CURVE_PRICE_KEYS = ("middlePrice", "lowPrice", "highPrice")
+
+
+def _post_json(url: str, payload: dict, cookie: Optional[str] = None,
+               timeout: int = 60) -> dict:
+    body = json.dumps(payload).encode()
+    req = urllib.request.Request(url, data=body, method="POST")
+    hdrs = {"User-Agent": UA, "Referer": f"{API_BASE}/page/", "Origin": API_BASE,
+            "Content-Type": "application/json"}
+    if cookie is None:
+        cookie = cookie_header()
+    if cookie:
+        hdrs["Cookie"] = cookie
+    for k, v in hdrs.items():
+        req.add_header(k, v)
+    with urllib.request.urlopen(req, data=body, timeout=timeout) as r:
+        return json.loads(r.read().decode("utf-8", "ignore"))
+
+
+def fetch_curve_raw(business_id: int, business_type: int = 3, tlbt: int = 0,
+                    index_price_type: int = 0, time_type: int = 0,
+                    start_date: Optional[str] = None,
+                    end_date: Optional[str] = None,
+                    cookie: Optional[str] = None, timeout: int = 60) -> dict:
+    """取某一行（品种×市场×规格）在 [start_date, end_date] 内的全部日价格点。
+
+    日期格式 YYYY-MM-DD；time_type：0/2=日 1=周 3=月 4=季 5=年。
+    """
+    payload: dict[str, Any] = {"businessId": int(business_id),
+                               "businessType": int(business_type),
+                               "twoLevelBusinessType": int(tlbt),
+                               "indexPriceType": int(index_price_type),
+                               "timeType": int(time_type)}
+    if start_date:
+        payload["queryStartDate"] = str(start_date)
+    if end_date:
+        payload["queryEndDate"] = str(end_date)
+    return _post_json(CURVE_URL, payload, cookie=cookie, timeout=timeout)
+
+
+def curve_series(resp: dict) -> dict[str, Optional[float]]:
+    """priceDataList → {YYYY-MM-DD: 价格}；取不到价格的点也登记为 None（铁律留空）"""
+    out: dict[str, Optional[float]] = {}
+    for item in resp.get("priceDataList") or []:
+        if not isinstance(item, dict):
+            continue
+        d = str(item.get("dataDate") or "").replace("/", "-").strip()
+        if not d:
+            continue
+        val = None
+        for k in CURVE_PRICE_KEYS:
+            val = to_number(item.get(k))
+            if val is not None:
+                break
+        out[d] = val
+    return out
+
+
+def resolve_business_row(key: str, cookie: Optional[str] = None,
+                         sleep: float = 0.5) -> dict[str, Any]:
+    """按 VARIETY_MAP 的口径（specs / markets / strict）选出目标行。
+
+    返回 {ok, business_id, market, spec, region, business_type, tlbt,
+          index_price_type, error}；选不到时 ok=False 且 error 说明原因。
+    """
+    cfg = VARIETY_MAP.get(key)
+    if not cfg:
+        raise KeyError(f"未知品种 key: {key}")
+    out: dict[str, Any] = {"ok": False, "business_id": None, "market": "", "spec": "",
+                           "region": "", "business_type": cfg["bt"],
+                           "tlbt": cfg["tlbt"], "index_price_type": 0, "error": None}
+    try:
+        doc = _post_json(QUERY_PRICE_URL,
+                         {"varietiesId": cfg["vid"], "businessType": str(cfg["bt"]),
+                          "twoLevelBusinessType": cfg["tlbt"], "timeType": 0,
+                          "pageNum": 1, "pageSize": 100},
+                         cookie=cookie)
+        if str(doc.get("status")) != "200":
+            out["error"] = doc.get("message") or "行枚举失败"
+            return out
+        rows = _iter_rows(doc.get("response") or {})
+        cand = [r for r in rows if _spec_ok(_row_label(r)[1], cfg.get("specs"))]
+        if not cand:
+            out["error"] = "未有规格匹配行"
+            return out
+        markets = cfg.get("markets")
+        order: list[dict] = []
+        if markets:
+            for m in markets:
+                order += [r for r in cand if m in _row_label(r)[0]]
+        if not bool(cfg.get("strict")):
+            order += [r for r in cand if r not in order]
+        if not order:
+            avail = sorted({_row_label(r)[0] for r in cand})
+            out["error"] = f"指定市场 {markets} 无行（候选 {avail}）"
+            return out
+        pick = order[0]
+        mkt, sp = _row_label(pick)
+        out.update({"ok": True, "business_id": pick.get("businessId"), "market": mkt,
+                    "spec": sp, "region": pick.get("regionName") or "",
+                    "business_type": pick.get("businessType", cfg["bt"]),
+                    "tlbt": pick.get("twoLevelBusinessType", cfg["tlbt"]),
+                    "index_price_type": pick.get("indexPriceType", 0) or 0})
+    except Exception as e:
+        out["error"] = f"{type(e).__name__}: {e}"
+    if sleep:
+        time.sleep(sleep)
+    return out
+
+
+def fetch_variety_curve(key: str, start_date: str, end_date: str,
+                        cookie: Optional[str] = None,
+                        row: Optional[dict] = None) -> dict[str, Any]:
+    """按 key 取 [start_date, end_date] 的完整日序列（含历史）。
+
+    返回 {key, name, unit, series, source, auth, error, business_id}
+    """
+    cfg = VARIETY_MAP[key]
+    out: dict[str, Any] = {"key": key, "name": cfg["name"], "unit": cfg["unit"],
+                           "series": {}, "source": "", "auth": "", "error": None,
+                           "business_id": None}
+    if row is None:
+        row = resolve_business_row(key, cookie)
+    if not row.get("ok"):
+        out["error"] = row.get("error") or "未定位到目标行"
+        return out
+    out["business_id"] = row["business_id"]
+    out["source"] = f"{row['market']}|{row['spec']}"
+    try:
+        doc = fetch_curve_raw(row["business_id"], row["business_type"], row["tlbt"],
+                              row["index_price_type"], 0, start_date, end_date,
+                              cookie=cookie)
+        if str(doc.get("status")) != "200":
+            out["error"] = doc.get("message") or "曲线接口返回非 200"
+            return out
+        resp = doc.get("response") or {}
+        out["auth"] = auth_state(resp)
+        out["series"] = curve_series(resp)
+    except Exception as e:
+        out["error"] = f"{type(e).__name__}: {e}"
+    return out
+
+
 def fetch_daily(keys: Optional[list[str]] = None,
                 cookie: Optional[str] = None) -> dict[str, dict[str, Any]]:
     """批量抓取，返回 {key: 结果}。逐品种独立，互不影响。"""
