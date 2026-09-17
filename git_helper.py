@@ -152,6 +152,15 @@ def git_pull_rebase(cwd=None) -> bool:
     return True
 
 
+def _find_local_proxy(timeout: int = 4) -> Optional[str]:
+    """在常见本地代理端口里找一个**实测能通 GitHub** 的，找不到返回 None"""
+    for port in _COMMON_PORTS:
+        proxy = f"http://127.0.0.1:{port}"
+        if _probe(proxy=proxy, timeout=timeout):
+            return proxy
+    return None
+
+
 def git_push(cwd=None, retries: int = 6) -> bool:
     """git push（自动清代理 + 网络间歇时重试）
 
@@ -159,11 +168,17 @@ def git_push(cwd=None, retries: int = 6) -> bool:
     因此**必须重试**，不能一次失败就放弃（这是历史「推送失败」的主因之一）。
     同时对慢速连接放宽容忍（lowSpeedLimit=10 + 45s），慢速直连常比快速失败更有效。
 
+    ⚠️ 2026-09-17 增强：`_detect_proxy()` 的直连探测是**瞬时**的，探测通过不等于
+    后续 push 也能通（当日晚间实测：探测判直连，紧接着直连 push 6 次全败）。故在
+    重试到第 3 次仍失败且当前走直连时，自动切换到实测可通的本地代理继续重试。
+
     不重试的情形：被拒（fetch first / non-fast-forward）—— 那是本地状态问题。
     """
+    global _detected_proxy
     import time
 
     last = ""
+    switch_at = max(2, retries // 2)
     for i in range(1, retries + 1):
         code, out, err = git_with_proxy(
             ["-c", "http.lowSpeedLimit=10", "-c", "http.lowSpeedTime=45", "push"],
@@ -181,6 +196,14 @@ def git_push(cwd=None, retries: int = 6) -> bool:
 
         tail = last.splitlines()[-1][:110] if last else "未知错误"
         print(f"  ⏳ 第 {i}/{retries} 次失败：{tail}")
+
+        # 直连间歇不可用 → 中途切换实测可通的本地代理
+        if i == switch_at and not _detect_proxy():
+            alt = _find_local_proxy()
+            if alt:
+                _detected_proxy = alt
+                print(f"  ↪ 直连不通，切换代理 {alt} 继续重试")
+
         if i < retries:
             time.sleep(4)
 
@@ -196,6 +219,23 @@ def ahead_count(cwd=None) -> int:
     """
     code, out, err = git_with_proxy(
         ["rev-list", "--count", "origin/main..HEAD"], cwd=cwd, timeout=15,
+    )
+    if code != 0:
+        return 0
+    try:
+        return int((out or "0").strip())
+    except ValueError:
+        return 0
+
+
+def behind_count(cwd=None) -> int:
+    """本地落后 origin/main 的提交数。
+
+    与 `ahead_count()` 配合使用：`ahead>0 且 behind==0` 时，推送必然是
+    快进（fast-forward），无需 pull 也可安全直推。
+    """
+    code, out, err = git_with_proxy(
+        ["rev-list", "--count", "HEAD..origin/main"], cwd=cwd, timeout=15,
     )
     if code != 0:
         return 0
@@ -261,9 +301,22 @@ def publish_to_github(files, commit_msg, cwd=None):
     print(f"  → 本地待推送 {ahead} 个提交")
 
     # 3. pull --rebase（冲突自动 abort）
+    #    ⚠️ 2026-09-17 修复：pull 失败曾经**无条件**跳过 push —— 但网络不通
+    #    导致的 pull 失败与「本地落后」是两件事。只要 behind == 0，本次推送
+    #    必然是快进，直推安全，不应被 pull 的网络故障连累（当日晚间曼德任务
+    #    即因此白跑一次：数据已 commit 却卡在本地）。
     if not git_pull_rebase(cwd):
-        print("  ⚠️ pull 失败或冲突，跳过 push（commit 已在本地，下次会重试）")
-        return False
+        behind = behind_count(cwd)
+        if behind > 0:
+            print(f"  ⚠️ pull 失败或冲突且已落后 {behind} 个提交，跳过 push"
+                  "（commit 已在本地，下次会重试）")
+            return False
+        print("  ⚠️ pull 失败，但本地未落后 origin/main → 跳过 pull 直接推送")
+    else:
+        behind = behind_count(cwd)
+        if behind > 0:
+            print(f"  ⚠️ pull 后仍落后 {behind} 个提交，跳过 push（避免非快进）")
+            return False
 
     # 4. push
     return git_push(cwd)
