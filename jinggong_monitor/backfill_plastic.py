@@ -3,12 +3,23 @@
 """
 backfill_plastic.py — 中塑在线塑料/橡塑牌号历史回填
 ====================================================================
-从 2026-01-01 起逐交易日抓取，生成 docs/plastic/data.json（格式对齐精工看板）。
+逐交易日抓取中塑在线牌号历史，写入 docs/plastic/data.json（格式对齐精工看板）。
 
 用法：
   python3 jinggong_monitor/backfill_plastic.py                      # 全量重建（TARGETS 全部牌号）
   python3 jinggong_monitor/backfill_plastic.py --only PP_K8003       # 增量：只回填指定牌号，合并进现有 data.json
         （新增牌号时用增量模式，避免全量重跑；多个 key 用逗号分隔）
+
+⚠⚠ 危险：不带 --only 的「全量重建」会按 START 起算重建 varieties 并覆盖
+   docs/plastic/data.json —— 该文件是 诺博橡胶页 /rubber/ 与 诺博内外饰页 /plastic/
+   **共用**的数据文件，重建后将丢失：
+     ① 隆众 15 项 2020-07-01 起的长历史（供「较XX年均价涨幅」使用）
+     ② 桥接进来的 WTI 原油 / A380 / AlSi9Cu3（bridge_jinggong.py 写入）
+     ③ 百川盈孚 高温煤焦油
+   补救：重建后依次执行
+     python3 -m jinggong_monitor.backfill_plastic_ext --from 2020-07-01
+     python3 -m jinggong_monitor.bridge_jinggong --history
+   日常更新请用 daily_plastic.py / daily_plastic_ext.py（按日期 merge，幂等，安全）。
 """
 import json
 import os

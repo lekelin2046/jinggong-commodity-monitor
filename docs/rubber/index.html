@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" data-page-node-id="S2qovWx7lY0d4keudqbqAH">
 <title>诺博橡胶大宗原材料价格看板</title>
 <script src="../vendor/chart.umd.min.js"></script>
+<script src="../board-analysis.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f1f5f9;color:#1e293b;padding:16px;overflow-x:hidden}
@@ -23,6 +24,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .section-label.daily .bar{background:#2563eb}
 .section-label.monthly .bar{background:#ea580c}
 .section-label.trend .bar{background:#9333ea}
+.section-label.analysis .bar{background:#0f766e}
 .section-divider{border:none;border-top:1px dashed #cbd5e1;margin:20px 0 4px}
 /* 分区卡片左边框色 */
 .section.daily .card{border-left:3px solid #2563eb}
@@ -248,6 +250,14 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 
 <hr class="section-divider" data-page-node-id="cUiw1fFGCETK88VPYK10Lh">
 
+<!-- ===== 分组分析（周报形态） ===== -->
+<div class="section analysis">
+  <div class="section-label analysis"><span class="bar"></span>分组分析</div>
+  <div id="analysisContainer"></div>
+</div>
+
+<hr class="section-divider">
+
 <!-- ===== 月维度 ===== -->
 <div class="section monthly" data-page-node-id="BteEMZVapDbBFVRYHlHwaq">
   <div class="section-label monthly" data-page-node-id="kLfGF8OZkWGymEvXVQKoY5"><span class="bar" data-page-node-id="jegloaDt5fVm3GsJqty6TA"></span>月维度</div>
@@ -373,6 +383,23 @@ function renderAll(year, month) {
   renderSingleTrend();
   renderVolatilityTrend();
   renderPrediction();
+  renderAnalysis();
+}
+
+// ===== 分组分析（周报形态，复刻《诺博橡胶大宗物料价格走势-2026.xlsx》「原材料价格走势-周报」）=====
+function renderAnalysis() {
+  if (!window.BoardAnalysis) return;
+  BoardAnalysis.render({
+    containerId: "analysisContainer",
+    categories: CATEGORIES,
+    data: ALL_DATA,
+    names: VARIETY_NAMES,
+    units: VARIETY_UNITS,
+    sources: VARIETY_SOURCES,
+    markets: VARIETY_MARKETS,
+    colors: COLORS,
+    defaultUnit: DEFAULT_UNIT
+  });
 }
 
 // 单品日趋势图：选一个品种，只画它自己一条线
