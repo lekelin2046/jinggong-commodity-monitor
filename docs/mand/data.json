@@ -1,0 +1,172 @@
+{
+ "data": {
+  "2026-09-17": {
+   "AG": 15500.0,
+   "AL_A00": 24180.0,
+   "AL_A380": 26250.0,
+   "AL_ADC12": 24350.0,
+   "AL_ALSI12FE": 24700.0,
+   "CU": 108680.0,
+   "PCU": 114150.0
+  }
+ },
+ "display_names": {
+  "AG": "1#白银",
+  "AL_A00": "SMM A00铝",
+  "AL_A380": "A380铝合金",
+  "AL_ADC12": "SMM铝合金ADC12",
+  "AL_ALSI12FE": "AlSi12(Fe)铝合金",
+  "CU": "铜（上海地区现货）",
+  "PA6": "PA6",
+  "PA66": "PA66",
+  "PA66_BASF": "巴斯夫PA66",
+  "PCU": "磷铜合金",
+  "PP_TD20": "PP-TD20",
+  "PP_TD40": "PP-TD40",
+  "PRND": "镨钕金属"
+ },
+ "last_updated": "2026-09-17",
+ "meta": {
+  "AG": {
+   "name": "1#白银",
+   "source": "长江有色网",
+   "status": "live",
+   "unit": "元/千克"
+  },
+  "AL_A00": {
+   "name": "SMM A00铝",
+   "source": "SMM 上海有色",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "AL_A380": {
+   "name": "A380铝合金",
+   "source": "SMM 上海有色",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "AL_ADC12": {
+   "name": "SMM铝合金ADC12",
+   "source": "SMM 上海有色",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "AL_ALSI12FE": {
+   "name": "AlSi12(Fe)铝合金",
+   "source": "SMM 上海有色",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "CU": {
+   "name": "铜（上海地区现货）",
+   "source": "长江有色网",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "PA6": {
+   "name": "PA6",
+   "source": "卓创资讯",
+   "status": "pending",
+   "unit": "元/吨"
+  },
+  "PA66": {
+   "name": "PA66",
+   "source": "卓创资讯",
+   "status": "pending",
+   "unit": "元/吨"
+  },
+  "PA66_BASF": {
+   "name": "巴斯夫PA66",
+   "source": "PCI",
+   "status": "blocked",
+   "unit": "元/吨"
+  },
+  "PCU": {
+   "name": "磷铜合金",
+   "source": "长江有色网",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "PP_TD20": {
+   "name": "PP-TD20",
+   "source": "卓创资讯",
+   "status": "blocked",
+   "unit": "元/吨"
+  },
+  "PP_TD40": {
+   "name": "PP-TD40",
+   "source": "卓创资讯",
+   "status": "blocked",
+   "unit": "元/吨"
+  },
+  "PRND": {
+   "name": "镨钕金属",
+   "source": "亚洲金属网",
+   "status": "pending",
+   "unit": "元/吨"
+  }
+ },
+ "source": "长江有色网 · SMM 上海有色（待接入：亚洲金属网 · 卓创资讯）",
+ "sources": {
+  "AG": "长江有色网",
+  "AL_A00": "SMM 上海有色",
+  "AL_A380": "SMM 上海有色",
+  "AL_ADC12": "SMM 上海有色",
+  "AL_ALSI12FE": "SMM 上海有色",
+  "CU": "长江有色网",
+  "PA6": "卓创资讯",
+  "PA66": "卓创资讯",
+  "PA66_BASF": "PCI",
+  "PCU": "长江有色网",
+  "PP_TD20": "卓创资讯",
+  "PP_TD40": "卓创资讯",
+  "PRND": "亚洲金属网"
+ },
+ "status": {
+  "AG": "live",
+  "AL_A00": "live",
+  "AL_A380": "live",
+  "AL_ADC12": "live",
+  "AL_ALSI12FE": "live",
+  "CU": "live",
+  "PA6": "pending",
+  "PA66": "pending",
+  "PA66_BASF": "blocked",
+  "PCU": "live",
+  "PP_TD20": "blocked",
+  "PP_TD40": "blocked",
+  "PRND": "pending"
+ },
+ "total_days": 1,
+ "unit": "元/吨（1#白银为 元/千克）",
+ "units": {
+  "AG": "元/千克",
+  "AL_A00": "元/吨",
+  "AL_A380": "元/吨",
+  "AL_ADC12": "元/吨",
+  "AL_ALSI12FE": "元/吨",
+  "CU": "元/吨",
+  "PA6": "元/吨",
+  "PA66": "元/吨",
+  "PA66_BASF": "元/吨",
+  "PCU": "元/吨",
+  "PP_TD20": "元/吨",
+  "PP_TD40": "元/吨",
+  "PRND": "元/吨"
+ },
+ "varieties": [
+  "CU",
+  "AG",
+  "PCU",
+  "AL_A00",
+  "AL_A380",
+  "AL_ADC12",
+  "AL_ALSI12FE",
+  "PRND",
+  "PA6",
+  "PA66",
+  "PA66_BASF",
+  "PP_TD20",
+  "PP_TD40"
+ ]
+}

@@ -7,6 +7,7 @@
 
 数据来源: hq.smm.cn
 目标品种: ADC12, A380, AlSi9Cu3, A356, AM60B, AZ91D, 闻喜镁锭
+         另供曼德看板: SMM A00铝（AL_A00）、AlSi12(Fe)铝合金（AL_ALSI12FE）
 
 性能对比（vs 旧方案）：
 - 旧方案：访问 7 个品种详情页，每页 3-5s，总耗时 25-40s
@@ -94,6 +95,17 @@ SMM_VARIETIES = {
     "ADC12_JAPAN_CIF": {
         "page": "alloy_chart",
         "pattern": r"日本进口ADC12铝合金价格\s+(\d{4})\s*-\s*(\d{4})\s+(\d{4})",
+    },
+    # 2026-09-17 曼德热系统看板新增（同在 aluminum 页；精工主流程按 COL_MAP 取值，多余 key 自动忽略）
+    # ⚠️ 同段另有裸 "AlSi12" / "AlSi20" / "AlSi50"（铝合金锭系列，价格不同），
+    #    故 AL_ALSI12FE 必须精确锚定 "AlSi12(Fe)铝合金" 并容忍全/半角括号，否则误抓。
+    "AL_A00": {
+        "page": "aluminum",
+        "pattern": r"SMM A00铝\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
+    },
+    "AL_ALSI12FE": {
+        "page": "aluminum",
+        "pattern": r"AlSi12[（(]Fe[)）]铝合金\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
     },
 }
 
