@@ -49,6 +49,19 @@ SMM_PAGES = {
 # 品种 → 页面 → 正则模式
 # 正则匹配格式：品种名 [中间描述] 低价~高价 均价
 SMM_VARIETIES = {
+    # —— 铝（2026-09-17 新增 A00 / ZLD104，供塑料看板「铝」分组使用）——
+    "A00": {
+        "page": "aluminum",
+        # 页面形如「SMM A00铝 \t24170~24190\t24180」；须锚定 "SMM " 前缀，
+        # 否则会误命中「SMM A00铝(中原)/(佛山)」等地区行与「A00铝升贴水」行
+        "pattern": r"SMM A00铝\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
+    },
+    "ZLD104": {
+        "page": "aluminum",
+        # ⚠️ 页面同时存在「ZLD104铝合金」与「低碳ZLD104铝合金」两行，
+        # 不加负向断言时后者也满足匹配（值不同：24350 vs 24300）
+        "pattern": r"(?<!低碳)ZLD104铝合金\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
+    },
     "ADC12": {
         "page": "aluminum",
         "pattern": r"SMM铝合金ADC12\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
@@ -63,7 +76,8 @@ SMM_VARIETIES = {
     },
     "AlSi9Cu3": {
         "page": "aluminum",
-        "pattern": r"AlSi9Cu3铝合金\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
+        # 页面另有「低碳AlSi9Cu3铝合金锭」「国标AlSi9Cu3铝合金锭」等变体行，负向断言排除
+        "pattern": r"(?<!低碳)AlSi9Cu3铝合金\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
     },
     "AM60B": {
         "page": "magnesium",
@@ -234,7 +248,7 @@ class SmmFetcher(BaseFetcher):
         results = asyncio.run(_fetch_smm_raw(target_date))
         if not results:
             self._raise(FetchError("SMM 抓取失败：未拿到任何品种价格（登录态可能失效）"))
-        logger.info(f"=== SMM 抓取完成: {len(results)}/7 品种 ===")
+        logger.info(f"=== SMM 抓取完成: {len(results)}/{len(SMM_VARIETIES)} 品种 ===")
         return results
 
 

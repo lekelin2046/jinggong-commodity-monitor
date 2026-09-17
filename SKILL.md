@@ -2,9 +2,15 @@
 name: 精工有色金属共享表自动化填写
 description: 精工板块每日有色金属市场均价采集与Excel填写。覆盖16项品种，5类数据源(ccmn公开AJAX/SMM登录态/亚洲金属网登录态/akshare/中钨在线)。已验证6/29跑通15+1全填+4张截图+1HTML证据。流程标准化，每日15:00（WTI）+17:00（16品种+截图）+21:00（钨粉补查）执行。
 agent_created: true
-version: 3.0
-last_updated: 2026-06-29
+version: 3.1
+last_updated: 2026-09-17
 changelog:
+  v3.1 (2026-09-17):
+    - + 附录 E：塑料/橡胶模块（13 牌号、docs/plastic/ 看板、backfill --only）——此前 SKILL 完全未覆盖
+    - + 附录 E.2：5 个候选源的可行性实测结论（SMM 扩品类 / 百川免登录 / 隆众 dc 结构化 API 需登录 / 同花顺无外盘 / 生意社口径差异）
+    - 注：附录 E.2 的隆众结论当日两次更新——文章正文确为会员墙，但 `dc.oilchem.net` 结构化价格库可用；同日取得账号实登后**已验证 13 牌号全部取到真实价**（权限分品种、cookie 直连、免浏览器）
+    - + 已验证替代路径（新浪外盘 hf_OIL）
+    - 注：正文「16 品种」已过时，主线实为 26 品种 × 7 源
   v3.0 (2026-06-29):
     - + 21:00 钨粉晚点补查 cron
     - + 价格校验机制（偏差 >50% 标黄不写）
@@ -842,3 +848,41 @@ pyyaml>=6.0
 - 必须有本 SKILL.md + jinggong_monitor/ 代码
 
 **不满足前提时**：先看 Obsidian 笔记「03-项目背景与需求总结」了解业务背景，再决定要不要单独搭环境。
+
+---
+
+## 附录 E. 塑料/橡胶模块（2026-09-17 补充，此前 SKILL 未覆盖）
+
+> 本节补记项目自 2026-06 起新增、但一直未写入本 SKILL 的「塑料/橡胶」支线。原正文「16 品种」描述已过时——
+> 有色金属主线现为 **26 品种 × 7 源**，另有独立看板 `docs/plastic/`。
+
+### E.1 现有资产
+
+| 文件 | 作用 |
+|---|---|
+| `jinggong_monitor/fetcher_21cp.py` | 中塑在线（`intl.21cp.com`）牌号级行情；`TARGETS` 为抓取清单 |
+| `jinggong_monitor/daily_plastic.py` | 工作日 15:30 增量抓 13 牌号 → 追加 `docs/plastic/data.json`（幂等） |
+| `jinggong_monitor/backfill_plastic.py` | 历史回填；`--only <KEY>` 增量合并单牌号（约 40s vs 全量 10+min）|
+| `docs/plastic/data.json` | `{日期:{牌号:价}}` 内层为 dict 非数组；`total_days`/`last_updated` 在顶层 |
+| `docs/plastic/index.html` | Chart.js 看板；**CATEGORIES / VARIETY_NAMES / UNITS / SOURCES / COLORS 全部硬编码，不读 data.json** |
+
+- 13 牌号 = PC×3、ABS×3、PP×5、POE×1、PA6×1；口径＝余姚中国塑料城市场参考价（元/吨）。
+- 反爬：全站 SafeLine WAF，普通 UA 一律 468；**Googlebot UA 对 `/market/detail/` 放行**，须低频（每日 1 次、间隔 ≥2s）。
+- ⚠️ 同名陷阱：`K8003` 同名牌号极多，必须用 `dushanzi`/`独山子` 过滤。
+- ⚠️ 中塑对**部分牌号发布不同步**，同一天可能出现多个日期，属正常，勿强行拉平。
+
+### E.2 扩品类时的源可行性（2026-09-17 实测，供下次直接复用）
+
+| 源 | 结论 | 关键要点 |
+|---|---|---|
+| **SMM `hq.smm.cn/aluminum`** | ✅ 免新账号 | 复用 `data/smm_cookies.json`。页面另含 **A00铝 / ZLD104铝合金**（`fetch_smm` 现仅取 A380/AlSi9Cu3/ADC12/A356）。匹配「低碳ZLD104铝合金」需防误命中 |
+| **百川盈孚 `baiinfo.com`** | ✅ 免登录 | 品种页如 `/meijiaohua/gaowenmeijiaoyou`。价格是 SSR 内嵌的**「百川盈孚提示」句**：`YYYY年M月D日，<品种>市场均价 NNNN元/吨，相较于上一工作日上调/下调 N 元/吨`。同页另有 CCTX 指数 |
+| **隆众资讯** | ✅ **已验证可抓**（2026-09-17 实登实测，13 牌号全取到真实价） | ⚠️ 分两层，别只测一层就下结论：<br>① **文章正文**（`www.oilchem.net/xx-xxxx-…html`）＝会员墙，正文被整体替换为「注册为会员可获得相关产品 15 天的免费浏览权…400-658-1688」，`元/吨` 命中 0（9/9 抽样：日评/周评/月评/早间提示/价格一览表）。标题/发布时间仍公开。<br>② **结构化价格库**（`dc.oilchem.net/page/`）＝真正的入口。`POST https://dc.oilchem.net/ndc/price/list/queryPricePage`，body `{"varietiesId":<id>,"businessType":"2\|3\|4","twoLevelBusinessType":<int>,"timeType":0,"pageNum":1,"pageSize":100}`，头需 `Referer: https://dc.oilchem.net/page/`+`Origin`+`Content-Type: application/json`。<br>　⚠️ `twoLevelBusinessType` 必须是**数字** `0`（字符串校验不过）；⚠️ **pageSize 上限 100**，超限报「pageSize数值超限」且**静默无行**（易误判无数据）。<br>　**登录门槛在后端数据层**：未登录也返 200 + 完整行结构（行=市场+规格，列=日期），但价格值被替换为 `"请登录"`，并带 `pricePowerBO={see:false}` → **登录后服务端自动回填真实价，解析代码无需改**。<br>　`businessType`：2=企业价 3=市场价 4=国际价。原油(110)无市场价只能走 bt=4（tlbt 22=期货/23=国际市场/27=现货/28=远期现货）。<br>　品种 id：原油110、乙烯196、丙烯116、高温煤焦油133、炭黑242、**干胶259（＝天然橡胶，库里不叫"天然橡胶"）**、顺丁267、丁苯266、防老剂282、促进剂281、三元乙丙275。<br>　登录＝`POST passport.oilchem.net/member/login/`（password 前端 MD5）+ 网易易盾 → 走**人工登录 + 持久化 profile**（同 `cookies/lme_official_profile`，已稳定 9 天）。<br>　封装模块：`jinggong_monitor/lz_price_center.py`（`VARIETY_MAP`；cookie 直连为默认路径，Playwright 降为回退）、`lz_login_setup.py`（自动填表+提交+验证码检测+权限体检）。<br>　**登录实测（2026-09-17）**：全自动登录**未触发网易易盾**，一次通过。cookie 落 `cookies/lz.json`（`.gitignore:56` 已忽略，**严禁入 git**）；核心 `_member_user_tonken_` **有效期约 30 天**，到期需重登。取数**不必启动浏览器**——urllib 带 Cookie 头即可，11 品种全通。<br>　🔴 **权限是「分品种」的，不是账号级开关**——同一账号实测 `see=true`：乙烯/丙烯/炭黑/**干胶(天胶)**/顺丁/丁苯/防老剂/促进剂/三元乙丙；`see=false`：柴油/原油/高温煤焦油。<br>　**三态判据（排障必用）**：价格值＝`"请登录"` → 匿名；＝`"无权限"` → 登录有效但该品种无订阅；＝真实数值 且 `see=true` → 正常。**判定账号权限必须逐品种扫，单点外推会得出错误结论**（曾只测柴油差点误判整账号无权限）。<br>　⚠️ 牌号匹配必须**精确**：促进剂同 vid(281) 下 DM/M/TMTD 混排，包含匹配时 `M` 会误命中 TMTD 与 DM；丁苯需兼容 `1712`/`SBR1712` 两种写法。<br>　⚠️ 同一牌号多地区报价语义有差异（如 SCRWF 上海 18450 / 山东 18250），取值口径由 `VARIETY_MAP[*]["markets"]` 优先级列表决定，实际取值市场回写在返回的 `source` 字段 |
+| **同花顺 `10jqka.com.cn`** | ❌ 无外盘 | `goodsfu` 期货页为 JS 渲染 SPA + GBK 编码，HTML 内无任何外盘/布伦特字符串；`q.10jqka.com.cn/global/` 301；外盘接口 404 |
+| **生意社 `www.100ppi.com`** | ⚠️ 可用但口径不同 | 首次响应含 JS 校验，读 `HW_CHECK=<md5>` 写入 cookie 后重取即 200。分品种页 `mprice/plist-1-<id>-1.html`：天胶56/顺丁371/丁苯930/炭黑398/防老剂2315/乙烯51/丙烯362/促进剂M=15657/TMTD=3555。**但"报价中心"＝企业贸易商挂牌价，非市场均价**；且**无三元乙丙** |
+
+**替代路径（已验证）**
+- 原油（布伦特）：`https://hq.sinajs.cn/list=hf_OIL,hf_CL`，需 `Referer: finance.sina.com.cn`，响应 GBK。实测 `hf_OIL=105.644`（布伦特）、`hf_CL=97.395`（纽约原油）。布伦特值与当日新闻披露的 105.60 吻合。⚠️ `hf_CL` 与项目 akshare WTI 存在差值，若启用需先交叉校验，勿直接混用。
+
+**探针脚本**：`probe_smm_aluminum.py`（落盘 `data/smm_aluminum_probe.txt`）、`probe_lz_gate.py`（判定门槛标记 + 正文是否真含价格）。
+
