@@ -30,6 +30,14 @@ dc.oilchem.net 提供完整 REST 接口，且接口层不拦匿名调用。真�
   · 价格取值：`pick_price(row["YYYY/MM/DD"]["price"])`，按
     **主流价 > 最低价 > 最高价** 优先级（见 PRICE_KEY_ORDER）。
     ⚠️ 勿按 dict 首键取：三键齐全时会取到区间下沿。
+  · ⚠️⚠️ **queryPricePage 对「区间型品种」根本不回「主流价」**，只有
+    「最低价/最高价」两键 —— 此时 pick_price 会退到**区间下沿**。
+    而历史回填补的是 getSingleCurve 的 `middlePrice`（主流价）。
+    两侧差约半个区间宽（炭黑 N550 实测 300 元/吨），拼接处会造出假跳变。
+    → 故这类品种在 VARIETY_MAP 里标 `"curve_daily": True`，**日常取数也走
+    曲线接口**，保证与历史同源同字段。判据见 `verify_daily_vs_curve()`。
+    受影响品种（2026-09-18 全量实测确认）：丙烯 / 炭黑N550 / 防老剂4020 /
+    促进剂M / 促进剂TMTD。
   · 涨跌方向另在 row["YYYY/MM/DD"]["dataRiseOrFall"]，取值 -1/0/1
   · 行标识：国内价用 internalMarketName + specificationsName + standard；
     国际价用 marketName + specificationsName
@@ -81,6 +89,9 @@ TOKEN_COOKIE = "_member_user_tonken_"
 #   markets     : 市场/地区优先级（取第一个有值的；None = 不限，取首行）
 #   strict      : True = **只在 markets 内取**，取不到即留空，不跨市场兜底
 #                 False（默认）= markets 全未命中时退到首个匹配行
+#   curve_daily : True = **日常取数走 getSingleCurve 取 middlePrice（主流价）**，
+#                 不走 queryPricePage。仅「区间型品种」需要 —— 它们的
+#                 queryPricePage 响应里没有「主流价」键，只能取到区间下沿。
 #
 # strict 的意义：主人指定口径的品种用 True。否则一旦指定市场当日无报价，
 # 会静默滑到别的市场，看板上只显示数字、看不出市场已漂移 —— 那比留空更危险。
@@ -97,11 +108,13 @@ VARIETY_MAP: dict[str, dict[str, Any]] = {
     "PROPYLENE": {
         "name": "丙烯", "unit": "元/吨", "vid": 116, "bt": 3, "tlbt": 0,
         "specs": None, "markets": ["山东"], "strict": True,
+        "curve_daily": True,
     },
     # ---- 炭黑 ----
     "CARBON_BLACK_N550": {
         "name": "炭黑 N550", "unit": "元/吨", "vid": 242, "bt": 3, "tlbt": 0,
         "specs": ["N550"], "markets": ["山东"], "strict": True,
+        "curve_daily": True,
     },
     # ---- 天然橡胶（隆众品种名为「干胶」）----
     # SCRWF = 国产全乳胶，主人指定云南昆明产地口径
@@ -127,6 +140,7 @@ VARIETY_MAP: dict[str, dict[str, Any]] = {
     "ANTIOXIDANT_4020": {
         "name": "防老剂 4020", "unit": "元/吨", "vid": 282, "bt": 3, "tlbt": 0,
         "specs": ["4020"], "markets": ["华东", "衡水", "广州"],
+        "curve_daily": True,
     },
     # 主人指定促进剂取山东。但山东只有 D/DZ/NS/CZ/DM 五个规格：
     #   · DM / CZ → 山东有，strict 单市场
@@ -142,10 +156,12 @@ VARIETY_MAP: dict[str, dict[str, Any]] = {
     "ACCEL_M": {
         "name": "促进剂 M", "unit": "元/吨", "vid": 281, "bt": 3, "tlbt": 0,
         "specs": ["M"], "markets": ["衡水"], "strict": True,
+        "curve_daily": True,
     },
     "ACCEL_TMTD": {
         "name": "促进剂 TMTD", "unit": "元/吨", "vid": 281, "bt": 3, "tlbt": 0,
         "specs": ["TMTD"], "markets": ["衡水"], "strict": True,
+        "curve_daily": True,
     },
     # ---- 三元乙丙橡胶（牌号级）----
     "EPDM_6950C": {
@@ -256,6 +272,8 @@ def to_number(raw: Any) -> Optional[float]:
 #     · 三键齐全                  → 顺丁 / 丁苯 / 三元乙丙
 #   原先按 dict 首键取值，遇到「三键齐全」会取到**区间下沿**而非主流价
 #   （顺丁取 15300 而主流价是 15400）。现改为显式优先级：主流价 > 最低价 > 最高价。
+#   ⚠️ 「只有最低价/最高价」的那一档，pick_price 只能退到区间下沿 ——
+#      这是**降级**而非等价，故这类品种改走曲线接口（curve_daily）。
 PRICE_KEY_ORDER = ("主流价", "最低价", "最高价")
 
 
@@ -382,19 +400,72 @@ def fetch_raw_http(vid: int, bt: int, tlbt: int = 0,
         return json.loads(r.read().decode("utf-8", "ignore"))
 
 
+def fetch_variety_curve_daily(key: str, days: int = 14,
+                              cookie: Optional[str] = None) -> dict[str, Any]:
+    """日常取数（**曲线口径**）：取最近 `days` 天的曲线，只认 middlePrice。
+
+    与 fetch_variety 返回同结构（含 date/price/series/source/auth/error）。
+    用于「区间型品种」—— 日报接口对它们不回主流价，取不到真口径。
+
+    为什么不用日报接口的 low/high 取平均代替：
+      实测 middlePrice **不等于** (low+high)/2。例（山东|N550）：
+        2026-09-03  low=9000  high=9300  → 中值 9150，middlePrice=9200
+        2026-09-17  low=11800 high=12300 → 中值 12050，middlePrice=12000
+      middlePrice 是隆众单独维护的主流价，自算中值会造成**新的**口径偏差。
+    """
+    import datetime as _dt
+    cfg = VARIETY_MAP[key]
+    out: dict[str, Any] = {"key": key, "name": cfg["name"], "unit": cfg["unit"],
+                           "date": None, "price": None, "series": {},
+                           "source": "", "auth": "", "error": None}
+    end = _dt.date.today()
+    start = end - _dt.timedelta(days=int(days))
+    r = fetch_variety_curve(key, start.isoformat(), end.isoformat(), cookie=cookie)
+    out["error"] = r.get("error")
+    out["source"] = r.get("source") or ""
+    out["auth"] = r.get("auth") or ""
+    out["series"] = r.get("series") or {}
+    live = {d: v for d, v in out["series"].items() if v is not None}
+    if live:
+        d = max(live)
+        out["date"] = d
+        out["price"] = live[d]
+    return out
+
+
 def fetch_variety(key: str, cookie: Optional[str] = None,
                   sleep: float = 0.6) -> dict[str, Any]:
     """按映射表 key 取价。
 
-    返回 {key, name, unit, date, price, series, source, auth, error}
+    返回 {key, name, unit, date, price, series, source, auth, error, mode}
     —— 取不到时 price=None（绝不编造）。
+
+    mode：`daily`＝日报接口 queryPricePage；`curve`＝曲线接口 getSingleCurve。
+    ⚠️ 区间型品种（cfg["curve_daily"]）走 curve，与历史回填同口径；
+       曲线取不到时**回退** daily 并打 WARNING（口径会偏低，但好过断档）。
     """
     cfg = VARIETY_MAP.get(key)
     if not cfg:
         raise KeyError(f"未知品种 key: {key}（可选：{', '.join(VARIETY_MAP)}）")
     out: dict[str, Any] = {"key": key, "name": cfg["name"], "unit": cfg["unit"],
                            "date": None, "price": None, "series": {},
-                           "source": "", "auth": "", "error": None}
+                           "source": "", "auth": "", "error": None, "mode": ""}
+    if cfg.get("curve_daily"):
+        try:
+            r = fetch_variety_curve_daily(key, cookie=cookie)
+        except Exception as e:                                  # noqa: BLE001
+            r = {"error": f"{type(e).__name__}: {e}"}
+        if r.get("price") is not None:
+            for k in ("date", "price", "series", "source", "auth", "error"):
+                out[k] = r.get(k)
+            out["mode"] = "curve"
+            if sleep:
+                time.sleep(sleep)
+            return out
+        logger.warning("%s 曲线口径取数失败（%s）—— 回退日报接口，"
+                       "该值与历史主流价口径不同，可能偏低",
+                       cfg["name"], r.get("error") or "无有效点")
+        out["error"] = r.get("error")
     try:
         doc = fetch_raw_http(cfg["vid"], cfg["bt"], cfg["tlbt"], cookie)
         if str(doc.get("status")) != "200":
@@ -412,6 +483,7 @@ def fetch_variety(key: str, cookie: Optional[str] = None,
                 out["date"] = d
                 out["price"] = series[d]
                 break
+        out["mode"] = "daily"
     except Exception as e:
         out["error"] = f"{type(e).__name__}: {e}"
     if sleep:
@@ -611,6 +683,66 @@ def check_login(path: Optional[Path] = None) -> tuple[bool, str]:
     return False, f"未取到登录态（匿名）{note}"
 
 
+def verify_daily_vs_curve(keys: Optional[list[str]] = None,
+                          probe_days: int = 14,
+                          cookie: Optional[str] = None) -> list[dict[str, Any]]:
+    """体检：逐品种比较**日报口径**与**曲线口径**在同一交易日的取值。
+
+    用途：发现「未标记 curve_daily、但实际日志接口也取不到主流价」的品种
+    （即口径分裂的漏网之鱼）。
+
+    返回 [{key, name, date, daily, curve, diff, verdict}]
+    verdict：ok（一致）/ drift（不一致，需改走曲线）/ unknown（某侧无值）
+    """
+    import datetime as _dt
+    keys = keys or [k for k in VARIETY_MAP if "无权" not in VARIETY_MAP[k]["name"]]
+    end = _dt.date.today()
+    start = end - _dt.timedelta(days=int(probe_days))
+    rows: list[dict[str, Any]] = []
+    for k in keys:
+        cfg = VARIETY_MAP[k]
+        rec = {"key": k, "name": cfg["name"], "date": None,
+               "daily": None, "curve": None, "diff": None,
+               "verdict": "unknown", "market": "", "spec": ""}
+        try:
+            doc = fetch_raw_http(cfg["vid"], cfg["bt"], cfg["tlbt"], cookie)
+            resp = (doc.get("response") or {}) if str(doc.get("status")) == "200" else {}
+            ser, src = parse_series(resp, cfg.get("specs"), cfg.get("markets"),
+                                    strict=bool(cfg.get("strict")))
+            live = {d: v for d, v in ser.items() if v is not None}
+            if live:
+                d = max(live)
+                rec["daily"] = live[d]
+                rec["date"] = d.replace("/", "-")
+                rec["market"] = src
+        except Exception as e:                                   # noqa: BLE001
+            logger.warning("体检 %s 日报口径失败: %s", cfg["name"], e)
+        try:
+            r = fetch_variety_curve(k, start.isoformat(), end.isoformat(), cookie=cookie)
+            if not rec["market"]:
+                rec["market"] = r.get("source") or ""
+            live2 = {d: v for d, v in (r.get("series") or {}).items() if v is not None}
+            if live2:
+                if rec["date"] and rec["date"] in live2:
+                    rec["curve"] = live2[rec["date"]]          # 同一天比
+                    if not rec["spec"]:
+                        rec["spec"] = ""
+                else:
+                    d2 = max(live2)
+                    rec["curve"] = live2[d2]
+                    rec["date"] = rec["date"] or d2
+        except Exception as e:                                   # noqa: BLE001
+            logger.warning("体检 %s 曲线口径失败: %s", cfg["name"], e)
+        if rec["daily"] is None or rec["curve"] is None:
+            rec["verdict"] = "unknown"
+        else:
+            rec["diff"] = rec["daily"] - rec["curve"]
+            rec["verdict"] = "ok" if abs(rec["diff"]) < 1e-6 else "drift"
+        rows.append(rec)
+        time.sleep(0.3)
+    return rows
+
+
 # ---------------------------------------------------------------------------
 # 抓取 · Playwright 回退（cookie 失效/风控升级时用）
 # ---------------------------------------------------------------------------
@@ -664,11 +796,36 @@ async def probe_authorization(page) -> bool:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import argparse
+    import sys
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     ap = argparse.ArgumentParser(description="隆众价格中心 · 映射表与登录态体检")
     ap.add_argument("--check", action="store_true", help="体检登录态并试抓全部品种")
+    ap.add_argument("--verify", action="store_true",
+                    help="逐品种比对「日报口径 vs 曲线口径」，暴露口径分裂")
     args = ap.parse_args()
+
+    if args.verify:
+        print("隆众 · 日报口径 vs 曲线口径 体检")
+        print("=" * 92)
+        print(f"{'品种':<24}{'日期':<13}{'日报':>10}{'曲线(主流价)':>14}{'差':>10}  {'判定':<8}取值行")
+        print("-" * 92)
+        drift = []
+        for r in verify_daily_vs_curve():
+            dv = f"{r['daily']:.0f}" if r["daily"] is not None else "—"
+            cv = f"{r['curve']:.0f}" if r["curve"] is not None else "—"
+            df = f"{r['diff']:+.0f}" if r["diff"] is not None else "—"
+            flag = {"ok": "一致",
+                    "drift": "★分裂",
+                    "unknown": "数据不足"}[r["verdict"]]
+            if r["verdict"] == "drift":
+                drift.append(r["key"])
+            print(f"{r['name']:<24}{str(r['date'] or '—'):<13}{dv:>10}{cv:>14}{df:>10}  {flag:<8}{r['market']}")
+        print("-" * 92)
+        print(f"口径分裂 {len(drift)} 项：{', '.join(drift) if drift else '无'}")
+        if drift:
+            print("→ 处置：在 VARIETY_MAP 里给这些品种加 \"curve_daily\": True")
+        sys.exit(0)
 
     if not args.check:
         print("隆众价格中心 · 品种映射表")
