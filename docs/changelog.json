@@ -17530,6 +17530,96 @@
       "source": "manual_xlsx",
       "editor": "主人",
       "commit": "6e5757c79ddb2b91517552008029a124af96b723"
+    },
+    {
+      "ts": "2026-09-18T17:04:07",
+      "date_row": "2026-09-18",
+      "code": "A00_AL",
+      "old": null,
+      "new": 24380.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "e2ccaf159b5811f290ec3effb563a29c6d3e4d43"
+    },
+    {
+      "ts": "2026-09-18T17:04:07",
+      "date_row": "2026-09-18",
+      "code": "CU",
+      "old": null,
+      "new": 110290.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "e2ccaf159b5811f290ec3effb563a29c6d3e4d43"
+    },
+    {
+      "ts": "2026-09-18T17:04:07",
+      "date_row": "2026-09-18",
+      "code": "SI_441",
+      "old": null,
+      "new": 10200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "e2ccaf159b5811f290ec3effb563a29c6d3e4d43"
+    },
+    {
+      "ts": "2026-09-18T17:04:07",
+      "date_row": "2026-09-18",
+      "code": "SI_3303",
+      "old": null,
+      "new": 10500.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "e2ccaf159b5811f290ec3effb563a29c6d3e4d43"
+    },
+    {
+      "ts": "2026-09-18T17:04:07",
+      "date_row": "2026-09-18",
+      "code": "MG",
+      "old": null,
+      "new": 17600.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "e2ccaf159b5811f290ec3effb563a29c6d3e4d43"
+    },
+    {
+      "ts": "2026-09-18T17:04:07",
+      "date_row": "2026-09-18",
+      "code": "MN",
+      "old": null,
+      "new": 19000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "e2ccaf159b5811f290ec3effb563a29c6d3e4d43"
+    },
+    {
+      "ts": "2026-09-18T17:04:07",
+      "date_row": "2026-09-18",
+      "code": "SI_331",
+      "old": null,
+      "new": 10900.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "e2ccaf159b5811f290ec3effb563a29c6d3e4d43"
+    },
+    {
+      "ts": "2026-09-18T17:04:07",
+      "date_row": "2026-09-18",
+      "code": "WTI",
+      "old": 95.35,
+      "new": 95.44,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "e2ccaf159b5811f290ec3effb563a29c6d3e4d43"
+    },
+    {
+      "ts": "2026-09-18T17:04:07",
+      "date_row": "2026-09-18",
+      "code": "IRON_ORE",
+      "old": 837.0,
+      "new": 838.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "e2ccaf159b5811f290ec3effb563a29c6d3e4d43"
     }
   ]
 }
