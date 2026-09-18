@@ -127,6 +127,17 @@ def _extract_w_from_table(html: str) -> Optional[float]:
     return None
 
 
+# 报价表图片 OCR 的预处理变体（2026-09-18 新增，用于变体间交叉验证）。
+# (放大倍数, 对比度增强, 二值化阈值或 None)
+# ⚠️ 单一二值化阈值会系统性地把「8」读成「9」或「3」（09-18 实测：钨粉 890.00
+# 被阈值 180 读成 900 / 390）。故并列三种变体取多数票，见 _ocr_window。
+_PREPROC_VARIANTS = (
+    (3, 2.0, None),   # 仅放大 + 增强对比（09-18 实测读对 890）
+    (3, 2.0, 180),    # 原实现：硬二值化
+    (3, 2.0, 150),    # 较松阈值
+)
+
+
 def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: str) -> Optional[float]:
     """当 HTML 中无文本化报价表时，对文章内嵌的报价表图片做 OCR 取钨粉价。
 
@@ -198,59 +209,101 @@ def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: s
         re.compile(r"(?:钨粉|转粉)[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)"),
     )
 
-    def _ocr_window(y0: int, y1: int):
-        """裁一条横向窗做预处理 + OCR，返回 (价格或None, 原始文本)。"""
-        if y1 - y0 < 8:
-            return None, ""
-        crop = img.crop((0, y0, w, y1))
-        # 放大、增强对比度、二值化——这是让 tesseract 读准的关键
-        crop = crop.resize((crop.width * 3, crop.height * 3), Image.LANCZOS)
-        crop = ImageEnhance.Contrast(crop).enhance(2.0)
-        crop = crop.point(lambda p: 255 if p > 180 else 0)
+    def _ocr_variant(crop, scale: int, contrast: float, thr):
+        """对一条裁剪窗做指定预处理后 OCR，返回原始文本。"""
+        c = crop.resize((crop.width * scale, crop.height * scale), Image.LANCZOS)
+        if contrast:
+            c = ImageEnhance.Contrast(c).enhance(contrast)
+        if thr is not None:
+            c = c.point(lambda p: 255 if p > thr else 0)
 
         # tesseract 在 macOS 沙盒/子进程中对 /tmp 访问受限，放到项目目录更稳
         tmp_dir = os.path.dirname(os.path.abspath(__file__))
         with tempfile.NamedTemporaryFile(dir=tmp_dir, suffix=".png", delete=False) as fh:
-            crop.save(fh.name)
+            c.save(fh.name)
             tmp_path = fh.name
         try:
             result = subprocess.run(
                 ["tesseract", tmp_path, "stdout", "-l", "chi_sim+eng", "--psm", "6"],
                 capture_output=True, timeout=15
             )
-            txt = result.stdout.decode("utf-8", errors="ignore")
+            return result.stdout.decode("utf-8", errors="ignore")
         finally:
             try:
                 os.unlink(tmp_path)
             except OSError:
                 pass
 
-        for pat in _SPEC_ANCHORS:
-            m = pat.search(txt)
-            if not m:
-                continue
-            try:
-                val = float(m.group(1).replace(",", ""))
-            except ValueError:
-                continue
-            # 钨粉近年价格区间大致 200~5000 元/千克
-            if 200 <= val <= 5000:
-                return round(val, 2), txt
-        return None, txt
+    def _ocr_window(y0: int, y1: int):
+        """裁一条横向窗做预处理 + OCR，返回 (价格或None, 原始文本)。
+
+        2026-09-18 加固：**同一窗口做 3 种预处理变体，取多数票**。
+        背景：当日图上「钨粉 890.00」被原二值化变体（阈值 180）读成 900 / 390，
+        而「不二值化」「阈值 150」两个变体均正确读出 890.00。
+        原实现的「≥2 票一致」只在**同一变体跨窗口**成立 —— 同一字形被系统性
+        误读时，重复扫描只会把同一个错误投成多票，不构成正确性证据。
+        改为变体间互校：
+          ① 3 变体中有 ≥2 个给出同一价格 ⇒ 采用（真交叉验证）；
+          ② 3 变体各说各话 ⇒ 弃权返回 None（宁留空，不取错，守铁律）；
+          ③ 只有 1 个变体给出价格（另两个无锚点/无数字）⇒ 采用该单票结果。
+        """
+        if y1 - y0 < 8:
+            return None, ""
+        crop = img.crop((0, y0, w, y1))
+
+        variant_vals: list = []
+        texts: list = []
+        for scale, contrast, thr in _PREPROC_VARIANTS:
+            txt = _ocr_variant(crop, scale, contrast, thr)
+            texts.append(txt)
+            hit = None
+            for pat in _SPEC_ANCHORS:
+                m = pat.search(txt)
+                if not m:
+                    continue
+                try:
+                    val = float(m.group(1).replace(",", ""))
+                except ValueError:
+                    continue
+                # 钨粉近年价格区间大致 200~5000 元/千克
+                if 200 <= val <= 5000:
+                    hit = round(val, 2)
+                    break
+            variant_vals.append(hit)
+
+        joined = " ||| ".join(t.strip() for t in texts)
+        hits = [v for v in variant_vals if v is not None]
+        if not hits:
+            return None, joined
+        counts: dict = {}
+        for v in hits:
+            counts[v] = counts.get(v, 0) + 1
+        best_val, best_n = max(counts.items(), key=lambda kv: kv[1])
+        if best_n >= 2:
+            return best_val, joined
+        if len(hits) == 1:
+            return hits[0], joined
+        # 多票但无共识 ⇒ 弃权
+        logger.debug("OCR 变体间无共识 (%s)，弃权 y0=%s", variant_vals, y0)
+        return None, joined
 
     votes = {}          # val -> 票数（不含「碳化」窗口）
     suspect = False     # 是否出现过仅因「碳化」被排除的命中
     first_hit = None    # (y0, val) 纵向最靠上的可信命中
-    calls = 0
-    MAX_CALLS = 45      # 兜底路径耗时上限（每次 OCR 约 0.5~1s）
-    for y0_ratio in (0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48,
-                     0.49, 0.50, 0.51, 0.52, 0.54, 0.56):
-        y0 = int(h * y0_ratio)
-        for row_h_ratio, dy in ((0.06, 0), (0.055, 0), (0.065, 0),
-                                (0.06, -2), (0.06, 2)):
-            calls += 1
+    calls = 0           # OCR 调用次数（每个窗口 3 变体 = 3 次）
+    # 2026-09-18：每窗口 OCR 次数由 1 增至 3（变体互校），预算同步收紧至 45 次
+    # （≈15 个窗口）。同时把「窗高/微扰」提到外层、「纵向位置」放内层 ——
+    # 让第一轮（dy=0）就扫遍整表 y 区间，避免预算被微扰子组合耗尽而只覆盖表头上部。
+    MAX_CALLS = 45
+    Y0_RATIOS = (0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48,
+                 0.49, 0.50, 0.51, 0.52, 0.54, 0.56)
+    for row_h_ratio, dy in ((0.06, 0), (0.055, 0), (0.065, 0),
+                            (0.06, -2), (0.06, 2)):
+        for y0_ratio in Y0_RATIOS:
+            calls += 3
             if calls > MAX_CALLS:
                 break
+            y0 = int(h * y0_ratio)
             y1 = min(h, y0 + int(h * row_h_ratio) + dy)
             val, txt = _ocr_window(y0, y1)
             if val is None:
@@ -262,11 +315,13 @@ def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: s
             votes[val] = votes.get(val, 0) + 1
             if first_hit is None:
                 first_hit = (y0, val)
-        # ≥2 票一致 ⇒ 证据充分，提前收工
-        if votes and max(votes.values()) >= 2:
-            break
-        # 首个命中后多扫 3 个带仍无第二票 ⇒ 收工省时
-        if first_hit is not None and y0_ratio >= first_hit[0] / h + 0.03:
+            # ≥2 票一致 ⇒ 证据充分，提前收工
+            if votes and max(votes.values()) >= 2:
+                break
+            # 首个命中后多扫 3 个带仍无第二票 ⇒ 收工省时
+            if y0_ratio >= first_hit[0] / h + 0.03:
+                break
+        if calls > MAX_CALLS or (votes and max(votes.values()) >= 2):
             break
 
     if votes:
