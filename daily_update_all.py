@@ -388,23 +388,45 @@ async def main():
         print(f"  ⚠️ 同步失败: {e}（继续执行）")
 
     all_prices = {}
+    failed_sources: list[str] = []
 
-    all_prices.update(await fetch_ccmn())
+    # ===== 单源容错（2026-09-18 加固）=====
+    # 背景：ccmn.cn 全站 500 时 fetch_ccmn() 抛 FetchError 未被捕获，导致整轮
+    # 中止、其余 18 项全部未写入（09-18 实测）。单源故障不应拖垮全表。
+    # 原则不变：抓不到就留空，绝不编造、绝不沿用前值 —— 此处只保证「其余源照常」。
+    async def _safe_async(label, coro):
+        try:
+            return await coro or {}
+        except Exception as e:
+            failed_sources.append(label)
+            print(f"  ⚠️ {label} 抓取失败，相关列留空（守铁律，不编造）: {type(e).__name__}: {e}")
+            return {}
+
+    def _safe_sync(label, fn):
+        try:
+            return fn() or {}
+        except Exception as e:
+            failed_sources.append(label)
+            print(f"  ⚠️ {label} 抓取失败，相关列留空（守铁律，不编造）: {type(e).__name__}: {e}")
+            return {}
+
+    all_prices.update(await _safe_async("ccmn(7)", fetch_ccmn()))
     print()
-    all_prices.update(await fetch_smm())
+    all_prices.update(await _safe_async("SMM(8)", fetch_smm()))
     print()
     # 亚洲金属网闻喜镁锭覆盖 SMM 的 Wenxi_MG（项目要求主源为亚洲金属网）
-    all_prices.update(await fetch_asianmetal())
+    all_prices.update(await _safe_async("asianmetal(闻喜镁锭)", fetch_asianmetal()))
     print()
-    tungsten = fetch_tungsten()
-    if tungsten: all_prices.update(tungsten)
-    wti = fetch_wti()
-    if wti: all_prices.update(wti)
-    steel = await fetch_steel()
-    if steel: all_prices.update(steel)
-    sci99 = await fetch_sci99()
-    if sci99: all_prices.update(sci99)
+    all_prices.update(_safe_sync("中钨在线(钨粉)", fetch_tungsten))
+    all_prices.update(_safe_sync("akshare(WTI)", fetch_wti))
+    all_prices.update(await _safe_async("钢铁(2)", fetch_steel()))
+    all_prices.update(await _safe_async("卓创(6)", fetch_sci99()))
     print()
+    if failed_sources:
+        print(f"  ⚠️ 本轮失败源: {', '.join(failed_sources)}（LME_AL 另按设计延后）")
+    if not all_prices:
+        print("\n  ❌ 全部数据源均失败，不写表、不发布（避免写入空行）。")
+        return
     # ===== LME 铝：2026-09-16 起不在 15:00 抓取 =====
     # 该源为 day-delayed 官方价（伦敦 12:30 定价、北京 19:30-20:30 发布），15:00
     # 只能拿到前一伦敦交易日值，写入当日行会造成日期错位。现改为次日 9:00 由
@@ -419,6 +441,8 @@ async def main():
 
     active_total = len(COL_MAP) - len(DEFERRED_CODES)
     print(f"\n  已更新 {len(all_prices)}/{active_total} 品种（LME_AL 另由次日 9:00 回填）")
+    if failed_sources:
+        print(f"  ⚠️ 失败源（留空待补抓）: {', '.join(failed_sources)}")
     print(f"  看板: https://lekelin2046.github.io/jinggong-commodity-monitor/\n")
 
 
