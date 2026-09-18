@@ -117,19 +117,38 @@ def _git_env():
 def git_with_proxy(args, cwd=None, timeout=60):
     """运行 git 命令，自动注入代理，统一超时和输出格式
 
+    🔴 **超时不再抛异常**：捕获 TimeoutExpired 后按 returncode=124 返回。
+    否则会炸穿上层契约 —— `git_pull_rebase()` 声明返回 True/False，但 pull 卡住
+    60s 时抛的是 subprocess.TimeoutExpired，异常直接穿透调用方，整个脚本以
+    traceback 结束（2026-09-18 实测：mand_update.py --push 在 pull --rebase 处
+    超时，数据虽已落盘却让任务以非零退出码收场，被上层误判为整体失败）。
+    网络故障应当是**可返回的失败**，不是崩溃。
+
     Returns:
-        (returncode, stdout, stderr)
+        (returncode, stdout, stderr)；超时返回 (124, 已读到的输出, 附带超时说明)
     """
     if cwd is None:
         cwd = str(PROJECT_DIR)
-    r = subprocess.run(
-        ["git"] + args,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        env=_git_env(),
-    )
+    try:
+        r = subprocess.run(
+            ["git"] + args,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            env=_git_env(),
+        )
+    except subprocess.TimeoutExpired as e:
+        def _txt(v) -> str:
+            if v is None:
+                return ""
+            return v.decode("utf-8", "replace") if isinstance(v, bytes) else str(v)
+
+        return (
+            124,
+            _txt(e.stdout).strip(),
+            (_txt(e.stderr).strip() + f"\n[timeout after {timeout}s]").strip(),
+        )
     return r.returncode, r.stdout.strip(), r.stderr.strip()
 
 
