@@ -17620,6 +17620,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "e2ccaf159b5811f290ec3effb563a29c6d3e4d43"
+    },
+    {
+      "ts": "2026-09-19T13:50:00",
+      "date_row": "2026-09-18",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3285.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "fe0142f22542ecc500605eab18c356b8b8aa0934"
     }
   ]
 }
