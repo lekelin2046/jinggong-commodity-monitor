@@ -17880,6 +17880,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "9773270f5acc404cf3ba2c45803db8b5a807b7b0"
+    },
+    {
+      "ts": "2026-09-22T09:01:48",
+      "date_row": "2026-09-21",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3262.5,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "38082736bc6cd3cbc18d787c45a3f8a7bae3134f"
     }
   ]
 }
