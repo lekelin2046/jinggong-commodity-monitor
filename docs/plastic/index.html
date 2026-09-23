@@ -95,7 +95,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 /* 日趋势 2×2 网格（用 minmax(0,1fr) 防止 Chart.js 画布撑出横向滚动条） */
 .trend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(max-width:768px){.trend-grid{grid-template-columns:1fr}}
-/* 单品日趋势：控件 + 分段按钮 */
+/* 多指标价格曲线对比 / 趋势控件：多选 + 分段按钮 + 日期范围 */
 .trend-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
 .trend-controls select{padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;min-width:240px}
 .seg{display:inline-flex;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden}
