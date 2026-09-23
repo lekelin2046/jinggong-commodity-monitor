@@ -201,12 +201,17 @@ def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: s
     #   ④ 全部窗口被排除或无命中 ⇒ 返回 None 留空，由 17:00 补抓/人工兜底。
 
     _SPEC_ANCHORS = (
-        # "2-10μm"（OCR 常读成 210m / 2-10mm / 2-10m）+ 其后最近的价格数字
-        re.compile(r"(?:2\s*[-–—]\s*10|210)\s*[muμmM]{1,3}[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)"),
+        # "2-10μm"（OCR 常读成 210m / 2-10mm / 2-10m）+ 其后最近的价格数字。
+        # ⚠️ 2026-09-23 加固：价格必须带完整小数「\d{3,4}\.\d{2}」。
+        # 背景：当日「钨粉 880.00」被水印干扰读成「|800 |」（丢中间 8 + 丢 .00），
+        # 旧正则允许裸 3 位数命中 ⇒ 800 被当合法价、还跨窗口重复投票凑满 2 票，
+        # 击败了正确窗口的 880.00。报价表所有真实价都带 .00，截断误读天然无小数点，
+        # 强制小数即可拒绝；顺带杀掉「580,000.00 被截成 580」的错行风险。
+        re.compile(r"(?:2\s*[-–—]\s*10|210)\s*[muμmM]{1,3}[^\d]{0,40}(\d{3,4}\.\d{2})"),
         # 备选：μm/mm 单位后取数字
-        re.compile(r"[μu]m[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)"),
+        re.compile(r"[μu]m[^\d]{0,40}(\d{3,4}\.\d{2})"),
         # 再备选：直接出现 "钨粉/转粉" 字样后取数字
-        re.compile(r"(?:钨粉|转粉)[^\d]{0,40}(\d{3,4}(?:[.,]\d+)?)"),
+        re.compile(r"(?:钨粉|转粉)[^\d]{0,40}(\d{3,4}\.\d{2})"),
     )
 
     def _ocr_variant(crop, scale: int, contrast: float, thr):
@@ -274,22 +279,24 @@ def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: s
         joined = " ||| ".join(t.strip() for t in texts)
         hits = [v for v in variant_vals if v is not None]
         if not hits:
-            return None, joined
+            return None, False, joined
         counts: dict = {}
         for v in hits:
             counts[v] = counts.get(v, 0) + 1
         best_val, best_n = max(counts.items(), key=lambda kv: kv[1])
         if best_n >= 2:
-            return best_val, joined
+            # 窗口内 ≥2 变体一致 ⇒ 强窗口（真交叉验证）
+            return best_val, True, joined
         if len(hits) == 1:
-            return hits[0], joined
+            return hits[0], False, joined
         # 多票但无共识 ⇒ 弃权
         logger.debug("OCR 变体间无共识 (%s)，弃权 y0=%s", variant_vals, y0)
-        return None, joined
+        return None, False, joined
 
     votes = {}          # val -> 票数（不含「碳化」窗口）
+    strong_vals = set() # 2026-09-23：至少在一个窗口内获得 ≥2 变体一致的值（强证据）
     suspect = False     # 是否出现过仅因「碳化」被排除的命中
-    first_hit = None    # (y0, val) 纵向最靠上的可信命中
+    first_hit = None    # (y0, val, strong) 纵向最靠上的可信命中
     calls = 0           # OCR 调用次数（每个窗口 3 变体 = 3 次）
     # 2026-09-18：每窗口 OCR 次数由 1 增至 3（变体互校），预算同步收紧至 45 次
     # （≈15 个窗口）。同时把「窗高/微扰」提到外层、「纵向位置」放内层 ——
@@ -305,7 +312,7 @@ def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: s
                 break
             y0 = int(h * y0_ratio)
             y1 = min(h, y0 + int(h * row_h_ratio) + dy)
-            val, txt = _ocr_window(y0, y1)
+            val, strong, txt = _ocr_window(y0, y1)
             if val is None:
                 continue
             if "碳化" in txt:
@@ -313,21 +320,46 @@ def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: s
                 logger.debug("跳过含「碳化」窗口 y0=%s y1=%s val=%s", y0, y1, val)
                 continue
             votes[val] = votes.get(val, 0) + 1
+            if strong:
+                strong_vals.add(val)
             if first_hit is None:
-                first_hit = (y0, val)
-            # ≥2 票一致 ⇒ 证据充分，提前收工
-            if votes and max(votes.values()) >= 2:
-                break
+                first_hit = (y0, val, strong)
+            # ≥2 票一致且该值为强窗口 ⇒ 证据充分，提前收工。
+            # ⚠️ 2026-09-23：弱值凑满 2 票**不再**提前收工 —— 同一字形被系统性
+            # 误读时（如 880.00→800），重复扫描只会把同一错误投成多票；
+            # 继续扫描才有可能遇到强窗口纠正它。
+            if votes:
+                bv = max(votes.items(), key=lambda kv: kv[1])[0]
+                if votes[bv] >= 2 and bv in strong_vals:
+                    break
             # 首个命中后多扫 3 个带仍无第二票 ⇒ 收工省时
             if y0_ratio >= first_hit[0] / h + 0.03:
                 break
-        if calls > MAX_CALLS or (votes and max(votes.values()) >= 2):
+        if calls > MAX_CALLS or (
+            votes
+            and (lambda bv: votes[bv] >= 2 and bv in strong_vals)(
+                max(votes.items(), key=lambda kv: kv[1])[0]
+            )
+        ):
             break
 
     if votes:
         best_val, best_n = max(votes.items(), key=lambda kv: kv[1])
+        # 2026-09-23 决策规则：强窗口值 > 弱票多数 > 单票。
+        # 只要出现过强值（单窗口内 ≥2 变体一致），就只认强值 ——
+        # 弱票（含跨窗口重复的同一误读）不构成正确性证据。
+        if strong_vals:
+            if len(strong_vals) == 1:
+                sv = next(iter(strong_vals))
+                logger.info(
+                    "中钨在线 W(钨粉): %.2f (报价表图片 OCR，强窗口 %.2f；弱票 %s)",
+                    sv, sv, votes,
+                )
+                return sv
+            logger.warning("报价表图片 OCR 强窗口值冲突 %s，为防取错行弃权留空", strong_vals)
+            return None
         if best_n >= 2:
-            logger.info("中钨在线 W(钨粉): %.2f (报价表图片 OCR，%d 票一致)", best_val, best_n)
+            logger.info("中钨在线 W(钨粉): %.2f (报价表图片 OCR，%d 票一致，无强窗口)", best_val, best_n)
             return best_val
         logger.info("中钨在线 W(钨粉): %.2f (报价表图片 OCR，单票 y0=%s)",
                     first_hit[1], first_hit[0])
