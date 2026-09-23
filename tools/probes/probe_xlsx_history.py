@@ -5,10 +5,14 @@
 """
 import json
 import datetime as dt
+from pathlib import Path
+
 from openpyxl import load_workbook
 
-XLSX = "诺博橡胶大宗物料价格走势-2026.xlsx"
-DATA = "docs/plastic/data.json"
+# 2026-09-23 整理：源文件已归入 sources/橡胶/，路径锚定仓库根（不再依赖 cwd）
+_ROOT = Path(__file__).resolve().parents[2]
+XLSX = str(_ROOT / "sources" / "橡胶" / "诺博橡胶大宗物料价格走势-2026.xlsx")
+DATA = str(_ROOT / "docs" / "plastic" / "data.json")
 
 # (sheet, col_letter) -> code
 MAP = {

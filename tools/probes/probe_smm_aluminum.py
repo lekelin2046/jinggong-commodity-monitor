@@ -13,12 +13,12 @@ import re
 import sys
 from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # 2026-09-23 整理：需 import jinggong_monitor，故插入仓库根
 
 from jinggong_monitor.fetcher_smm import _fetch_page_text, _login_and_save_cookies, COOKIE_FILE, SMM_PAGES
 from playwright.async_api import async_playwright
 
-OUT = Path(__file__).parent / "data" / "smm_aluminum_probe.txt"
+OUT = Path(__file__).resolve().parents[2] / "data" / "smm_aluminum_probe.txt"
 
 
 async def main():

@@ -11,7 +11,7 @@ import os
 import re
 from pathlib import Path
 
-OUT = Path(__file__).parent / "data" / "probe_dc"
+OUT = Path(__file__).resolve().parents[2] / "data" / "probe_dc"  # 2026-09-23 整理：本文件位于 tools/probes/，根目录上溯两级
 OUT.mkdir(parents=True, exist_ok=True)
 
 # 柴油 channelIdNew=1695（从首页链接取得）

@@ -40,7 +40,8 @@ from openpyxl import load_workbook
 from .trading_calendar import is_trading_day
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-XLSX_DEFAULT = os.path.join(BASE, "诺博橡胶大宗物料价格走势-2026.xlsx")
+# 2026-09-23 整理：源工作簿已归入 sources/橡胶/
+XLSX_DEFAULT = os.path.join(BASE, "sources", "橡胶", "诺博橡胶大宗物料价格走势-2026.xlsx")
 DATA_DEFAULT = os.path.join(BASE, "docs", "plastic", "data.json")
 
 # (工作表, 列字母) -> 看板品种代码
@@ -323,10 +324,14 @@ def main(argv=None):
         print("无任何可写入的数据点 → 跳过写盘。")
         return 0
 
-    bak = args.data + ".bak-" + dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    # 2026-09-23 整理：备份统一落 backups/塑料/，不再堆在 docs/plastic/ 下
+    bak_dir = os.path.join(BASE, "backups", "塑料")
+    os.makedirs(bak_dir, exist_ok=True)
+    bak = os.path.join(bak_dir, os.path.basename(args.data) + ".bak-"
+                       + dt.datetime.now().strftime("%Y%m%d-%H%M%S"))
     shutil.copy2(args.data, bak)
     print()
-    print(f"已备份 → {os.path.basename(bak)}")
+    print(f"已备份 → {os.path.relpath(bak, BASE)}")
 
     added = 0
     for k, vals in plan.items():

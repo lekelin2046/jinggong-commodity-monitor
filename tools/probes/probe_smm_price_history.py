@@ -17,7 +17,7 @@ from pathlib import Path
 
 os.environ.pop("NODE_OPTIONS", None)
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]  # 2026-09-23 整理：本文件位于 tools/probes/，根目录上溯两级
 sys.path.insert(0, str(ROOT))
 
 from jinggong_monitor.fetcher_smm import COOKIE_FILE  # noqa: E402

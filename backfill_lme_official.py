@@ -199,7 +199,10 @@ def main():
         return 0
 
     # 3) 写入 + 留痕
-    bak = SCRIPT_DIR / f"{EXCEL_PATH.name}.bak-{today.strftime('%Y%m%d')}"
+    # 2026-09-23 整理：xlsx 备份统一落 backups/精工/
+    bak_dir = SCRIPT_DIR / "backups" / "精工"
+    bak_dir.mkdir(parents=True, exist_ok=True)
+    bak = bak_dir / f"{EXCEL_PATH.name}.bak-{today.strftime('%Y%m%d')}"
     if not bak.exists():
         shutil.copy2(EXCEL_PATH, bak)
         log(f"[3/4] 已备份: {bak.name}（已存在则跳过）")

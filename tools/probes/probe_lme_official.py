@@ -24,7 +24,7 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-PROJECT = Path(__file__).resolve().parent
+PROJECT = Path(__file__).resolve().parents[2]  # 2026-09-23 整理：本文件位于 tools/probes/，根目录上溯两级
 PROFILE_DIR = PROJECT / "cookies" / "lme_official_profile"
 OUT_JSON = PROJECT / "data" / "lme_official_latest.json"
 

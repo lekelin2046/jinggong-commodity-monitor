@@ -935,7 +935,7 @@ pyyaml>=6.0
 **替代路径（已验证）**
 - 原油（布伦特）：`https://hq.sinajs.cn/list=hf_OIL,hf_CL`，需 `Referer: finance.sina.com.cn`，响应 GBK。实测 `hf_OIL=105.644`（布伦特）、`hf_CL=97.395`（纽约原油）。布伦特值与当日新闻披露的 105.60 吻合。⚠️ `hf_CL` 与项目 akshare WTI 存在差值，若启用需先交叉校验，勿直接混用。
 
-**探针脚本**：`probe_smm_aluminum.py`（落盘 `data/smm_aluminum_probe.txt`）、`probe_lz_gate.py`（判定门槛标记 + 正文是否真含价格）、`probe_smm_price_history.py`（判 SMM 历史站权限与接口，2026-09-17）、`probe_dc_api.py`/`probe_dc_varieties.py`（隆众接口与品种枚举）。
+**探针脚本**（2026-09-23 起统一收在 `tools/probes/`，**须在仓库根目录运行**）：`tools/probes/probe_smm_aluminum.py`（落盘 `data/smm_aluminum_probe.txt`）、`tools/probes/probe_lz_gate.py`（判定门槛标记 + 正文是否真含价格）、`tools/probes/probe_smm_price_history.py`（判 SMM 历史站权限与接口，2026-09-17）、`tools/probes/probe_dc_api.py` / `tools/probes/probe_dc_varieties.py`（隆众接口与品种枚举）、`tools/probes/probe_lme_official.py`（LME 官方价）、`tools/probes/probe_xlsx_history.py`（诺博工作簿 ↔ data.json 比对）。索引见 `tools/README.md`。
 
 ---
 

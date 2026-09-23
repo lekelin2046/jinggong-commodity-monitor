@@ -19,6 +19,66 @@
 
 ---
 
+## 📁 目录结构
+
+> 2026-09-23 整理：数据类文件按**子项目**归类。标 ⚠️ 者为**定时任务依赖，请勿移动**。
+
+```
+jinggong-commodity-monitor/
+├── 2026年有色金属市场价格.xlsx   ⚠️ 主共享表（8 处路径常量引用 → 见 sources/README.md）
+│
+├── daily_update_all.py           ⚠️ 15:00 全品种抓取（automation 入口）
+├── daily_check_missed.py         ⚠️ 17:00 补抓
+├── backfill_lme_official.py      ⚠️ 9:00 LME 官方价回填
+├── mand_update.py                ⚠️ 15:35 曼德抓取
+├── export_excel_to_json.py ⚠️ · sync_from_web.py ⚠️ · changelog.py ⚠️ · git_helper.py ⚠️
+│        └─ 上述四者为定时任务的依赖（sys.path / subprocess 引用），同留根目录
+├── 其余根级脚本：backfill_mand / backfill_tungsten_from_article / capture_smm_daily /
+│   gen_mand_board / interactive_am_login / lz_login_setup / manual_fill_tungsten /
+│   push_to_cloud / refetch_smm_fill / refetch_wenxi_now
+│
+├── jinggong_monitor/             核心包：fetcher_* + 交易日历 + 各看板日常抓取
+│   ├── daily_plastic.py          ⚠️ 15:30 塑料 13 牌号
+│   ├── daily_plastic_ext.py      ⚠️ 15:40 扩品类 20 项
+│   ├── lz_price_center.py        隆众价格中心（15 项）
+│   ├── bridge_jinggong.py        精工 → 诺博 接续（原油 / 铝历史）
+│   └── xlsx_history_import.py    诺博工作簿历史回填（--report / --apply）
+│
+├── docs/                         看板前端（GitHub Pages 部署根）
+│   ├── index.html                精工（26 品种）
+│   ├── rubber/index.html         诺博橡胶（21 项）
+│   ├── plastic/index.html        诺博内外饰（13 牌号 + 扩品类 20 项）
+│   ├── mand/index.html           曼德（13 品种）
+│   ├── data.json · plastic/data.json（rubber 与 plastic 共用）· mand/data.json
+│   └── board-analysis.js         分组分析模块（rubber / plastic 两页共用）
+│
+├── sources/                      📥 原始数据源与日价格归档（按子项目）→ 见 sources/README.md
+│   ├── 精工/  ├── 橡胶/  ├── 塑料/  └── 曼德/
+├── backups/                      🗄 备份归档（按子项目，不入 git）→ 见 backups/README.md
+├── tools/                        🔧 一次性工具：probes/（数据源侦察）+ board/（看板改造测试）→ 见 tools/README.md
+├── data/                         抓取中间件：cookie / 探针产物（不入 git）→ 见 data/README.md
+├── references/                   客户提供的图表 / 报告 / PDF（不入 git）
+├── screenshots/ · logs/ · output/  抓取截图 / 运行日志 / 交付产物（不入 git）
+├── _archive/                     🗃 归档区：OCR 临时切片 / 旧原型 / 维护脚本（不入 git）→ 见其 README
+├── _legacy/                      已废弃脚本（**勿据此排障**）
+├── miniprogram/                  小程序版（须设 CLOUD_ENV 才真推云端）
+├── config/ · cookies/ · requirements.txt
+└── README.md（本文件）· SKILL.md（排障手册，附录 A~F）
+```
+
+**放文件的规矩（2026-09-23 起）**
+
+| 新增内容 | 放置位置 |
+|---|---|
+| 外部数据源（xlsx / csv 等**结构化**文件） | `sources/<子项目>/` |
+| 客户提供的图表 / 报告 / PDF（**非结构化**材料） | `references/` |
+| 备份文件 | `backups/<子项目>/` |
+| cookie / 登录态 / 探针产物 | `data/` |
+| 一次性或侦察类脚本 | `tools/` |
+| OCR 临时切片等垃圾 | `_archive/tmp/`（定期清扫，**不要直接删**） |
+
+---
+
 ## 📊 26 个品种 × 7 类数据源（Excel 列 2–27）
 
 | Col | 品种 | 数据源 | 登录态 |

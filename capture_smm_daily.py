@@ -8,7 +8,7 @@
 1. 自动复用/登录 SMM 账号
 2. 抓取 7 个品种：ADC12 / A380 / AlSi9Cu3 / A356 / 闻喜镁锭 / AM60B / AZ91D
 3. 生成 Markdown 日报
-4. 写入项目目录：上海有色日价格查询/YYYY-MM-DD_上海有色.md
+4. 写入项目目录：sources/精工/上海有色日价格查询/YYYY-MM-DD_上海有色.md
 5. 写入 Obsidian Vault：工作/大宗原材料监控/日报/YYYY-MM-DD-上海有色.md
 """
 
@@ -26,7 +26,8 @@ from jinggong_monitor.fetcher_smm import SmmFetcher  # noqa: E402
 logger = logging.getLogger("capture_smm_daily")
 
 # 输出路径
-PROJECT_OUTPUT_DIR = PROJECT_ROOT / "上海有色日价格查询"
+# 2026-09-23 整理：日价格归档已归入 sources/精工/
+PROJECT_OUTPUT_DIR = PROJECT_ROOT / "sources" / "精工" / "上海有色日价格查询"
 OBSIDIAN_VAULT_DIR = Path.home() / "Documents" / "Obsidian Vault" / "工作" / "大宗原材料监控" / "日报"
 
 # 中文品种名映射

@@ -122,7 +122,10 @@ def main() -> int:
         print("\n  （--dry-run，未落盘）")
         return 0
 
-    backup = DST.with_suffix(f".json.bak-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+    # 2026-09-23 整理：备份统一落 backups/曼德/
+    bak_dir = ROOT / "backups" / "曼德"
+    bak_dir.mkdir(parents=True, exist_ok=True)
+    backup = bak_dir / f"data.json.bak-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     shutil.copy2(DST, backup)
     DST.write_text(json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8")
     print(f"\n  → 已写入 {DST.relative_to(ROOT)}")
