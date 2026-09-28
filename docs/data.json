@@ -1,6 +1,6 @@
 {
-  "last_updated": "2026-09-24",
-  "total_days": 178,
+  "last_updated": "2026-09-25",
+  "total_days": 179,
   "varieties": [
     "ADC12",
     "A380",
@@ -3628,6 +3628,9 @@
       "HIGH_CARBON_FECR": 7850.0,
       "ADC12_JAPAN_CIF": 3100.0,
       "LME_AL": 3228.0
+    },
+    "2026-09-25": {
+      "LME_AL": 3254.0
     }
   }
 }
