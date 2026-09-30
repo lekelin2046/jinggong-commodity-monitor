@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import tempfile
+from datetime import date
 from typing import Optional
 
 import requests
@@ -138,7 +139,12 @@ _PREPROC_VARIANTS = (
 )
 
 
-def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: str) -> Optional[float]:
+def _extract_w_from_image(
+    html: str,
+    fetcher: "ChinatungstenFetcher",
+    referer: str,
+    expected_date: Optional[date] = None,
+) -> Optional[float]:
     """当 HTML 中无文本化报价表时，对文章内嵌的报价表图片做 OCR 取钨粉价。
 
     2026-09-16 实测：中钨在线已将每日报价表渲染为 JPG 图片
@@ -159,6 +165,25 @@ def _extract_w_from_image(html: str, fetcher: "ChinatungstenFetcher", referer: s
         return None
     if img_url.startswith("/"):
         img_url = "http://news.chinatungsten.com" + img_url
+
+    # 1.5 校验图片数据日（2026-09-30 加固）：文件名 tungsten-price-YYYYMMDD.jpg
+    #     中的日期即该报价表的权威数据日。当日文章未上线时，旧逻辑会拿昨日
+    #     文章里的昨日图，把昨日价写进当日行（2026-09-30 实录：数值碰巧相同
+    #     才未酿成错值）。守铁律：宁留空，勿沿用前值。
+    m_day = re.search(r"tungsten-price-(\d{8})\.jpe?g", img_url, re.I)
+    if m_day and expected_date is not None:
+        try:
+            img_day = date(
+                int(m_day.group(1)[:4]), int(m_day.group(1)[4:6]), int(m_day.group(1)[6:8])
+            )
+        except ValueError:
+            img_day = None
+        if img_day is not None and img_day != expected_date:
+            logger.warning(
+                "报价表图片数据日 %s ≠ 目标日 %s，拒绝采用（防沿用前值）: %s",
+                img_day, expected_date, img_url,
+            )
+            return None
 
     # 2. 检查 tesseract 是否可用
     try:
@@ -456,6 +481,43 @@ class ChinatungstenFetcher(BaseFetcher):
             logger.warning("获取中钨在线栏目页失败: %s", e)
             return []
 
+    def _find_dated_candidate_articles(self, limit: int = 5) -> list[tuple[str, Optional[date]]]:
+        """从栏目页解析 (文章URL, 发布日期) 列表。
+
+        2026-09-30 加固：栏目页每个 contentpaneopen 块含一条文章链接 +
+        一个「2026年9月29日」式发布日期（实测一一对应）。此前 fetch()
+        盲取前 5 条链接，当日文章未上线时会拿到昨日文章 → 把昨日价写进
+        当日行（09-30 实录，数值碰巧相同才未酿成错值）。
+
+        返回 [(url, date_or_None)]；日期解析失败的条目 date=None。
+        """
+        try:
+            resp = self._get(_SECTION_URL, timeout=15)
+            resp.encoding = "utf-8"
+            html = resp.text
+        except Exception as e:
+            logger.warning("获取中钨在线栏目页失败: %s", e)
+            return []
+
+        dated: list[tuple[str, Optional[date]]] = []
+        seen: set[str] = set()
+        for block in re.split(r'class="contentpaneopen', html)[1:]:
+            m_link = re.search(r'href="(/cn/tungsten-product-news/[^"]+\.html)"', block)
+            if not m_link or m_link.group(1) in seen:
+                continue
+            seen.add(m_link.group(1))
+            m_date = re.search(r"(20\d{2})年(\d{1,2})月(\d{1,2})日?", block)
+            pub: Optional[date] = None
+            if m_date:
+                try:
+                    pub = date(int(m_date.group(1)), int(m_date.group(2)), int(m_date.group(3)))
+                except ValueError:
+                    pub = None
+            dated.append(("http://news.chinatungsten.com" + m_link.group(1), pub))
+            if len(dated) >= limit:
+                break
+        return dated
+
     def fetch(self, target_date: Optional[str] = None) -> dict[str, float]:
         """抓取钨系价格。
 
@@ -481,30 +543,35 @@ class ChinatungstenFetcher(BaseFetcher):
         except Exception:
             pass  # 网络异常交给后续正常流程处理
 
-        # 1. 从栏目页拿多篇含「钨」的文章 URL
-        candidate_urls = self._find_candidate_article_urls(limit=5)
-        if not candidate_urls:
-            # fallback：硬编码最近文章
-            from datetime import date
-            today = date.today()
-            date_strs = [
-                today.strftime("%Y%m%d"),
-                f"{today.year}-{today.month}-{today.day}",
-                f"{today.year}年{today.month}月{today.day}日",
-            ]
-            for ds in date_strs:
-                test_url = f"http://news.chinatungsten.com/cn/tungsten-product-news/175170-tpn-15286.html"
-                try:
-                    r = self._get(test_url, timeout=10)
-                    if r.status_code == 200 and "钨" in r.text:
-                        candidate_urls = [test_url]
-                        break
-                except Exception:
-                    continue
+        # 1. 从栏目页拿多篇含「钨」的文章 URL（带发布日期过滤）
+        #    2026-09-30 加固：target_date（默认今天）之外的旧文章一律跳过，
+        #    防止当日文章未上线时把昨日价写进当日行。
+        target: date
+        if target_date is None:
+            target = date.today()
+        elif isinstance(target_date, date):
+            target = target_date
+        else:
+            target = date.fromisoformat(str(target_date))
 
+        candidates = self._find_dated_candidate_articles(limit=5)
+        if not candidates:
+            # 栏目页不可用或结构变化导致无法解析发布日期。
+            # 2026-09-30 加固：绝不能退回「无日期过滤的旧候选」——回归实测
+            # 该路径下散文正则会把昨日文章的「钨粉价格860元/千克」当当日价
+            # 收下（=沿用前值）。守铁律：宁留空，勿错值。
+            self._raise("中钨在线栏目页不可用或结构变化（无法解析文章发布日期），保守留空")
+            return {}
 
+        # 只保留发布日==目标日的文章；发布日解析失败的条目同样跳过
+        candidate_urls = [u for u, pub in candidates if pub == target]
         if not candidate_urls:
-            self._raise("找不到当日中钨在线文章")
+            stale_n = sum(1 for _, pub in candidates if pub is not None and pub != target)
+            undated_n = sum(1 for _, pub in candidates if pub is None)
+            self._raise(
+                f"中钨在线栏目页无发布日={target} 的文章（当日未上线或已过时）；"
+                f"已跳过旧文章 {stale_n} 篇、无日期 {undated_n} 篇"
+            )
             return {}
 
         # 2. 遍历候选文章，钨粉价格取到就停
@@ -541,9 +608,9 @@ class ChinatungstenFetcher(BaseFetcher):
                         except ValueError:
                             continue
 
-            # 2.3 散文正则也失败 → 对报价表图片 OCR 兜底
+            # 2.3 散文正则也失败 → 对报价表图片 OCR 兜底（带数据日校验）
             if "W" not in results:
-                image_price = _extract_w_from_image(text, self, article_url)
+                image_price = _extract_w_from_image(text, self, article_url, expected_date=target)
                 if image_price is not None:
                     results["W"] = image_price
 
