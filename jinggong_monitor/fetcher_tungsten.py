@@ -31,10 +31,13 @@ logger = logging.getLogger("jinggong.fetcher.chinatungsten")
 _PRICE_PATTERNS = {
     "W": [
         # 6/26 主人拍板：取「钨粉价格 X 元/千克」这个表达（不是表里的「钨粉 X」）
-        re.compile(r"钨粉价格\s*[:：]?\s*([\d,]+)\s*元[／/]\s*千克"),
+        re.compile(r"(?<!碳化)钨粉价格\s*[:：]?\s*([\d,]+)\s*元[／/]\s*千克"),
         # 兑底：表里只写「钨粉」也行
-        re.compile(r"钨粉[^\d]{0,30}?([\d,]+)\s*元[／/]\s*千克"),
-        re.compile(r"钨粉\s*(?:≥?99\.?7%)?\s*[:：]?\s*([\d,]+)\s*元[／/]\s*千克"),
+        # 2026-10-08 加固：加 `(?<!碳化)` 负向后顾。此前「碳化钨粉局部报价跌破
+        # 800元/千克」中的「钨粉」子串被 pattern 2 命中 → 把碳化钨粉的叙述价
+        # 当钨粉价写入（当日实抓 800，真值 850，见 2026-10-08 事故记录）。
+        re.compile(r"(?<!碳化)钨粉[^\d]{0,30}?([\d,]+)\s*元[／/]\s*千克"),
+        re.compile(r"(?<!碳化)钨粉\s*(?:≥?99\.?7%)?\s*[:：]?\s*([\d,]+)\s*元[／/]\s*千克"),
     ],
 }
 
@@ -153,14 +156,50 @@ def _extract_w_from_image(
     能稳定读出数字。本函数即封装该兜底流程。
     """
     # 1. 定位报价表图片 URL
+    #    2026-10-08 加固：原逻辑「alt 含『钨制品价格图片』→ 否则取首个
+    #    tungsten-price-*.jpg」有两个坑：① 站方每日文案不统一，09-30 用的是
+    #    「钨制品价格一览」，正则 1 落空；② 落空后取到的首个匹配可能是站方
+    #    错链的涨跌幅图（09-30 实为 tungsten-price-increase-20260630.jpg，文件名
+    #    日期 20260630 → 被数据日校验拒掉 → 整篇判无表）。改按可靠度分层候选：
+    #      A 文件名即数据日的主图（最可靠，不依赖文案标签）
+    #      B 文案标签为「钨制品价格图片/一览」的主图（允许无日期）
+    #      C 其它 tungsten-price-*.jpg（仅当文件名日期 == 目标日才采用）
     img_url: Optional[str] = None
-    m = re.search(r'<img[^>]*alt="[^"]*钨制品价格图片[^"]*"[^>]*src="([^"]+)"', html, re.I)
-    if m:
-        img_url = m.group(1)
-    if not img_url:
-        m = re.search(r'<img[^>]*src="([^"]*tungsten-price-[^"]+\.jpe?g)"', html, re.I)
-        if m:
-            img_url = m.group(1)
+    _cands: list[tuple[str, bool]] = []   # (url, 是否由文案标签确认)
+    if expected_date is not None:
+        want = expected_date.strftime("%Y%m%d")
+        for m in re.finditer(
+            r'src="([^"]*tungsten-price-' + want + r'\.jpe?g)"', html, re.I
+        ):
+            _cands.append((m.group(1), False))
+    for m in re.finditer(
+        r'<img[^>]*(?:alt|title)="[^"]*钨制品价格(?:图片|一览)[^"]*"[^>]*src="([^"]+)"',
+        html, re.I,
+    ):
+        _cands.append((m.group(1), True))
+    for m in re.finditer(r'src="([^"]*tungsten-price-[^"]+\.jpe?g)"', html, re.I):
+        _cands.append((m.group(1), False))
+
+    _seen: set[str] = set()
+    for _raw, _labeled in _cands:
+        u = _raw if _raw.startswith("http") else "http://news.chinatungsten.com" + _raw
+        if u in _seen:
+            continue
+        _seen.add(u)
+        _mday = re.search(r"tungsten-price-(\d{8})\.jpe?g", u, re.I)
+        if _mday:
+            try:
+                _d = date(int(_mday.group(1)[:4]), int(_mday.group(1)[4:6]), int(_mday.group(1)[6:8]))
+            except ValueError:
+                _d = None
+            if _d is None or (expected_date is not None and _d != expected_date):
+                continue
+        elif not _labeled:
+            # 文件名无数据日且非文案标签确认 → 不采用（宁留空，勿错值）
+            continue
+        img_url = u
+        break
+
     if not img_url:
         return None
     if img_url.startswith("/"):
@@ -584,7 +623,7 @@ class ChinatungstenFetcher(BaseFetcher):
                 logger.warning("获取文章 %s 失败: %s", article_url, e)
                 continue
 
-            # 2.1 优先从报价表解析（避免正文/涨跌描述里的昨日价误匹配）
+            # 2.1 优先从 HTML 报价表解析（避免正文/涨跌描述里的昨日价误匹配）
             table_price = _extract_w_from_table(text)
             if table_price is not None:
                 results["W"] = table_price
@@ -592,27 +631,32 @@ class ChinatungstenFetcher(BaseFetcher):
                 logger.info("中钨在线 W(钨粉): %.2f (来自报价表)", table_price)
                 break
 
-            # 2.2 表解析失败，降级到散文正则
-            for variety_id, patterns in _PRICE_PATTERNS.items():
-                for pattern in patterns:
-                    m = pattern.search(text)
-                    if m:
-                        try:
-                            price = self._parse_price(m.group(1))
-                            # 如果是精矿价格按吨计，转成千克
-                            if "精矿" in m.group(0) and "吨" in m.group(0) and "千克" not in m.group(0):
-                                price = price / 1000
-                            results[variety_id] = round(price, 2)
-                            logger.info("中钨在线 %s: %.2f (匹配: %s)", variety_id, price, m.group(0)[:80])
-                            break
-                        except ValueError:
-                            continue
+            # 2.2 HTML 报价表不存在（当日报价表为图片）→ 走图片 OCR。
+            #     2026-10-08 调整顺序：OCR 从「散文正则之后」提到之前。
+            #     理由＝《报价表是权威口径》是本模块既定原则，而散文正则是最
+            #     宽松的一条（`钨粉[^数字]{0,30}?数字元/千克`，会命中正文叙述）。
+            #     原顺序下散文一旦命中就不会跑 OCR，权威表反而拿不到
+            #     （当日散文误捕 800=碳化钨粉叙述价，真值 850）。
+            image_price = _extract_w_from_image(text, self, article_url, expected_date=target)
+            if image_price is not None:
+                results["W"] = image_price
 
-            # 2.3 散文正则也失败 → 对报价表图片 OCR 兜底（带数据日校验）
+            # 2.3 报价表与图片都拿不到 → 才降级到散文正则（最后兜底）
             if "W" not in results:
-                image_price = _extract_w_from_image(text, self, article_url, expected_date=target)
-                if image_price is not None:
-                    results["W"] = image_price
+                for variety_id, patterns in _PRICE_PATTERNS.items():
+                    for pattern in patterns:
+                        m = pattern.search(text)
+                        if m:
+                            try:
+                                price = self._parse_price(m.group(1))
+                                # 如果是精矿价格按吨计，转成千克
+                                if "精矿" in m.group(0) and "吨" in m.group(0) and "千克" not in m.group(0):
+                                    price = price / 1000
+                                results[variety_id] = round(price, 2)
+                                logger.info("中钨在线 %s: %.2f (匹配: %s)", variety_id, price, m.group(0)[:80])
+                                break
+                            except ValueError:
+                                continue
 
             # 钨粉拿到就跳出（这是主要需求）
             if "W" in results:
