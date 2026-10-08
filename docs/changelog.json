@@ -19720,6 +19720,116 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "bfe6d494c060823fe009976da2c0fb061ea9244a"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-01",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3261.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-02",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3255.5,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-03",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3303.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-04",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3292.5,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-07",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3310.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-08",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3325.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-28",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3248.5,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-30",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3204.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-10",
+      "code": "LME_AL",
+      "old": 3352,
+      "new": 3343.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-11",
+      "code": "LME_AL",
+      "old": 3343,
+      "new": 3274.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
+    },
+    {
+      "ts": "2026-10-08T11:00:16",
+      "date_row": "2026-09-14",
+      "code": "LME_AL",
+      "old": 3274,
+      "new": 3311.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "8989a9b609b0dd68de0d6f1ba71829c3099fec6d"
     }
   ]
 }

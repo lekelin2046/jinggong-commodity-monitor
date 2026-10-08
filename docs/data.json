@@ -3156,7 +3156,8 @@
       "SS_441": 11200.0,
       "NICKEL_IRON": 1145.0,
       "HIGH_CARBON_FECR": 8000.0,
-      "ADC12_JAPAN_CIF": 3080.0
+      "ADC12_JAPAN_CIF": 3080.0,
+      "LME_AL": 3261.0
     },
     "2026-09-02": {
       "ADC12": 24100.0,
@@ -3183,7 +3184,8 @@
       "SS_441": 11200.0,
       "NICKEL_IRON": 1143.0,
       "HIGH_CARBON_FECR": 8000.0,
-      "ADC12_JAPAN_CIF": 3080.0
+      "ADC12_JAPAN_CIF": 3080.0,
+      "LME_AL": 3255.5
     },
     "2026-09-03": {
       "ADC12": 24300.0,
@@ -3210,7 +3212,8 @@
       "SS_441": 11200.0,
       "NICKEL_IRON": 1140.0,
       "HIGH_CARBON_FECR": 8000.0,
-      "ADC12_JAPAN_CIF": 3080.0
+      "ADC12_JAPAN_CIF": 3080.0,
+      "LME_AL": 3303.0
     },
     "2026-09-04": {
       "ADC12": 24300.0,
@@ -3237,7 +3240,8 @@
       "SS_441": 11200.0,
       "NICKEL_IRON": 1139.0,
       "HIGH_CARBON_FECR": 8000.0,
-      "ADC12_JAPAN_CIF": 3080.0
+      "ADC12_JAPAN_CIF": 3080.0,
+      "LME_AL": 3292.5
     },
     "2026-09-07": {
       "ADC12": 24300.0,
@@ -3264,7 +3268,8 @@
       "SS_441": 11200.0,
       "NICKEL_IRON": 1133.0,
       "HIGH_CARBON_FECR": 8000.0,
-      "ADC12_JAPAN_CIF": 3080.0
+      "ADC12_JAPAN_CIF": 3080.0,
+      "LME_AL": 3310.0
     },
     "2026-09-08": {
       "ADC12": 24350.0,
@@ -3291,7 +3296,8 @@
       "SS_441": 11200.0,
       "NICKEL_IRON": 1133.0,
       "HIGH_CARBON_FECR": 8000.0,
-      "ADC12_JAPAN_CIF": 3080.0
+      "ADC12_JAPAN_CIF": 3080.0,
+      "LME_AL": 3325.0
     },
     "2026-09-09": {
       "ADC12": 24450.0,
@@ -3347,7 +3353,7 @@
       "NICKEL_IRON": 1130.0,
       "HIGH_CARBON_FECR": 8000.0,
       "ADC12_JAPAN_CIF": 3120.0,
-      "LME_AL": 3352.0
+      "LME_AL": 3343.0
     },
     "2026-09-11": {
       "ADC12": 24300.0,
@@ -3375,7 +3381,7 @@
       "NICKEL_IRON": 1110.0,
       "HIGH_CARBON_FECR": 8000.0,
       "ADC12_JAPAN_CIF": 3110.0,
-      "LME_AL": 3343.0
+      "LME_AL": 3274.0
     },
     "2026-09-14": {
       "ADC12": 24200.0,
@@ -3403,7 +3409,7 @@
       "NICKEL_IRON": 1105.0,
       "HIGH_CARBON_FECR": 8000.0,
       "ADC12_JAPAN_CIF": 3100.0,
-      "LME_AL": 3274.0
+      "LME_AL": 3311.0
     },
     "2026-09-15": {
       "ADC12": 24200.0,
@@ -3657,7 +3663,8 @@
       "SS_441": 11200.0,
       "NICKEL_IRON": 1080.0,
       "HIGH_CARBON_FECR": 7850.0,
-      "ADC12_JAPAN_CIF": 3100.0
+      "ADC12_JAPAN_CIF": 3100.0,
+      "LME_AL": 3248.5
     },
     "2026-09-29": {
       "ADC12": 24500.0,
@@ -3712,7 +3719,8 @@
       "SS_441": 11200.0,
       "NICKEL_IRON": 1078.0,
       "HIGH_CARBON_FECR": 7800.0,
-      "ADC12_JAPAN_CIF": 3120.0
+      "ADC12_JAPAN_CIF": 3120.0,
+      "LME_AL": 3204.0
     },
     "2026-10-02": {
       "LME_AL": 3109.5
