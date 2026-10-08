@@ -6,21 +6,32 @@
   一旦错过即永久丢失。9 月因此留下 8 天空缺（09-01~04、07、08、28、30）；
   另有 09-10/09-11/09-14 三行是 09-16 改口径前「日延一日」写入的残留，
   每行装的都是**前一天**的官方价。
+  → 本脚本同日固化为**月度例行核验**：每月对上个月每个官方数据日逐日复核，
+    把「错了才发现」变成「每月自动发现」。
 
 数据源：世铝网（cnal）月度官方报价表「LME 原铝官方报价及结算价月度统计」
   https://market.cnal.com/lme/... ，列 = 日期|现货买|现货卖|均价|3M买|3M卖|3M均价|结算价
   取「现货卖」＝ 官方 Cash Ask，与 fetcher_lme 口径一致（已用 09-15~09-25
   共 11 个有值日逐日比对，全部完全一致）。
+  URL 定位走**世铝网自己的 LME 行情索引页**（索引只含当月与上月，恰好够用），
+  按标题「YYYY年M月LME原铝…」匹配，不靠搜索引擎、不靠 URL 路径推月份，跨年不会错。
 
 规则：
-  · 空单元格 → 写入；已有值 → 跳过（幂等，不重复留痕）；
-  · --fix 已错位行（现值 == 前一官方数据日官方价）→ 改写为该行官方价，
-    写入前必须同时满足：① 现值确等于**前一交易日**官方价（证明是错位而非人工修正）
-    ② 该日在官方表内。任一不满足 → 拒绝改写并告警。
+  · **默认只读核验**——逐日比对，输出「一致 / 空缺待补 / 日延一错位 /
+    其他偏差 / 表中无行」五类清单并给出结论，**不写任何数据**；
+  · 加 `--apply` 才落库：空单元格 → 补入；日延一错位 → 改写。后者必须满足
+    「现值 == **前一官方数据日**官方价」（证明是旧错位而非人工修正），否则
+    归入「其他偏差」**一律不改**并告警；
+  · 幂等 —— 已一致则跳过，不重复写、不重复留痕；
   · 官方表未列出的日期（英国/中国假期）→ 不写，留空。
 
 用法:
-    python3 tools/backfill_lme_month.py --month 2026-09 [--fix] [--dry-run] [--no-push]
+    # 核验上一自然月（只读，月初例行）
+    python3 tools/backfill_lme_month.py
+    # 核验指定月 / 确认后写入 / 只导出不推送
+    python3 tools/backfill_lme_month.py --month 2026-09
+    python3 tools/backfill_lme_month.py --month 2026-09 --apply
+    python3 tools/backfill_lme_month.py --month 2026-09 --apply --no-push
 """
 
 import argparse
@@ -52,39 +63,77 @@ UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0 Safari/537.36")
 
 
-def find_month_page(year: int, month: int) -> str:
-    """按年月搜出该月的「LME 原铝官方报价及结算价月度统计」页面 URL。"""
-    import urllib.parse
-    import urllib.request
+IDX_URL = "https://market.cnal.com/lme/"
 
-    q = f"{year}年{month}月 LME原铝 官方报价 结算价 月度统计 世铝网"
-    url = "https://www.bing.com/search?q=" + urllib.parse.quote(q)
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    htmltxt = urllib.request.urlopen(req, timeout=40).read().decode("utf-8", "ignore")
-    hits = re.findall(r"https?://market\.cnal\.com/lme/[^\"'<>\\ ]+", htmltxt)
-    pat = re.compile(rf"原铝官方报价.{0,6}月度统计|LME原铝官方报价")
-    # 从候选页里挑「原铝」且与目标月份相符的那条
-    for h in dict.fromkeys(hits):
-        head = h.rsplit("/", 2)[0]
-        m = re.search(r"/lme/(\d{4})/(\d{2}-\d{2})/", h)
-        if m and int(m.group(1)) == year and int(m.group(2).split("-")[0]) == month + 1:
-            return h
-    if hits:
-        return hits[0]
-    raise RuntimeError(f"未找到 {year}-{month:02d} 的世铝网月度表 URL（bing 返回 {len(hits)} 条候选）")
+
+def find_month_page(year: int, month: int) -> str:
+    """定位该月「LME 原铝官方报价及结算价月度统计」页 URL。
+
+    2026-10-08 改造：原先靠 Bing 搜索定位，但 Bing 会把结果里的月份数字当
+    自己的月份去比对（`month + 1` 的写法在跨年时必错），且搜索结果页结构变动
+    即失效。改用**世铝网自己的 LME 行情索引页**——稳定、且只含当月与上月，
+    对「月度核验上一月」这个场景刚好够用；标题里带「2026年9月」字样，
+    按**标题**匹配而非按 URL 路径推月份，跨年不会再错。
+    """
+    idx = _get(IDX_URL).decode("utf-8", "ignore")
+
+    # 标题形如「2026年9月LME原铝官方报价及结算价月度统计」
+    want = re.compile(rf"{year}年{month}月\s*LME原铝官方报价及结算价月度统计")
+    for m in re.finditer(
+            r'<a[^>]+href="(https://market\.cnal\.com/lme/[^"]+\.shtml)"[^>]*>(.*?)</a>',
+            idx, re.S):
+        title = html.unescape(re.sub(r"<[^>]+>", "", m.group(2))).strip()
+        if want.search(title.replace(" ", "")):
+            return m.group(1)
+    raise RuntimeError(
+        f"索引页未列出 {year}-{month:02d} 的原铝月度统计表（可能尚未发布，通常次月 1 日出）")
+
+
+def _get(url: str, timeout: int = 60) -> bytes:
+    """GET 并返回**解压后**的字节。
+
+    2026-10-08 修复：世铝网对 urllib 请求返回 **gzip 压缩体**（`1f 8b` 魔数），
+    urllib 不会像 curl 那样自动解压，直接 .decode('utf-8') 会得到乱码 →
+    解析出 0 行，误报「页面结构已变」。故此处显式按 Content-Encoding 解压。
+    """
+    import gzip
+    import urllib.request
+    import zlib
+
+    req = urllib.request.Request(url, headers={
+        "User-Agent": UA, "Accept-Encoding": "gzip, deflate"})
+    resp = urllib.request.urlopen(req, timeout=timeout)
+    data = resp.read()
+    enc = (resp.headers.get("Content-Encoding") or "").lower()
+    if "gzip" in enc or data[:2] == b"\x1f\x8b":
+        data = gzip.decompress(data)
+    elif "deflate" in enc:
+        try:
+            data = zlib.decompress(data)
+        except zlib.error:
+            data = zlib.decompress(data, -zlib.MAX_WBITS)
+    return data
 
 
 def fetch_month_table(year: int, month: int) -> dict:
-    """返回 {日期字符串: 现货卖(Cash Ask)}，全部月份。失败抛异常。"""
+    """返回 {日期字符串: 现货卖(Cash Ask)}。失败抛异常。
+
+    ⚠️ 缓存只存**解压后**的文本；早先版本可能已缓存过压缩体，
+    读取时若仍非文本（decode 后找不到 '<'）则自动重抓，避免误报结构变更。
+    """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache = CACHE_DIR / f"cnal-lme-{year}-{month:02d}.html"
+    raw = ""
     if cache.exists():
         raw = cache.read_text(encoding="utf-8", errors="ignore")
-    else:
-        import urllib.request
+        if "<" not in raw or "年" not in raw:
+            print("  ⚠️ 缓存疑似损坏/为压缩体，重新抓取")
+            raw = ""
+    if not raw:
         page = find_month_page(year, month)
-        req = urllib.request.Request(page, headers={"User-Agent": UA})
-        raw = urllib.request.urlopen(req, timeout=60).read().decode("utf-8", "ignore")
+        raw = _get(page).decode("utf-8", "ignore")
+        if "<table" not in raw.lower():
+            raise RuntimeError(f"抓取内容不像 HTML（前 80 字：{raw[:80]!r}）")
         cache.write_text(raw, encoding="utf-8")
         print(f"  已抓取 {page} → 缓存 {cache.name}")
 
@@ -109,21 +158,37 @@ def fetch_month_table(year: int, month: int) -> dict:
 
 # ===== 主流程 =====
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--month", required=True, help="YYYY-MM")
-    ap.add_argument("--fix", action="store_true", help="修正旧日延一日错位行")
-    ap.add_argument("--dry-run", action="store_true")
+    ap = argparse.ArgumentParser(
+        description="LME 铝月度核验（默认只读）；加 --apply 才写入")
+    ap.add_argument("--month", help="YYYY-MM，缺省＝上一自然月")
+    ap.add_argument("--apply", action="store_true",
+                    help="确认后真正写入（空缺直接补、日延一错位修正）")
     ap.add_argument("--no-push", action="store_true")
     args = ap.parse_args()
 
-    y, mo = (int(x) for x in args.month.split("-"))
+    if args.month:
+        y, mo = (int(x) for x in args.month.split("-"))
+    else:
+        # 月度核验默认核验「上一自然月」：世铝网次月 1 日才出上月表
+        first = datetime.date.today().replace(day=1)
+        prev = first - datetime.timedelta(days=1)
+        y, mo = prev.year, prev.month
+        args.month = f"{y}-{mo:02d}"
     today = datetime.date.today()
+    mode = "写入" if args.apply else "核验（只读）"
     print("=" * 54)
-    print(f"  LME 铝 · {args.month} 历史补全（世铝网官方价表）  {today}")
+    print(f"  LME 铝 · {args.month} 月度核验/补全（世铝网官方价表）  {today}  模式：{mode}")
     print("=" * 54)
 
     print("[1/4] 抓取世铝网月度官方价表（现货卖 = Cash Ask）...")
-    table = fetch_month_table(y, mo)
+    try:
+        table = fetch_month_table(y, mo)
+    except Exception as e:
+        # 定时任务场景：抓不到属常态（表未发布/站点抖动），给清晰原因后
+        # 优雅退出（code 0 = 无差异），不抛栈、不当成故障刷屏。
+        print(f"  ℹ️ 跳过：{e}")
+        print("  → 本月不核验，未改动任何数据。等表发布后重跑即可。")
+        return 0
     month_days = {k: v for k, v in table.items() if k.startswith(f"{y}-{mo:02d}-")}
     print(f"  官方表 {args.month} 共 {len(month_days)} 个数据日"
           f"（区间 {min(month_days)} ~ {max(month_days)}）")
@@ -137,8 +202,10 @@ def main():
         s = v.strftime("%Y-%m-%d") if hasattr(v, "strftime") else str(v).strip()
         rows[s] = r
 
-    writes, fixes, skipped, absent = [], [], [], []
-    for day in sorted(month_days):
+    # ---- 逐日比对，分类 ----
+    ok, writes, fixes, suspects, absent = [], [], [], [], []
+    prev_days_sorted = sorted(month_days)
+    for day in prev_days_sorted:
         off = month_days[day]
         r = rows.get(day)
         if r is None:
@@ -146,39 +213,52 @@ def main():
             continue
         cur = ws.cell(r, LME_COL).value
         if isinstance(cur, (int, float)) and abs(float(cur) - off) < 1e-6:
-            skipped.append(day)
+            ok.append(day)
             continue
         if cur in (None, ""):
             writes.append((r, day, off))
             continue
-        # 有值但 ≠ 官方值
-        if args.fix:
-            prev_days = sorted(d for d in month_days if d < day)
-            prev_off = month_days[prev_days[-1]] if prev_days else None
-            if prev_off is not None and abs(float(cur) - prev_off) < 1e-6:
-                fixes.append((r, day, cur, off))
-            else:
-                print(f"  ⚠️ {day} 现值 {cur} 既≠官方 {off} 也≠前一日官方 {prev_off}"
-                      f" → 疑似人工修正，**不改**")
+        # 有值但 ≠ 官方值：判它是「旧日延一错位」还是「人工修正/其他偏差」
+        idx = prev_days_sorted.index(day)
+        prev_off = month_days[prev_days_sorted[idx - 1]] if idx > 0 else None
+        if prev_off is not None and abs(float(cur) - prev_off) < 1e-6:
+            fixes.append((r, day, cur, off))
         else:
-            skipped.append(f"{day}(现{cur}≠官方{off}，未开--fix)")
+            suspects.append((day, cur, off))
 
-    print(f"[2/4] 官方表比对：新增 {len(writes)}，错位修正 {len(fixes)}，"
-          f"已一致 {len(skipped)}，无对应行 {len(absent)}")
+    print(f"[2/4] 逐日比对（官方表 {len(month_days)} 日 vs 表内）：")
+    print(f"    ✅ 一致 {len(ok)}"
+          f"   ｜ 空缺待补 {len(writes)}"
+          f"   ｜ 日延一错位 {len(fixes)}"
+          f"   ｜ 其他偏差 {len(suspects)}"
+          f"   ｜ 表中无行 {len(absent)}")
     for r, day, off in writes:
         print(f"    + {day}  行{r}  = {off}")
     for r, day, old, off in fixes:
-        print(f"    ~ {day}  行{r}  {old} → {off}（修正旧日延一口径）")
+        print(f"    ~ {day}  行{r}  {old} → {off}（日延一错位）")
+    for day, cur, off in suspects:
+        print(f"    ? {day}  现值 {cur} ≠ 官方 {off}"
+              f"（既非前一日官方价 → 疑似人工修正或源方回溯修订，**不改**）")
     if absent:
         print(f"    · 表中无行：{', '.join(absent)}")
+
+    # ---- 月度核验结论 ----
+    clean = not (writes or fixes or suspects or absent)
+    if clean:
+        print(f"\n  🟢 核验通过：{args.month} 共 {len(ok)} 个官方数据日，表内全部与官方价一致。")
+    else:
+        print(f"\n  🟡 核验发现 {len(writes) + len(fixes) + len(suspects) + len(absent)} 处差异"
+              f"（待补 {len(writes)} / 错位 {len(fixes)} / 其他偏差 {len(suspects)} / 无行 {len(absent)}）")
 
     if not writes and not fixes:
         print("  无需变更，退出。")
         return 0
-    if args.dry_run:
-        print("  [dry-run] 未写入。")
+    if not args.apply:
+        print("\n  [核验模式] 未加 --apply，不写入任何数据。"
+              "确认无误后重跑：加 --apply")
         return 0
 
+    # ---- 备份 ----
     bak_dir = SCRIPT_DIR / "backups" / "精工"
     bak_dir.mkdir(parents=True, exist_ok=True)
     bak = bak_dir / f"{EXCEL_PATH.name}.bak-lme{args.month.replace('-', '')}"
