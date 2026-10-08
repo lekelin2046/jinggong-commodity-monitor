@@ -19970,6 +19970,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "232867341006a2d3795ae2604c0146342af938f2"
+    },
+    {
+      "ts": "2026-10-08T15:27:02",
+      "date_row": "2026-10-08",
+      "code": "W",
+      "old": null,
+      "new": 850.0,
+      "source": "manual_xlsx",
+      "editor": "主人",
+      "commit": "449eb64acb35fb6935f5758f5dda3f9671f13a34"
     }
   ]
 }
