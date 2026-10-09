@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """曼德热系统大宗原材料价格采集 → docs/mand/data.json
 
-品种分三类（共 13 项）：
-  A 已接入（7） 长江有色网 3 项 + SMM 上海有色 4 项
+品种分三类（共 14 项）：
+  A 已接入（8） 长江有色网 3 项 + SMM 上海有色 5 项
   B 待接入（3） 镨钕金属（亚洲金属网）、PA6 / PA66（卓创资讯）
   C 无公开源（3）巴斯夫PA66（PCI 订阅制）、PP-TD20、PP-TD40（卓创未收录改性牌号）
 
@@ -44,6 +44,7 @@ SPEC = [
     ("AL_A380",     "A380铝合金",         "SMM 上海有色", "元/吨",   "live"),
     ("AL_ADC12",    "SMM铝合金ADC12",     "SMM 上海有色", "元/吨",   "live"),
     ("AL_ALSI12FE", "AlSi12(Fe)铝合金",   "SMM 上海有色", "元/吨",   "live"),
+    ("AL_A360",     "A360铝合金",         "SMM 上海有色", "元/吨",   "live"),
     # ---- 待接入 ----
     ("PRND",        "镨钕金属",           "亚洲金属网",   "元/吨",   "pending"),
     ("PA6",         "PA6",                "卓创资讯",     "元/吨",   "pending"),
@@ -60,6 +61,7 @@ LIVE_CCMN = ("CU", "AG", "PCU")
 SMM_KEY_MAP = {
     "AL_A00":      "AL_A00",
     "AL_ALSI12FE": "AL_ALSI12FE",
+    "A360":        "AL_A360",
     "A380":        "AL_A380",
     "ADC12":       "AL_ADC12",
 }
@@ -81,7 +83,7 @@ def fetch_ccmn() -> dict:
 
 
 async def fetch_smm() -> dict:
-    """SMM 上海有色：A00铝 / A380 / ADC12 / AlSi12(Fe)"""
+    """SMM 上海有色：A00铝 / A380 / ADC12 / AlSi12(Fe) / A360"""
     print("  [SMM] 抓取 ...", end=" ", flush=True)
     try:
         from jinggong_monitor.fetcher_smm import _fetch_smm_raw

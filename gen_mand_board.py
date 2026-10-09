@@ -8,6 +8,12 @@
 
 塑料看板若升级骨架，重跑本脚本即可把升级同步到曼德看板。
 
+🔴 2026-10-09 状态：本脚本**暂停可用**。塑料骨架已升级（多指标价格曲线对比 / 分组分析 /
+   2025 节假日表）并携带塑料专属常量，直接重跑会把塑料定制污染进曼德页
+   （导出文件名变「诺博内外饰塑料价格」、默认曲线指标指向天然橡胶 NR_SCRWF/NR_RSS3）。
+   已加骨架漂移守卫 FORBIDDEN_IN_MAND 拒绝执行；骨架同步属独立议题，须先补曼德口径覆盖表。
+   当前曼德页的品种常量以手工方式维护（见 docs/mand/index.html）。
+
 用法：python3 gen_mand_board.py
 """
 
@@ -20,7 +26,10 @@ ROOT = Path(__file__).resolve().parent
 SRC = ROOT / "docs" / "plastic" / "index.html"
 DST = ROOT / "docs" / "mand" / "index.html"
 
-OLD_TITLE = "诺博大宗原材料价格看板"
+# ⚠️ 模板页标题必须与 docs/plastic/index.html 的 <title>/<h1> 完全一致。
+#    塑料看板改名后（诺博 → 诺博内外饰，2026-10-08），此常量未同步会导致本脚本
+#    在第一步即 [FATAL] 退出、曼德页无法再生成 —— 改塑料标题时务必同步这里。
+OLD_TITLE = "诺博内外饰大宗原材料价格看板"
 NEW_TITLE = "曼德热系统大宗原材料价格看板"
 DEFAULT_UNIT = "元/吨"
 
@@ -33,6 +42,7 @@ VARIETIES = [
     ("AL_A380",     "A380铝合金",         "SMM 上海有色", "元/吨"),
     ("AL_ADC12",    "SMM铝合金ADC12",     "SMM 上海有色", "元/吨"),
     ("AL_ALSI12FE", "AlSi12(Fe)铝合金",   "SMM 上海有色", "元/吨"),
+    ("AL_A360",     "A360铝合金",         "SMM 上海有色", "元/吨"),
     ("PRND",        "镨钕金属",           "亚洲金属网",   "元/吨"),
     ("PA6",         "PA6",                "卓创资讯",     "元/吨"),
     ("PA66",        "PA66",               "卓创资讯",     "元/吨"),
@@ -43,7 +53,7 @@ VARIETIES = [
 
 CATEGORIES = [
     ("铜及贵金属", ["CU", "AG", "PCU"]),
-    ("铝及铝合金", ["AL_A00", "AL_A380", "AL_ADC12", "AL_ALSI12FE"]),
+    ("铝及铝合金", ["AL_A00", "AL_A380", "AL_ADC12", "AL_ALSI12FE", "AL_A360"]),
     ("稀土金属",   ["PRND"]),
     ("工程塑料",   ["PA6", "PA66", "PA66_BASF"]),
     ("改性塑料",   ["PP_TD20", "PP_TD40"]),
@@ -60,7 +70,14 @@ MARKETS = {}
 
 BADGE = ('  <span style="font-size:12px;color:#475569;background:#e2e8f0;'
          'padding:3px 9px;border-radius:6px;white-space:nowrap">'
-         '13 品种 · 7 项已接入（长江有色 3 / SMM 4）</span>')
+         '14 品种 · 8 项已接入（长江有色 3 / SMM 5）</span>')
+
+# 🔴 骨架漂移守卫（2026-10-09 立）
+# 塑料模板骨架升级后会带入曼德页不适用的专属常量：
+#   - EXPORT_BASENAME="诺博内外饰塑料价格" → 曼德页导出文件名出错
+#   - 默认曲线指标 NR_SCRWF / NR_RSS3（天然橡胶）→ 曼德无此品种
+# 一旦在模板中检出，本脚本拒绝执行（fail loud），避免静默污染曼德页。
+FORBIDDEN_IN_MAND = ["诺博内外饰塑料价格", "NR_SCRWF", "NR_RSS3"]
 
 
 def js(obj) -> str:
@@ -90,6 +107,16 @@ def main() -> int:
 
     html = SRC.read_text(encoding="utf-8")
     orig_len = len(html)
+
+    # 0) 骨架漂移守卫（见文件头 FORBIDDEN_IN_MAND 说明）
+    drift = [bad for bad in FORBIDDEN_IN_MAND if bad in html]
+    if drift:
+        raise SystemExit(
+            "[FATAL] 塑料模板骨架已漂移，含曼德页不适用的塑料专属常量："
+            + "、".join(drift) + "\n"
+            "  直接重跑会把塑料定制（导出文件名 / 默认曲线指标）污染进曼德页，已拒绝执行。\n"
+            "  处理方式：先补 MAND_OVERRIDES 覆盖表按曼德口径改写这些常量，再放开本守卫。"
+        )
 
     # 1) 标题（title + h1，共 2 处）
     n_title = html.count(OLD_TITLE)

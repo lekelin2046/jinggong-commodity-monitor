@@ -7,7 +7,7 @@
 
 数据来源: hq.smm.cn
 目标品种: ADC12, A380, AlSi9Cu3, A356, AM60B, AZ91D, 闻喜镁锭
-         另供曼德看板: SMM A00铝（AL_A00）、AlSi12(Fe)铝合金（AL_ALSI12FE）
+         另供曼德看板: SMM A00铝（AL_A00）、AlSi12(Fe)铝合金（AL_ALSI12FE）、A360 铝合金（A360）
 
 性能对比（vs 旧方案）：
 - 旧方案：访问 7 个品种详情页，每页 3-5s，总耗时 25-40s
@@ -106,6 +106,14 @@ SMM_VARIETIES = {
     "AL_ALSI12FE": {
         "page": "aluminum",
         "pattern": r"AlSi12[（(]Fe[)）]铝合金\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
+    },
+    # 2026-10-09 曼德新增：A360（压铸铝，AlSi10Mg 系，用于热系统压铸件）
+    # ⚠️ 同段存在 A356 / A380 / AlSi10Mg(Fe) / AlSi12(Fe) / 低碳A356.2 等近似牌号，
+    #    价格互不相同，必须精确锚定 "A360铝合金"；「低碳A360...」类变体行由负向断言挡住
+    #    （ZLD104 曾因漏加负向断言误抓「低碳ZLD104」，此处沿用同一防御）。
+    "A360": {
+        "page": "aluminum",
+        "pattern": r"(?<!低碳)A360铝合金\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
     },
 }
 
@@ -234,7 +242,7 @@ async def _fetch_smm_raw(target_date: Optional[str] = None) -> dict:
 
             # aluminum 页关键铝合金品种（ADC12/A380/A356/AlSi9Cu3）偶发 SSR 渲染慢，
             # 若缺失则对 aluminum 页单独重试一次（更长等待），避免整日留空
-            alum_keys = {"ADC12", "A380", "A356", "AlSi9Cu3"}
+            alum_keys = {"ADC12", "A380", "A356", "AlSi9Cu3", "A360"}
             if not alum_keys.issubset(results.keys()) and texts.get("aluminum"):
                 logger.warning("铝合金关键品种缺失，重试 aluminum 页(更长等待)...")
                 texts["aluminum"] = await _fetch_page_text(ctx, SMM_PAGES["aluminum"], "aluminum", wait_ms=12000)

@@ -189,7 +189,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 
 <div class="header" data-page-node-id="TWYILIuUVd9CPNiPnagcV6">
   <h1 data-page-node-id="KTPI4s1ybbLhQBqZnd2yfQ">📊 曼德热系统大宗原材料价格看板</h1>
-  <span style="font-size:12px;color:#475569;background:#e2e8f0;padding:3px 9px;border-radius:6px;white-space:nowrap">13 品种 · 7 项已接入（长江有色 3 / SMM 4）</span>
+  <span style="font-size:12px;color:#475569;background:#e2e8f0;padding:3px 9px;border-radius:6px;white-space:nowrap">14 品种 · 8 项已接入（长江有色 3 / SMM 5）</span>
   <span class="updated" id="updatedTime" data-page-node-id="dPCtOIdylMDFYXFIEpjSms">加载中...</span>
 </div>
 
@@ -299,9 +299,9 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <script>
 // ===== DATA =====
 let ALL_DATA = {};
-const VARIETY_NAMES = {"CU": "铜（上海地区现货）", "AG": "1#白银", "PCU": "磷铜合金", "AL_A00": "SMM A00铝", "AL_A380": "A380铝合金", "AL_ADC12": "SMM铝合金ADC12", "AL_ALSI12FE": "AlSi12(Fe)铝合金", "PRND": "镨钕金属", "PA6": "PA6", "PA66": "PA66", "PA66_BASF": "巴斯夫PA66", "PP_TD20": "PP-TD20", "PP_TD40": "PP-TD40"};
+const VARIETY_NAMES = {"CU": "铜（上海地区现货）", "AG": "1#白银", "PCU": "磷铜合金", "AL_A00": "SMM A00铝", "AL_A380": "A380铝合金", "AL_ADC12": "SMM铝合金ADC12", "AL_ALSI12FE": "AlSi12(Fe)铝合金", "AL_A360": "A360铝合金", "PRND": "镨钕金属", "PA6": "PA6", "PA66": "PA66", "PA66_BASF": "巴斯夫PA66", "PP_TD20": "PP-TD20", "PP_TD40": "PP-TD40"};
 const VARIETY_UNITS = {"AG": "元/千克"};
-const VARIETY_SOURCES = {"CU": "长江有色网", "AG": "长江有色网", "PCU": "长江有色网", "AL_A00": "SMM 上海有色", "AL_A380": "SMM 上海有色", "AL_ADC12": "SMM 上海有色", "AL_ALSI12FE": "SMM 上海有色", "PRND": "亚洲金属网", "PA6": "卓创资讯", "PA66": "卓创资讯", "PA66_BASF": "PCI", "PP_TD20": "卓创资讯", "PP_TD40": "卓创资讯"};
+const VARIETY_SOURCES = {"CU": "长江有色网", "AG": "长江有色网", "PCU": "长江有色网", "AL_A00": "SMM 上海有色", "AL_A380": "SMM 上海有色", "AL_ADC12": "SMM 上海有色", "AL_ALSI12FE": "SMM 上海有色", "AL_A360": "SMM 上海有色", "PRND": "亚洲金属网", "PA6": "卓创资讯", "PA66": "卓创资讯", "PA66_BASF": "PCI", "PP_TD20": "卓创资讯", "PP_TD40": "卓创资讯"};
 const VARIETY_MARKETS = {};
 // KPI 关键品种卡（参考精工看板：只列代表品种，避免 33 张卡视觉噪音）
 // 顺序即展示顺序；增删改这里即可，其余品种仍在下方明细表中完整可见
@@ -310,7 +310,7 @@ function marketTag(code) {
   const m = VARIETY_MARKETS[code];
   return m ? '<span class="variety-market">' + m + '</span>' : "";
 }
-const CATEGORIES = [{"name": "铜及贵金属", "codes": ["CU", "AG", "PCU"]}, {"name": "铝及铝合金", "codes": ["AL_A00", "AL_A380", "AL_ADC12", "AL_ALSI12FE"]}, {"name": "稀土金属", "codes": ["PRND"]}, {"name": "工程塑料", "codes": ["PA6", "PA66", "PA66_BASF"]}, {"name": "改性塑料", "codes": ["PP_TD20", "PP_TD40"]}];
+const CATEGORIES = [{"name": "铜及贵金属", "codes": ["CU", "AG", "PCU"]}, {"name": "铝及铝合金", "codes": ["AL_A00", "AL_A380", "AL_ADC12", "AL_ALSI12FE", "AL_A360"]}, {"name": "稀土金属", "codes": ["PRND"]}, {"name": "工程塑料", "codes": ["PA6", "PA66", "PA66_BASF"]}, {"name": "改性塑料", "codes": ["PP_TD20", "PP_TD40"]}];
 const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#9333ea", "#0891b2", "#ea580c", "#4f46e5", "#be123c", "#0d9488", "#d97706", "#7c3aed", "#65a30d", "#0ea5e9", "#f43f5e", "#22c55e", "#a855f7", "#06b6d4", "#f97316", "#6366f1", "#e11d48", "#14b8a6", "#f59e0b", "#8b5cf6", "#84cc16", "#1d4ed8", "#b91c1c", "#15803d", "#a16207", "#7e22ce", "#0e7490", "#c2410c", "#4338ca"];
 const CHART_IDS = [];
 const MS_STATE = { msAvg: null, msVol: null };

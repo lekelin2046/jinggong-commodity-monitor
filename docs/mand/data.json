@@ -948,11 +948,22 @@
    "AL_ALSI12FE": 24250.0,
    "CU": 112700.0,
    "PCU": 118150.0
+  },
+  "2026-10-09": {
+   "AG": 14595.0,
+   "AL_A00": 23650.0,
+   "AL_A360": 24250.0,
+   "AL_A380": 26300.0,
+   "AL_ADC12": 24400.0,
+   "AL_ALSI12FE": 24150.0,
+   "CU": 111760.0,
+   "PCU": 117200.0
   }
  },
  "display_names": {
   "AG": "1#白银",
   "AL_A00": "SMM A00铝",
+  "AL_A360": "A360铝合金",
   "AL_A380": "A380铝合金",
   "AL_ADC12": "SMM铝合金ADC12",
   "AL_ALSI12FE": "AlSi12(Fe)铝合金",
@@ -965,7 +976,7 @@
   "PP_TD40": "PP-TD40",
   "PRND": "镨钕金属"
  },
- "last_updated": "2026-10-08",
+ "last_updated": "2026-10-09",
  "meta": {
   "AG": {
    "name": "1#白银",
@@ -975,6 +986,12 @@
   },
   "AL_A00": {
    "name": "SMM A00铝",
+   "source": "SMM 上海有色",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "AL_A360": {
+   "name": "A360铝合金",
    "source": "SMM 上海有色",
    "status": "live",
    "unit": "元/吨"
@@ -1050,6 +1067,7 @@
  "sources": {
   "AG": "长江有色网",
   "AL_A00": "SMM 上海有色",
+  "AL_A360": "SMM 上海有色",
   "AL_A380": "SMM 上海有色",
   "AL_ADC12": "SMM 上海有色",
   "AL_ALSI12FE": "SMM 上海有色",
@@ -1065,6 +1083,7 @@
  "status": {
   "AG": "live",
   "AL_A00": "live",
+  "AL_A360": "live",
   "AL_A380": "live",
   "AL_ADC12": "live",
   "AL_ALSI12FE": "live",
@@ -1077,11 +1096,12 @@
   "PP_TD40": "blocked",
   "PRND": "pending"
  },
- "total_days": 182,
+ "total_days": 183,
  "unit": "元/吨（1#白银为 元/千克）",
  "units": {
   "AG": "元/千克",
   "AL_A00": "元/吨",
+  "AL_A360": "元/吨",
   "AL_A380": "元/吨",
   "AL_ADC12": "元/吨",
   "AL_ALSI12FE": "元/吨",
@@ -1102,6 +1122,7 @@
   "AL_A380",
   "AL_ADC12",
   "AL_ALSI12FE",
+  "AL_A360",
   "PRND",
   "PA6",
   "PA66",
