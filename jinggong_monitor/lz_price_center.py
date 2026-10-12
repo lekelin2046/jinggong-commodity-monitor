@@ -176,6 +176,13 @@ VARIETY_MAP: dict[str, dict[str, Any]] = {
         "name": "三元乙丙 13561C", "unit": "元/吨", "vid": 275, "bt": 3, "tlbt": 0,
         "specs": ["13561C"], "markets": ["上海"],
     },
+    # 三井化学 EPT3092PM（隆众曲线名：三元乙丙橡胶-华东-3092pm-中石化三井）
+    # vid=275 下该规格**仅「华东」一行**（businessId=8467），故 strict=True 锁定口径：
+    # 华东当日缺报即留空，不会漂到别的规格/市场。
+    "EPDM_3092PM": {
+        "name": "三元乙丙 3092PM", "unit": "元/吨", "vid": 275, "bt": 3, "tlbt": 0,
+        "specs": ["3092PM"], "markets": ["华东"], "strict": True,
+    },
     # ---- 以下品种本账号 see=false，仅登记以便将来核对 ----
     # COAL_TAR_HIGH vid=133（高温煤焦油）→ 无权限；改用百川盈孚（免登录）
     # CRUDE_BRENT vid=110 bt=4 tlbt=22/23（布伦特 期货/FOB）→ 无权限；走精工现有路径

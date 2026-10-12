@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-daily_plastic_ext.py — 塑料/橡塑看板「扩品类」每日增量更新（20 项）
+daily_plastic_ext.py — 塑料/橡塑看板「扩品类」每日增量更新（21 项）
 
 与 daily_plastic.py 的分工
 ------------------------------------------------------------------
   daily_plastic.py      → 13 个塑料牌号（源：中塑在线 intl.21cp.com）
-  daily_plastic_ext.py  → 20 个新品类（源：SMM / 百川盈孚 / 隆众资讯）  ← 本脚本
+  daily_plastic_ext.py  → 21 个新品类（源：SMM / 百川盈孚 / 隆众资讯）  ← 本脚本
 
 两者写同一个 docs/plastic/data.json，均为**按日期 merge**、幂等。
 ⚠️ 两个脚本不可同时运行（同一文件会互相覆盖）——定时任务须错开。
 
-本脚本负责的 20 项（key 即 data.json 中的品种键）
+本脚本负责的 21 项（key 即 data.json 中的品种键）
 ------------------------------------------------------------------
   铝(4)      AL_A00 / AL_A380 / AL_ZLD104 / AL_ALSI9CU3        ← SMM
   化工(2)    C2_ETHYLENE / C3_PROPYLENE                        ← 隆众
-  三元乙丙(3) EPDM_6950C / EPDM_3110M / EPDM_13561C             ← 隆众
+  三元乙丙(4) EPDM_6950C / EPDM_3110M / EPDM_13561C / EPDM_3092PM ← 隆众
   炭黑原料(1) CB_COALTAR                                        ← 百川盈孚
   炭黑(1)    CB_N550                                            ← 隆众
   天然橡胶(2) NR_SCRWF / NR_RSS3                                ← 隆众
@@ -81,6 +81,7 @@ NEW_VARIETIES: dict[str, dict[str, str]] = {
     "EPDM_6950C":   {"name": "三元乙丙 6950C",  "unit": "元/吨", "source": "隆众资讯", "cat": "三元乙丙"},
     "EPDM_3110M":   {"name": "三元乙丙 3110M",  "unit": "元/吨", "source": "隆众资讯", "cat": "三元乙丙"},
     "EPDM_13561C":  {"name": "三元乙丙 13561C", "unit": "元/吨", "source": "隆众资讯", "cat": "三元乙丙"},
+    "EPDM_3092PM":  {"name": "三元乙丙 3092PM", "unit": "元/吨", "source": "隆众资讯", "cat": "三元乙丙"},
     # ---- 炭黑及原料 ----
     "CB_COALTAR":   {"name": "高温煤焦油",      "unit": "元/吨", "source": "百川盈孚", "cat": "炭黑"},
     "CB_N550":      {"name": "炭黑 N550",       "unit": "元/吨", "source": "隆众资讯", "cat": "炭黑"},
@@ -106,6 +107,7 @@ SMM_KEY_MAP = {"A00": "AL_A00", "A380": "AL_A380",
 LZ_KEY_MAP = {
     "ETHYLENE": "C2_ETHYLENE", "PROPYLENE": "C3_PROPYLENE",
     "EPDM_6950C": "EPDM_6950C", "EPDM_3110M": "EPDM_3110M", "EPDM_13561C": "EPDM_13561C",
+    "EPDM_3092PM": "EPDM_3092PM",
     "CARBON_BLACK_N550": "CB_N550",
     "NR_SCRWF": "NR_SCRWF", "NR_RSS3": "NR_RSS3",
     "BR9000": "BR9000", "SBR1712": "SBR1712",
@@ -154,7 +156,7 @@ def fetch_lz() -> dict[str, tuple[str, float]]:
 
 # ---------------------------------------------------------------------------
 def main():
-    ap = argparse.ArgumentParser(description="塑料看板扩品类每日更新（20 项）")
+    ap = argparse.ArgumentParser(description="塑料看板扩品类每日更新（21 项）")
     ap.add_argument("--dry-run", action="store_true", help="只抓取不写文件")
     ap.add_argument("--refresh", action="store_true",
                     help="覆盖本脚本 20 项的已有值（口径调整后重算用；不影响 13 个塑料牌号）")
@@ -203,7 +205,7 @@ def main():
 
     # ---- 3. 隆众资讯 15 品种 ----
     if "lz" in sources:
-        print("\n[3] 隆众资讯 · 化工/橡胶/助剂 15 品种")
+        print("\n[3] 隆众资讯 · 化工/橡胶/助剂 16 品种")
         lz = fetch_lz()
         for dk, (d, p) in sorted(lz.items()):
             got[dk] = (d, p)
