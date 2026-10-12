@@ -20480,6 +20480,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "fa2c16db0a2a4dc1ec126bb872ae5b7b15477c70"
+    },
+    {
+      "ts": "2026-10-12T15:32:34",
+      "date_row": "2026-10-12",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 7800.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "189f6d5925e9140e9610ba93d678d547a1fbdfdf"
     }
   ]
 }
