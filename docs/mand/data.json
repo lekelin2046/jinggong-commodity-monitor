@@ -1005,7 +1005,6 @@
   "CU": "铜（上海地区现货）",
   "PA6": "PA6",
   "PA66": "PA66",
-  "PA66_BASF": "巴斯夫PA66",
   "PCU": "磷铜合金",
   "PP_EP548R": "PP EP548R",
   "PP_T30S": "PP T30S",
@@ -1067,12 +1066,6 @@
    "status": "live",
    "unit": "元/吨"
   },
-  "PA66_BASF": {
-   "name": "巴斯夫PA66",
-   "source": "PCI",
-   "status": "paused",
-   "unit": "元/吨"
-  },
   "PCU": {
    "name": "磷铜合金",
    "source": "长江有色网",
@@ -1109,7 +1102,6 @@
   "CU": "长江有色网",
   "PA6": "卓创资讯",
   "PA66": "卓创资讯",
-  "PA66_BASF": "PCI",
   "PCU": "长江有色网",
   "PP_EP548R": "卓创资讯",
   "PP_T30S": "卓创资讯",
@@ -1125,7 +1117,6 @@
   "CU": "live",
   "PA6": "live",
   "PA66": "live",
-  "PA66_BASF": "paused",
   "PCU": "live",
   "PP_EP548R": "live",
   "PP_T30S": "live",
@@ -1143,7 +1134,6 @@
   "CU": "元/吨",
   "PA6": "元/吨",
   "PA66": "元/吨",
-  "PA66_BASF": "元/吨",
   "PCU": "元/吨",
   "PP_EP548R": "元/吨",
   "PP_T30S": "元/吨",
@@ -1162,7 +1152,6 @@
   "PA6",
   "PA66",
   "PP_T30S",
-  "PP_EP548R",
-  "PA66_BASF"
+  "PP_EP548R"
  ]
 }

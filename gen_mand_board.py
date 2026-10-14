@@ -48,14 +48,15 @@ VARIETIES = [
     ("PA66",        "PA66",               "卓创资讯",     "元/吨"),
     ("PP_T30S",     "PP T30S",            "卓创资讯",     "元/吨"),
     ("PP_EP548R",   "PP EP548R",          "卓创资讯",     "元/吨"),
-    ("PA66_BASF",   "巴斯夫PA66",         "PCI",          "元/吨"),
 ]
+# 注：原「巴斯夫PA66（PCI）」已于 2026-10-14 整项删除（无账号、曼德确认去除），
+#     若将来改由其他源跟踪巴斯夫 A3EG6/A3WG6 等牌号，再行加回。
 
 CATEGORIES = [
     ("铜及贵金属", ["CU", "AG", "PCU"]),
     ("铝及铝合金", ["AL_A00", "AL_A380", "AL_ADC12", "AL_ALSI12FE", "AL_A360"]),
     ("稀土金属",   ["PRND"]),
-    ("工程塑料",   ["PA6", "PA66", "PA66_BASF"]),
+    ("工程塑料",   ["PA6", "PA66"]),
     ("PP 聚丙烯",  ["PP_T30S", "PP_EP548R"]),
 ]
 
@@ -77,7 +78,7 @@ MARKETS = {
 
 BADGE = ('  <span style="font-size:12px;color:#475569;background:#e2e8f0;'
          'padding:3px 9px;border-radius:6px;white-space:nowrap">'
-         '14 品种 · 13 项已接入（长江有色 3 / SMM 5 / 卓创 5）</span>')
+         '13 品种 · 13 项已接入（长江有色 3 / SMM 5 / 卓创 5）</span>')
 
 # 🔴 骨架漂移守卫（2026-10-09 立）
 # 塑料模板骨架升级后会带入曼德页不适用的专属常量：
