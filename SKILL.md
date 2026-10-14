@@ -2,9 +2,17 @@
 name: 精工有色金属共享表自动化填写
 description: 精工板块每日有色金属市场均价采集与 Excel 填写。覆盖 26 项品种（Excel 列 2–27）、7 类数据源（ccmn 公开 AJAX / SMM 登录态 / 亚洲金属网登录态 / 卓创 Cookie / akshare / 中钨在线 OCR / LME 官方价）。每日 15:00 主抓 + 17:00 补抓 + 次日 09:00 LME 回填，均由平台定时任务触发。
 agent_created: true
-version: 3.6
-last_updated: 2026-09-18
+version: 3.7
+last_updated: 2026-10-14
 changelog:
+  v3.7 (2026-10-14):
+    - **四大项目口径统一 + Obsidian 知识库重构**：项目文档与知识笔记中原「三板块」表述全部作废，统一为**四项目**——精工（26）/ 诺博橡胶（21）/ 诺博内外饰（14）/ 曼德热系统（13）。
+    - 🔴 **曼德热系统 13 项全部接入**（原「7 已接入 / 3 待接入 / 3 无公开源」作废）：卓创 5 项（镨钕金属 / PA6 / PA66 / PP T30S / PP EP548R）按**品种编号**精确定位接入；巴斯夫 PA66 整项删除（PCI 订阅制，无账号）。**后续勿再当「未接入 / 待确认」处理。**
+    - ❗ **卓创写入改为「按源报价日期归位」**：`fetch_sci99_mand_sync()` 随行返回报价日期，非当日者按其真实日期写入（历史补位不覆盖）——根治此前的「日期伪标」同类风险（PP EP548R 当日未发布时如实落 10-13 而非 10-14）。**技术债**：ccmn / SMM 尚无同等闸门。
+    - + **诺博内外饰品种数为 14 而非 13**：三元乙丙 **3092PM** 归 `/plastic/`（隆众·华东），`/rubber/` 留 6950C·3110M·13561C —— **跨页属有意为之，勿合并**。
+    - + **曼德 `AL_A00` 历史回填 145 天**（2026-01-05 起共 159 天），源＝客户物料价格走势工作簿「铝 -日」B 列；`backfill_mand.py` 扩为双路源并新增**运行时口径闸门**（与独立基准一致率 ≥95% 才执行）。
+      纠正早前误判：判据是「与**同源基准**的一致率是否高」，**不是**「与疑似源是否存在差异」（相近品种天然有差异）——三重验证：独立 sheet 97.1% / 塑料看板 100% / 长江 88.8%。
+    - + **Obsidian `raw/工作/大宗原材料监控/` 按四项目重构**：「板块/诺博」拆为 `诺博橡胶` + `诺博内外饰`，「板块/曼德」改名 `曼德热系统`（旧名保留索引页）；总览新增**跨项目同名品种交叉表**（A00 铝 ccmn≠SMM、PP EP548R 中塑≠卓创）与**账号依赖总表**。
   v3.6 (2026-09-18):
     - + 「📜 关键经验 → 🧰 工程协作坑」三条：① **同一文件禁止并行发多个编辑**（后写基于旧快照整文件回写，静默吃掉先前改动且都回报“成功”）② **参考材料只有截图时不要动手**（曾照图猜分析字段，拿到原文档发现整块全错）③ **后台任务「failed」先看是不是自己的收尾动作**（本地验证服务 `pkill` 会被记成 failed，判据 `lsof -ti :<端口>`，复核须 `curl --noproxy '*'` 防代理 502 假象）
     - 这三条原只散落在 changelog / 会话记录里，现提到正文常读区，避免下次重复踩
@@ -377,23 +385,24 @@ jinggong-commodity-monitor/
 ├── jinggong_monitor/
 │   ├── base.py                       ← BaseFetcher + 价格区间解析
 │   ├── orchestrator.py               ← 多源调度
-│   ├── trading_calendar.py           ← 交易日历（三板块共用）
+│   ├── trading_calendar.py           ← 交易日历（四项目共用，唯一权威）
 │   ├── fetcher_ccmn.py               ← ccmn AJAX（长江现货 7 项）⭐
-│   ├── fetcher_smm.py                ← SMM（精工/诺博/曼德共用）
+│   ├── fetcher_smm.py                ← SMM（精工/诺博橡胶/诺博内外饰/曼德热系统共用）
 │   ├── fetcher_asianmetal.py         ← 亚洲金属网（闻喜镁锭）
-│   ├── fetcher_sci99.py              ← 卓创（Cookie）
+│   ├── fetcher_sci99.py              ← 卓创（Cookie；精工 6 项 + 曼德热系统 5 项按编号定位）
 │   ├── fetcher_steel.py              ← SMM 钢铁
 │   ├── fetcher_tungsten.py           ← 中钨在线（多窗口 OCR）
 │   ├── fetcher_akshare.py            ← akshare WTI 实时
 │   ├── fetcher_lme.py                ← LME 官方价
-│   ├── lz_price_center.py            ← 隆众结构化价格库（诺博）
+│   ├── lz_price_center.py            ← 隆众结构化价格库（诺博橡胶）
+│   ├── bridge_jinggong.py            ← 精工 → 诺博 数据接续（原油 / 铝历史）
 │   └── ...
 ├── config/{varieties,sources}.yaml   ← 品种-数据源映射
 ├── _legacy/                          ← 已废弃脚本（勿用，见其 README）
 └── docs/                             ← GitHub Pages 发布目录
 ```
 
-> 完整目录（含三个板块的全部脚本）见 `README.md`。
+> 完整目录（含四个项目的全部脚本）见 `README.md`。
 
 ---
 
@@ -839,6 +848,31 @@ curl --noproxy '*' -o /dev/null -w "%{http_code}\n" \
 
 ⚠️ 此前记录的「可用路径每日翻转」**已作废** —— 真正的变量是①沙箱代理变量干扰 + ②直连本身间歇，与"路径"无关。收尾仍须核 `git rev-list --left-right --count HEAD...origin/main` 为 `0 0`。
 
+#### 🪤 重试循环写法陷阱（2026-09-28 踩坑）
+
+**不要写 `if git push ... | tail -4; then`** —— `if` 判定的是**管道末端 `tail` 的退出码（恒 0）**，git 的失败码被吞掉，会**误报成功**。本次首轮据此误报 `PUSH_OK`，实际 5 次全失败、本地领先 1 未推送，靠事后 `ahead/behind = 1 0` 才暴露。
+
+```bash
+# ✅ 正解：重定向到文件，按 git 自身退出码判断
+for i in 1 2 3 4 5 6; do
+  env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy -u ALL_PROXY -u all_proxy \
+    git -c http.proxy= -c https.proxy= push origin main >/tmp/push_$i.log 2>&1 \
+    && { echo "SUCCESS attempt $i"; break; } || tail -2 /tmp/push_$i.log
+  sleep 2
+done
+```
+
+**收尾铁律**：无论脚本/命令自报什么，**必须独立核验** `git rev-list --left-right --count HEAD...origin/main` = `0 0`，并确认 `git rev-parse HEAD` 与线上一致。**自报成功 ≠ 推送成功**。
+
+**fetch 失败时如何核远程**：`git fetch` 报 `Empty reply` 时 ahead/behind 可能读的是陈旧引用。此时用 API 直查（不受 git 代理变量影响）：
+
+```bash
+curl -s --max-time 25 https://api.github.com/repos/lekelin2046/jinggong-commodity-monitor/commits/main \
+  | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['sha'][:7], d['commit']['message'].splitlines()[0])"
+```
+
+与本地 HEAD 一致 → 无分叉，可安全提交；不一致 → 说明其他会话已推，需先同步。
+
 ## C.5 Python 依赖
 
 ```
@@ -880,7 +914,7 @@ pyyaml>=6.0
 1. **先读**：「🎯 一句话总览」→「附录 A 接口契约表」
 2. **遇故障**：不 debug，直接查「附录 B 故障处置手册」按症状定位
 3. **缺环境信息**：查「附录 C 入口密码本」
-4. **要了解业务背景与三板块全貌**：读 Obsidian `raw/工作/大宗原材料监控/`（总览 + `章节/` + `板块/`）
+4. **要了解业务背景与四项目全貌**：读 Obsidian `raw/工作/大宗原材料监控/`（总览 + `章节/` + `板块/`）
 
 **复用前提**：
 - venv：`~/.workbuddy/binaries/python/envs/jinggong/`
@@ -906,18 +940,18 @@ pyyaml>=6.0
 | `jinggong_monitor/daily_plastic.py` | 工作日 15:30 增量抓 13 牌号 → 追加 `docs/plastic/data.json`（幂等） |
 | `jinggong_monitor/backfill_plastic.py` | 历史回填；`--only <KEY>` 增量合并单牌号（约 40s vs 全量 10+min）|
 | `docs/plastic/data.json` | `{日期:{牌号:价}}` 内层为 dict 非数组；`total_days`/`last_updated` 在顶层 |
-| `docs/plastic/index.html` | **诺博内外饰**看板（13 牌号）。Chart.js；**CATEGORIES / VARIETY_NAMES / UNITS / SOURCES / COLORS 全部硬编码，不读 data.json**。但 `allCodes` 由 `CATEGORIES.flatMap()` 动态派生 → **只需改常量，KPI 卡/多选器/下拉框自动跟随**。**已接入 `../board-analysis.js`**（同 rubber 页 3 处接线） |
+| `docs/plastic/index.html` | **诺博内外饰**看板（**14 项 = 13 中塑牌号 + 三元乙丙 3092PM**）。Chart.js；**CATEGORIES / VARIETY_NAMES / UNITS / SOURCES / COLORS 全部硬编码，不读 data.json**。但 `allCodes` 由 `CATEGORIES.flatMap()` 动态派生 → **只需改常量，KPI 卡/多选器/下拉框自动跟随**。**已接入 `../board-analysis.js`**（同 rubber 页 3 处接线） |
 | `docs/rubber/index.html` | **诺博橡胶**看板（21 项）。由 plastic 页复制而来，差异仅：标题、`CATEGORIES`(8 组 21 项)、`KPI_KEY_CODES`、`VARIETY_UNITS`(原油=美元/桶)、数据路径 `../plastic/data.json`、`docRef`。**已接入 `../board-analysis.js` 分组分析模块**（在 `renderAll()` 末尾调 `renderAnalysis()`；分析卡插在「日维度」之后、「月维度」之前） |
 | `docs/board-analysis.js` | **分组分析模块（周报形态，rubber/plastic 共用）**，复刻自诺博橡胶 Excel「原材料价格走势-周报」。入口 `BoardAnalysis.render({containerId,categories,data,names,units,sources,markets,colors,defaultUnit,fileBase,docRef})`。每组渲染折线图＋统计表＋自动摘要＋覆盖说明。<br>**新页接入只需 3 处**：① `<script src="../board-analysis.js">`；② 在「日维度」后插 `<div class="section analysis"><div class="section-label analysis">分组分析</div><div id="analysisContainer"></div></div>`；③ `renderAll()` 末尾加 `renderAnalysis()`（模块自注入 CSS，无需改页面样式）。<br>**CSV 导出**：`BoardAnalysis.exportCSV(idx)` 单组 / `exportCSVAll()` 全部；导出取屏幕表格同一份 `exportStore` 快照，不重算。<br>⚠️ **画布 ID 必须用分组下标**——分组名全是中文，做正则转义后会全塌成 `_` 而互相撞车（Chart.js 会报 "Canvas is already in use"）。⚠️ `renderAll()` 里的 `destroyCharts()` 会销毁**全部** Chart 实例，所以必须由 `renderAll()` 末尾重建，不能只在 DOMContentLoaded 里渲染一次。⚠️ 年度对比行需要该品种跨年历史，只有隆众（2020-07 起）撑得住；中塑是滚动一年窗口 → 只有 2025 一行 |
 | `jinggong_monitor/bridge_jinggong.py` | 精工→诺博**数据接续**（原油每日；`--history` 借 SMM 铝历史）。**只接同源同口径**，默认幂等只补空 |
-| `jinggong_monitor/daily_plastic_ext.py` | 工作日 15:40 增量抓**扩品类 20 项**（SMM 铝 4 / 百川煤焦油 1 / 隆众 15）→ 写同一 data.json，末尾自动调 `bridge_jinggong.sync()` 接上原油。⚠️ **必须与 daily_plastic.py 错开运行**（同文件并写会互相覆盖） |
+| `jinggong_monitor/daily_plastic_ext.py` | 工作日 15:40 增量抓**扩品类 21 项**（SMM 铝 4 / 百川煤焦油 1 / 隆众 16）→ 写同一 data.json，末尾自动调 `bridge_jinggong.sync()` 接上原油。⚠️ **必须与 daily_plastic.py 错开运行**（同文件并写会互相覆盖） |
 | `jinggong_monitor/lz_price_center.py` | 隆众 `dc.oilchem.net` 结构化价格库封装（cookie 直连），详见 E.2。体检入口：`--check`（登录态 + 试抓全品种）/ `--verify`（**比对日报口径 vs 曲线口径**，暴露口径分裂） |
-| `jinggong_monitor/backfill_plastic_ext.py` | 扩品类**历史回填**（隆众 15 项，走 `getSingleCurve` 曲线接口）。`--from 2025-09-17 [--to] [--only KEY] [--dry-run] [--refresh]`；默认幂等只补空缺。**长历史用 `--from 2020-07-01`**（2026-09-17 实测隆众能回溯到该日，6950C 拿到 1468 点；这是「较2025/2024/…/2020年均价涨幅」几行的数据基础，只用一年数据这几行会空掉）。SMM 铝 4 项 / 百川煤焦油 1 项源站无免费历史，**不在范围**（铝改由 `bridge_jinggong --history` 借精工同源历史）|
+| `jinggong_monitor/backfill_plastic_ext.py` | 扩品类**历史回填**（隆众 **16 项**，走 `getSingleCurve` 曲线接口）。`--from 2025-09-17 [--to] [--only KEY] [--dry-run] [--refresh]`；默认幂等只补空缺。**长历史用 `--from 2020-07-01`**（2026-09-17 实测隆众能回溯到该日，6950C 拿到 1468 点；这是「较2025/2024/…/2020年均价涨幅」几行的数据基础，只用一年数据这几行会空掉）。⚠️ 曲线接口**单次约 250 点上限且从起始端截断**（2026-10-12 实测）→ **拉更久须分段（每段 ≤1 年）**。SMM 铝 4 项 / 百川煤焦油 1 项源站无免费历史，**不在范围**（铝改由 `bridge_jinggong --history` 借精工同源历史）|
 | `jinggong_monitor/fetcher_baiinfo.py` | 百川盈孚煤焦油抓取（免登录 SSR） |
 
-- **data.json 现共 34 品种 = 塑料 13 + 扩品类 20 + 原油 1**（2026-09-17 扩充并上线），**1553 个交易日（2020-07-01 ~ 2026-09-18）**。塑料 13（PC×3、ABS×3、PP×5、POE×1、PA6×1）口径＝余姚中国塑料城市场参考价（元/吨），受源站**滚动一年窗口**限制只能回溯到 2025-09-17；扩品类 20 的源与口径见 E.2。
+- **data.json 现共 35 品种 = 塑料 13 + 扩品类 21 + 原油 1**（2026-10-14 口径），**1636 个交易日（2020-03-30 ~ 2026-10-13）**。塑料 13（PC×3、ABS×3、PP×5、POE×1、PA6×1）口径＝余姚中国塑料城市场参考价（元/吨），受源站**滚动一年窗口**限制只能回溯到 2025-09-17；扩品类 21 的源与口径见 E.2。
 - ⚠️ **`backfill_plastic.py` 不带 `--only` ＝ 全量重建，会覆盖 data.json**，并丢失：① 隆众 15 项 2020 起的长历史 ② 桥接的 WTI/A380/AlSi9Cu3 ③ 百川煤焦油。补救顺序：`backfill_plastic_ext --from 2020-07-01` → `bridge_jinggong --history`。**日常更新只用 `daily_plastic.py` / `daily_plastic_ext.py`（按日期 merge、幂等、安全）。**
-- **两页拆分（2026-09-17）**：`docs/plastic/`＝内外饰（13 牌号，4 组）；`docs/rubber/`＝橡胶（21 项，8 组）。**共用 data.json**。⚠️ 前端 KPI 的「今日更新品种」「月均价环比」必须按**本页** `CATEGORIES` 过滤——data.json 是共用的，不过滤会把对方品种算进来（曾出现「33 / 21」这种计数）。
+- **两页拆分（2026-09-17；2026-10-14 校正）**：`docs/plastic/`＝内外饰（**14 项，5 组**：13 中塑牌号 + 三元乙丙 3092PM）；`docs/rubber/`＝橡胶（21 项，8 组）。**共用 data.json**。⚠️ 前端 KPI 的「今日更新品种」「月均价环比」必须按**本页** `CATEGORIES` 过滤——data.json 是共用的，不过滤会把对方品种算进来（曾出现「33 / 21」这种计数）。⚠️ **三元乙丙组跨页属有意为之**（`/rubber/` 留 6950C·3110M·13561C 上海；`/plastic/` 留 3092PM 华东，隆众库中该牌号只有华东一行）——**勿合并**。
 - 反爬：全站 SafeLine WAF，普通 UA 一律 468；**Googlebot UA 对 `/market/detail/` 放行**，须低频（每日 1 次、间隔 ≥2s）。
 - ⚠️ 同名陷阱：`K8003` 同名牌号极多，必须用 `dushanzi`/`独山子` 过滤。
 - ⚠️ 中塑对**部分牌号发布不同步**，同一天可能出现多个日期，属正常，勿强行拉平。
@@ -949,8 +983,8 @@ pyyaml>=6.0
 |---|---|---|
 | `MEMORY.md` | ✅ **是**（唯一） | 只留每次都用得上的：铁律 / 数据源 / 推送 / 项目骨架速查 / 拆不拆结论。**约 6 千字** |
 | `board-jinggong.md` | ❌ 否 | 中钨在线 OCR 参数、LME 铝回填、交易日历、Excel 与 changelog、并发事故规程 |
-| `board-plastic.md` | ❌ 否 | 扩品类口径（昆明/山东/衡水）、隆众两条取数路径、13 牌号中塑 |
-| `board-mand.md` | ❌ 否 | 曼德 13 品种 SPEC、fetcher 复用映射（`SMM_KEY_MAP` 坑） |
+| `board-plastic.md` | ❌ 否 | 诺博（橡胶 + 内外饰）：扩品类口径（昆明/山东/衡水）、隆众两条取数路径、3092PM 跨页 |
+| `board-mand.md` | ❌ 否 | 曼德热系统 13 品种 SPEC（**全部已接入**）、卓创编号锚定、fetcher 复用映射（`SMM_KEY_MAP` 坑） |
 | `YYYY-MM-DD.md` | ❌ 否 | 按日工作日志，**只追加**；>30 天归纳进上述文件后删除 |
 
 ## F.2 铁律（写记忆时遵守）
@@ -961,9 +995,9 @@ pyyaml>=6.0
 
 ## F.3 拆不拆独立项目（结论，2026-09-17）
 
-**单仓库、单 Pages、单次推送。** 精工 / 塑料 / 曼德共享 `trading_calendar`、`git_helper`、fetcher、`export_excel_to_json`、Chart.js vendor：
-- 拆仓库 → **推送故障面 ×3**（推送是本项目最高频故障）；SMM fetcher 内部键是精工命名 `A380`/`ADC12`、曼德靠 `SMM_KEY_MAP` 映射，拆库必然产生两份漂移。
-- 现在已是**逻辑分家**：`docs/plastic/`（内外饰）、`docs/rubber/`（橡胶）、`docs/mand/` 独立子目录 + 独立前端常量 + 独立定时任务（15:30 / 15:35 / 15:40；**橡胶与内外饰共用同一份数据，不需要新定时任务**）。
+**单仓库、单 Pages、单次推送。** 精工 / 诺博橡胶 / 诺博内外饰 / 曼德热系统共享 `trading_calendar`、`git_helper`、fetcher、`export_excel_to_json`、Chart.js vendor：
+- 拆仓库 → **推送故障面 ×4**（推送是本项目最高频故障）；SMM fetcher 内部键是精工命名 `A380`/`ADC12`、曼德靠 `SMM_KEY_MAP` 映射，拆库必然产生多份漂移。
+- 现在已是**逻辑分家**：`docs/plastic/`（内外饰）、`docs/rubber/`（橡胶）、`docs/mand/` 独立子目录 + 独立前端常量 + 独立定时任务（15:30 / 15:35 / 15:40；**橡胶与内外饰共用同一份数据，共用两个错开的任务**）。
   · **2026-09-17 新增「拆页面·共用数据」的实践**：客户方要分开看（诺博橡胶 vs 诺博内外饰），拆的是**页面**不是数据层——抓取 1 次、推送 1 次，故障面不增加；两个链接可分别发人。
 - **唯一该拆的信号**：要给不同人不同权限（如曼德只给曼德同事看）——那时拆的是**发布通道**，不是代码。
 
@@ -975,20 +1009,23 @@ pyyaml>=6.0
 
 ```
 Obsidian Vault/raw/工作/大宗原材料监控/
-├── 大宗原材料监控-总览.md      ← MOC：三板块对照 + 数据流 + 双链索引
+├── 大宗原材料监控-总览.md      ← MOC：四项目对照 + 数据流 + 交叉矩阵 + 账号依赖 + 双链索引
 ├── 章节/                       ← 跨板块通用内容
 │   ├── 01-架构与数据流.md
 │   ├── 02-通用组件.md          ← 交易日历 / git_helper / fetcher 复用矩阵（双链枢纽）
 │   ├── 03-数据源与登录态.md
 │   ├── 04-发布与推送.md
 │   └── 05-运维与故障处置.md    ← 定时任务 ID / 故障表 / 并发规程
-├── 板块/                       ← 各板块品种清单与口径
-│   ├── 精工.md   诺博.md   曼德.md
+├── 板块/                       ← 各项目品种清单与口径
+│   ├── 精工.md   诺博橡胶.md   诺博内外饰.md   曼德热系统.md
+│   └── 诺博.md   曼德.md       ← 仅保留旧链接的索引页（内容已迁至上面两页）
 ├── 日报/                       ← 历史日报（6/10 ~ 8/11）
 └── _archive/                   ← 旧项目笔记与早期设计稿
 ```
 
 **三者分工**：SKILL.md ＝ 排障手册；Obsidian ＝ 架构与业务说明书；`.workbuddy/memory/` ＝ 我的工作记忆。
+
+> **2026-10-14 更新**：Obsidian 那套已按**四大项目**重构（原「三板块」表述作废）——总览改写为四项目结构（含**跨项目同名品种交叉表**与**账号依赖总表**），「板块/诺博」拆为 `诺博橡胶.md` + `诺博内外饰.md`，「板块/曼德」改名 `曼德热系统.md`，五个章节全部校正到现状。
 
 ## F.5 废弃代码
 

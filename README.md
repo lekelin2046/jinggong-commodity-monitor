@@ -15,7 +15,15 @@
 **之前**：纯人工 + Excel 操作员手工填表，每天 1-2 小时。
 **现在**：每天 15:00 由定时任务自动抓取 + 一次性写入 Excel，同步发布网页看板。
 
-> 本项目还承载另外两个板块的看板：**诺博**（橡胶/塑料原料，33 品种，`docs/plastic/`）与**曼德**（铜铝/工程塑料，13 品种，`docs/mand/`）。三个板块共享同一套底座（交易日历 / 推送 / fetcher），详见 SKILL.md 附录 F。
+> 本项目还承载另外**三个项目**的看板，合计四大项目共享同一套底座（交易日历 / 推送 / fetcher），详见 SKILL.md 附录 F：
+>
+> | 项目 | 看板 | 品种数 | 更新 |
+> |---|:-:|:-:|:-:|
+> | **诺博橡胶**（密封条原料） | `docs/rubber/` | 21 项 | 15:40 |
+> | **诺博内外饰**（塑料牌号） | `docs/plastic/` | 14 项 | 15:30 |
+> | **曼德热系统**（铜铝/工程塑料/稀土） | `docs/mand/` | 13 项 | 15:35 |
+>
+> 诺博两页**共用同一份 `docs/plastic/data.json`**（拆的是页面不是数据层）；三元乙丙组**跨页属有意为之**（`/rubber/` 留 6950C·3110M·13561C，`/plastic/` 留 3092PM）。
 
 ---
 
@@ -38,17 +46,17 @@ jinggong-commodity-monitor/
 │   push_to_cloud / refetch_smm_fill / refetch_wenxi_now
 │
 ├── jinggong_monitor/             核心包：fetcher_* + 交易日历 + 各看板日常抓取
-│   ├── daily_plastic.py          ⚠️ 15:30 塑料 13 牌号
-│   ├── daily_plastic_ext.py      ⚠️ 15:40 扩品类 20 项
-│   ├── lz_price_center.py        隆众价格中心（15 项）
+│   ├── daily_plastic.py          ⚠️ 15:30 诺博内外饰 · 中塑 13 牌号
+│   ├── daily_plastic_ext.py      ⚠️ 15:40 诺博橡胶 · 扩品类 21 项
+│   ├── lz_price_center.py        隆众价格中心（诺博橡胶 15 项 + 3092PM）
 │   ├── bridge_jinggong.py        精工 → 诺博 接续（原油 / 铝历史）
-│   └── xlsx_history_import.py    诺博工作簿历史回填（--report / --apply）
+│   └── xlsx_history_import.py    客户工作簿历史回填（--report / --apply）
 │
 ├── docs/                         看板前端（GitHub Pages 部署根）
 │   ├── index.html                精工（26 品种）
 │   ├── rubber/index.html         诺博橡胶（21 项）
-│   ├── plastic/index.html        诺博内外饰（13 牌号 + 扩品类 20 项）
-│   ├── mand/index.html           曼德（13 品种）
+│   ├── plastic/index.html        诺博内外饰（14 项 = 13 中塑牌号 + 3092PM）
+│   ├── mand/index.html           曼德热系统（13 品种）
 │   ├── data.json · plastic/data.json（rubber 与 plastic 共用）· mand/data.json
 │   └── board-analysis.js         分组分析模块（rubber / plastic 两页共用）
 │
@@ -158,10 +166,10 @@ jinggong-commodity-monitor/
 ├── daily_update_all.py             ← 15:00 主抓 25 项（精工）
 ├── daily_check_missed.py           ← 17:00 补抓漏项 + LME 兜底
 ├── backfill_lme_official.py        ← 次日 09:00 LME 铝按官方数据日回填
-├── daily_plastic.py                ← 诺博 13 个中塑塑料牌号（15:30）
-├── daily_plastic_ext.py            ← 诺博扩品类 20 项（15:40）
-├── mand_update.py                  ← 曼德 13 品种（15:35）
-├── gen_mand_board.py               ← 从诺博模板生成曼德看板骨架
+├── daily_plastic.py                ← 诺博内外饰 13 个中塑塑料牌号（15:30）
+├── daily_plastic_ext.py            ← 诺博橡胶 扩品类 21 项（15:40）
+├── mand_update.py                  ← 曼德热系统 13 品种（15:35）
+├── gen_mand_board.py               ← 从诺博内外饰模板生成曼德热系统看板骨架
 ├── export_excel_to_json.py         ← Excel → docs/data.json
 ├── sync_from_web.py                ← 线上编辑回写 Excel
 ├── changelog.py                    ← 数据变更留痕
@@ -173,24 +181,26 @@ jinggong-commodity-monitor/
 ├── jinggong_monitor/               ← 核心代码
 │   ├── base.py                     ← BaseFetcher + 价格区间解析
 │   ├── orchestrator.py             ← 多源调度
-│   ├── trading_calendar.py         ← 交易日历（三板块共用）
+│   ├── trading_calendar.py         ← 交易日历（四项目共用，唯一权威）
 │   ├── fetcher_ccmn.py             ← 长江有色 AJAX（公开 ⭐）
-│   ├── fetcher_smm.py              ← SMM 上海有色（自动登录；精工/诺博/曼德共用）
+│   ├── fetcher_smm.py              ← SMM 上海有色（自动登录；精工/诺博橡胶/曼德热系统共用）
 │   ├── fetcher_asianmetal.py       ← 闻喜镁锭
 │   ├── fetcher_sci99.py            ← 卓创（Cookie）
 │   ├── fetcher_steel.py            ← SMM 钢铁
 │   ├── fetcher_tungsten.py         ← 中钨在线钨粉（多窗口 OCR）
-│   ├── fetcher_baiinfo.py          ← 百川盈孚（诺博·煤焦油）
-│   ├── lz_price_center.py          ← 隆众结构化价格库（诺博）
-│   ├── fetcher_21cp.py             ← 中塑在线（诺博 13 牌号）
+│   ├── fetcher_baiinfo.py          ← 百川盈孚（诺博橡胶 · 煤焦油）
+│   ├── lz_price_center.py          ← 隆众结构化价格库（诺博橡胶）
+│   ├── fetcher_21cp.py             ← 中塑在线（诺博内外饰 13 牌号）
 │   ├── fetcher_lme.py              ← LME 官方价
 │   ├── excel_filler.py             ← openpyxl 写表
 │   └── validator.py                ← 数据校验
 ├── config/                         ← varieties.yaml / sources.yaml
 ├── docs/                           ← GitHub Pages 发布目录
 │   ├── index.html  data.json       ← 精工看板
-│   ├── plastic/                    ← 诺博看板
-│   ├── mand/                       ← 曼德看板
+│   ├── rubber/                     ← 诺博橡胶看板
+│   ├── plastic/                    ← 诺博内外饰看板（data.json 与 rubber 共用）
+│   ├── mand/                       ← 曼德热系统看板
+│   ├── board-analysis.js           ← 分组分析模块（rubber / plastic 共用）
 │   ├── editor.html                 ← 线上编辑页
 │   └── changelog.html / .json      ← 变更记录
 ├── cookies/  data/  screenshots/   ← 登录态与抓取缓存（均 gitignore）
