@@ -977,7 +977,22 @@
    "AL_ADC12": 24500.0,
    "AL_ALSI12FE": 24200.0,
    "CU": 111570.0,
-   "PCU": 117050.0
+   "PCU": 117050.0,
+   "PP_EP548R": 10775.0
+  },
+  "2026-10-14": {
+   "AG": 14350.0,
+   "AL_A00": 23620.0,
+   "AL_A360": 24200.0,
+   "AL_A380": 26400.0,
+   "AL_ADC12": 24500.0,
+   "AL_ALSI12FE": 24100.0,
+   "CU": 111650.0,
+   "PA6": 15000.0,
+   "PA66": 19000.0,
+   "PCU": 117150.0,
+   "PP_T30S": 10730.0,
+   "PRND": 900000.0
   }
  },
  "display_names": {
@@ -992,11 +1007,11 @@
   "PA66": "PA66",
   "PA66_BASF": "巴斯夫PA66",
   "PCU": "磷铜合金",
-  "PP_TD20": "PP-TD20",
-  "PP_TD40": "PP-TD40",
+  "PP_EP548R": "PP EP548R",
+  "PP_T30S": "PP T30S",
   "PRND": "镨钕金属"
  },
- "last_updated": "2026-10-13",
+ "last_updated": "2026-10-14",
  "meta": {
   "AG": {
    "name": "1#白银",
@@ -1043,19 +1058,19 @@
   "PA6": {
    "name": "PA6",
    "source": "卓创资讯",
-   "status": "pending",
+   "status": "live",
    "unit": "元/吨"
   },
   "PA66": {
    "name": "PA66",
    "source": "卓创资讯",
-   "status": "pending",
+   "status": "live",
    "unit": "元/吨"
   },
   "PA66_BASF": {
    "name": "巴斯夫PA66",
    "source": "PCI",
-   "status": "blocked",
+   "status": "paused",
    "unit": "元/吨"
   },
   "PCU": {
@@ -1064,26 +1079,26 @@
    "status": "live",
    "unit": "元/吨"
   },
-  "PP_TD20": {
-   "name": "PP-TD20",
+  "PP_EP548R": {
+   "name": "PP EP548R",
    "source": "卓创资讯",
-   "status": "blocked",
+   "status": "live",
    "unit": "元/吨"
   },
-  "PP_TD40": {
-   "name": "PP-TD40",
+  "PP_T30S": {
+   "name": "PP T30S",
    "source": "卓创资讯",
-   "status": "blocked",
+   "status": "live",
    "unit": "元/吨"
   },
   "PRND": {
    "name": "镨钕金属",
-   "source": "亚洲金属网",
-   "status": "pending",
+   "source": "卓创资讯",
+   "status": "live",
    "unit": "元/吨"
   }
  },
- "source": "长江有色网 · SMM 上海有色（待接入：亚洲金属网 · 卓创资讯）",
+ "source": "长江有色网 · SMM 上海有色 · 卓创资讯（已暂停：PCI 巴斯夫PA66）",
  "sources": {
   "AG": "长江有色网",
   "AL_A00": "SMM 上海有色",
@@ -1096,9 +1111,9 @@
   "PA66": "卓创资讯",
   "PA66_BASF": "PCI",
   "PCU": "长江有色网",
-  "PP_TD20": "卓创资讯",
-  "PP_TD40": "卓创资讯",
-  "PRND": "亚洲金属网"
+  "PP_EP548R": "卓创资讯",
+  "PP_T30S": "卓创资讯",
+  "PRND": "卓创资讯"
  },
  "status": {
   "AG": "live",
@@ -1108,15 +1123,15 @@
   "AL_ADC12": "live",
   "AL_ALSI12FE": "live",
   "CU": "live",
-  "PA6": "pending",
-  "PA66": "pending",
-  "PA66_BASF": "blocked",
+  "PA6": "live",
+  "PA66": "live",
+  "PA66_BASF": "paused",
   "PCU": "live",
-  "PP_TD20": "blocked",
-  "PP_TD40": "blocked",
-  "PRND": "pending"
+  "PP_EP548R": "live",
+  "PP_T30S": "live",
+  "PRND": "live"
  },
- "total_days": 185,
+ "total_days": 186,
  "unit": "元/吨（1#白银为 元/千克）",
  "units": {
   "AG": "元/千克",
@@ -1130,8 +1145,8 @@
   "PA66": "元/吨",
   "PA66_BASF": "元/吨",
   "PCU": "元/吨",
-  "PP_TD20": "元/吨",
-  "PP_TD40": "元/吨",
+  "PP_EP548R": "元/吨",
+  "PP_T30S": "元/吨",
   "PRND": "元/吨"
  },
  "varieties": [
@@ -1146,8 +1161,8 @@
   "PRND",
   "PA6",
   "PA66",
-  "PA66_BASF",
-  "PP_TD20",
-  "PP_TD40"
+  "PP_T30S",
+  "PP_EP548R",
+  "PA66_BASF"
  ]
 }
