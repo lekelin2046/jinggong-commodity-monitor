@@ -2,13 +2,20 @@
 # -*- coding: utf-8 -*-
 """曼德热系统大宗原材料价格采集 → docs/mand/data.json
 
-品种分三类（共 14 项）：
-  A 已接入（8） 长江有色网 3 项 + SMM 上海有色 5 项
-  B 待接入（3） 镨钕金属（亚洲金属网）、PA6 / PA66（卓创资讯）
-  C 无公开源（3）巴斯夫PA66（PCI 订阅制）、PP-TD20、PP-TD40（卓创未收录改性牌号）
+品种分两类（共 14 项）：
+  A 已接入（13） 长江有色网 3 项 + SMM 上海有色 5 项 + 卓创资讯 5 项
+  B 已暂停（1） 巴斯夫PA66（PCI 订阅制，曼德 2026-10-14 明确「暂停」）
+
+2026-10-14 依曼德逐项确认的口径完成「未接入品种」优化：
+  · 镨钕金属  源由亚洲金属网改为**卓创资讯**（亚洲金属网价格栏为会员权限，无账号）
+  · PA6 / PA66 由「只缺口径」转为已接入（按卓创品种编号精确定位唯一行）
+  · PP-TD20 / PP-TD40 → 替换为源站实际可取的 **PP T30S / PP EP548R**
+    （卓创价格库不收录改性牌号 TD20/TD40，检索 0 条）
 
 铁律：抓不到一律留空，绝不编造 / 估算 / 沿用前值。
       当日未抓到的品种不会写入该日行，前端按缺失渲染。
+      **日期不伪标**：卓创行的报价日期随行返回，非当日者按其真实日期归位
+      （历史补位且不覆盖已发布值），避免把上一交易日的价写成当日价。
 
 用法：
     python3 mand_update.py            # 采集当日并写入
@@ -33,7 +40,7 @@ sys.path.insert(0, str(SCRIPT_DIR / "jinggong_monitor"))
 from trading_calendar import is_trading_day, skip_reason  # noqa: E402
 
 # (code, 显示名, 数据源, 单位, 接入状态)
-#  status: live=已接入 / pending=待接入 / blocked=无公开源
+#  status: live=已接入 / pending=待接入 / blocked=无公开源 / paused=已暂停
 SPEC = [
     # ---- 长江有色金属网 ----
     ("CU",          "铜（上海地区现货）", "长江有色网",   "元/吨",   "live"),
@@ -45,17 +52,18 @@ SPEC = [
     ("AL_ADC12",    "SMM铝合金ADC12",     "SMM 上海有色", "元/吨",   "live"),
     ("AL_ALSI12FE", "AlSi12(Fe)铝合金",   "SMM 上海有色", "元/吨",   "live"),
     ("AL_A360",     "A360铝合金",         "SMM 上海有色", "元/吨",   "live"),
-    # ---- 待接入 ----
-    ("PRND",        "镨钕金属",           "亚洲金属网",   "元/吨",   "pending"),
-    ("PA6",         "PA6",                "卓创资讯",     "元/吨",   "pending"),
-    ("PA66",        "PA66",               "卓创资讯",     "元/吨",   "pending"),
-    # ---- 无公开源，需换源或走采购口径 ----
-    ("PA66_BASF",   "巴斯夫PA66",         "PCI",          "元/吨",   "blocked"),
-    ("PP_TD20",     "PP-TD20",            "卓创资讯",     "元/吨",   "blocked"),
-    ("PP_TD40",     "PP-TD40",            "卓创资讯",     "元/吨",   "blocked"),
+    # ---- 卓创资讯（2026-10-14 依曼德确认口径接入，按品种编号精确定位）----
+    ("PRND",        "镨钕金属",           "卓创资讯",     "元/吨",   "live"),
+    ("PA6",         "PA6",                "卓创资讯",     "元/吨",   "live"),
+    ("PA66",        "PA66",               "卓创资讯",     "元/吨",   "live"),
+    ("PP_T30S",     "PP T30S",            "卓创资讯",     "元/吨",   "live"),
+    ("PP_EP548R",   "PP EP548R",          "卓创资讯",     "元/吨",   "live"),
+    # ---- 已暂停：PCI 为订阅制付费数据，曼德 2026-10-14 明确「暂停」----
+    ("PA66_BASF",   "巴斯夫PA66",         "PCI",          "元/吨",   "paused"),
 ]
 
 LIVE_CCMN = ("CU", "AG", "PCU")
+LIVE_SCI99 = ("PRND", "PA6", "PA66", "PP_T30S", "PP_EP548R")
 
 # SMM fetcher 内部沿用精工命名（A380 / ADC12），曼德看板统一用 AL_ 前缀，此处做映射
 SMM_KEY_MAP = {
@@ -103,8 +111,37 @@ async def fetch_smm() -> dict:
     return out
 
 
+def fetch_sci99() -> dict:
+    """卓创资讯：镨钕金属 / PA6 / PA66 / PP T30S / PP EP548R
+
+    按**品种编号**（SCI99_MAND_TARGETS）精确检索单行，口径唯一、不含歧义；
+    返回项自带「源报价日期」，由 merge() 按真实日期归位。
+    """
+    print("  [卓创] 抓取（5 个编号，登录态 Playwright）...")
+    try:
+        from jinggong_monitor.fetcher_sci99 import fetch_sci99_mand_sync
+        raw = fetch_sci99_mand_sync()
+    except Exception as e:                                       # noqa: BLE001
+        print(f"     失败：{type(e).__name__}: {e}")
+        return {}
+    out = {c: v for c, v in raw.items() if c in LIVE_SCI99 and (v or {}).get("value")}
+    missing = [c for c in LIVE_SCI99 if c not in out]
+    print(f"     {len(out)}/{len(LIVE_SCI99)}"
+          + (f"  缺 {','.join(missing)}" if missing else ""))
+    return out
+
+
 def merge(prices: dict) -> dict:
-    """把当日抓取结果合并进 data.json（保留历史，不覆盖他日）"""
+    """把抓取结果合并进 data.json（保留历史，不覆盖他日）
+
+    prices 的取值支持两种形态：
+      · 数值                      → 视为**当日**取值
+      · {"value": v, "date": d}   → 按**源报价日期** d 归位
+
+    写入规则（守铁律，既不伪标日期、也不沿用前值）：
+      · 源报价日期 == 今天 → 覆盖写（当日盘中源方可修订，允许刷新）
+      · 源报价日期 <  今天 → 该键不存在才写（历史补位，不覆盖已发布值）
+    """
     if OUT_PATH.exists():
         doc = json.loads(OUT_PATH.read_text(encoding="utf-8"))
     else:
@@ -112,14 +149,23 @@ def merge(prices: dict) -> dict:
 
     today = datetime.now().strftime("%Y-%m-%d")
     data = doc.setdefault("data", {})
-    row = data.setdefault(today, {})
 
-    # 只写抓到的值；未抓到的不写入该 key（前端按缺失处理），绝不沿用前值
-    for code, val in prices.items():
-        if val is not None:
-            row[code] = val
+    for code, raw in prices.items():
+        if raw is None:
+            continue
+        if isinstance(raw, dict):
+            val, src_date = raw.get("value"), raw.get("date") or today
+        else:
+            val, src_date = raw, today
+        if val is None:
+            continue                       # 未抓到 ⇒ 不写该键，绝不沿用前值
+        row = data.setdefault(src_date, {})
+        if src_date != today and code in row:
+            continue                       # 历史补位：不覆盖已发布值
+        row[code] = val
 
-    doc["source"] = "长江有色网 · SMM 上海有色（待接入：亚洲金属网 · 卓创资讯）"
+    doc["source"] = ("长江有色网 · SMM 上海有色 · 卓创资讯"
+                     "（已暂停：PCI 巴斯夫PA66）")
     doc["unit"] = "元/吨（1#白银为 元/千克）"
     doc["last_updated"] = today
     doc["total_days"] = len(data)
@@ -177,32 +223,61 @@ def main() -> int:
     prices: dict = {}
     prices.update(fetch_ccmn())
     prices.update(asyncio.run(fetch_smm()))
+    prices.update(fetch_sci99())
+
+    today = datetime.now().strftime("%Y-%m-%d")
 
     if args.dry_run:
-        doc = {"data": {datetime.now().strftime("%Y-%m-%d"): prices}}
+        tmp: dict = {}
+        for code, raw in prices.items():
+            if raw is None:
+                continue
+            val, d = ((raw.get("value"), raw.get("date") or today)
+                      if isinstance(raw, dict) else (raw, today))
+            if val is not None:
+                tmp.setdefault(d, {})[code] = val
+        doc = {"data": tmp}
         print("\n  （dry-run，未落盘）")
     else:
         doc = merge(prices)
 
-    today = datetime.now().strftime("%Y-%m-%d")
-    row = doc["data"].get(today, {})
+    # 每项的“源报价日期”（用于展示与归位核对）
+    src_dates = {}
+    for code, raw in prices.items():
+        if raw is None:
+            continue
+        src_dates[code] = (raw.get("date") if isinstance(raw, dict) else today) or today
 
-    print(f"\n  日期 {today}：抓到 {len(row)}/{len(SPEC)} 项")
+    def _resolve(code):
+        """本次落位：(值, 日期)；当日行优先，其次按源日期归位的补位值"""
+        v = doc["data"].get(today, {}).get(code)
+        if v is not None:
+            return v, today
+        d = src_dates.get(code)
+        if d and d != today and code in doc["data"].get(d, {}):
+            return doc["data"][d][code], d
+        return None, None
+
+    n_live = sum(1 for *_x, st in SPEC if st == "live")
+    n_ok = sum(1 for code, *_x in SPEC if _resolve(code)[0] is not None)
+    print(f"\n  日期 {today}：抓到 {n_ok} 项（live 共 {n_live} 项，另 1 项暂停）")
     for code, name, src, unit, st in SPEC:
-        v = row.get(code)
+        v, d = _resolve(code)
         if v is not None:
             mark, shown = "OK ", f"{v:>12,.2f}"
+            tail = f"  {unit}"
+            if d != today:
+                tail += f"  ←源报价日 {d}（已按其真实日期归位，未伪标为今日）"
         elif st == "live":
-            mark, shown = "MISS", "         —"
+            mark, shown, tail = "MISS", "         —", "  （当日未抓到 → 留空）"
         else:
-            mark, shown = "n/a", "         —"
-        print(f"    [{mark}] {name:<18} {shown}  {unit if v is not None else ''}")
+            mark, shown, tail = "n/a", "         —", f"  （{st}）"
+        print(f"    [{mark}] {name:<18} {shown}{tail}")
     if not args.dry_run:
         print(f"\n  → {OUT_PATH.relative_to(SCRIPT_DIR)}")
 
     if args.push and not args.dry_run:
-        got = sum(1 for code, *_ in SPEC if row.get(code) is not None)
-        publish(got > 0)
+        publish(n_ok > 0)
     return 0
 
 

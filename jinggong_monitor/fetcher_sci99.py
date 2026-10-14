@@ -19,11 +19,12 @@
 """
 
 import asyncio
+import datetime as dt
 import json
 import os
 import re
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 SCRIPT_DIR = Path(__file__).parent.parent
 COOKIE_FILE = SCRIPT_DIR / "cookies" / "sci99.json"
@@ -209,3 +210,199 @@ async def fetch_sci99_async(timeout: int = 90, holder: Optional[Dict[str, float]
 def fetch_sci99_sync(timeout: int = 90) -> Dict[str, float]:
     """同步包装，供非异步环境调用"""
     return asyncio.run(fetch_sci99_async(timeout=timeout))
+
+
+# ===========================================================================
+# 曼德热系统专用：按「品种编号」精确定位单行（2026-10-14 新增）
+# ===========================================================================
+# 背景：曼德 2026-10-14 逐项确认了 5 个原「未接入」品种的口径（见
+#       output/曼德看板品种口径优化说明_2026-10-14.md）。
+#
+# 为什么用「品种编号」而不是关键词：search.aspx?keyword=<编号> 实测**精确返回
+# 唯一一行**，而按牌号关键词搜索会返回同名多厂家/多市场（如 T30S 有 20 条带价行），
+# 无法保证口径唯一。编号取自搜索页「ID」列，是卓创内部稳定的行标识。
+#
+# 每项：(曼德品种代码, 卓创编号, 口径描述, 单位换算倍数)
+#   · scale=1      源单位已是 元/吨
+#   · scale=10000  源单位为 万元/吨，×10000 归一到看板统一的 元/吨
+#     （曼德清单对镨钕金属标注的单位即 元/吨，故此处做单位归一，不改变数值含义）
+SCI99_MAND_TARGETS: Tuple[Tuple[str, int, str, float], ...] = (
+    ("PRND",      34618,  "金属镨钕 PrNd≥99% · 中国 · 市场价",           10000),
+    ("PA6",       43234,  "PA6 · BL3280H · 华南 · 市场价",                1),
+    ("PA66",      16980,  "PA66 · EPR27 · 神马工程塑料 · 企业报价(出厂价)", 1),
+    ("PP_T30S",   17969,  "T30S 拉丝料 · 大庆石化 · 沈阳 · 市场价",        1),
+    ("PP_EP548R", 198236, "EP548R 高熔共聚 · 大庆炼化 · 余姚 · 市场价",     1),
+)
+
+# 搜索页表格列序（2026-10-14 实测，表头 18 列 / 数据行 19 列）
+_MAND_COLS = {
+    "id": 0, "name": 1, "spec": 2, "vendor": 3, "market": 4,
+    "ptype": 5, "dtype": 6, "low": 8, "high": 9, "avg": 10,
+    "unit": 14, "date": 15,
+}
+
+_JS_MAND_TABLE = """
+() => {
+  const out = [];
+  for (const tr of document.querySelectorAll('table tr')) {
+    const cells = [...tr.querySelectorAll('th,td')].map(td => td.innerText.trim());
+    if (cells.some(c => c !== '')) out.push(cells);
+  }
+  return out;
+}
+"""
+
+
+def _cell(row: List[str], key: str) -> str:
+    i = _MAND_COLS[key]
+    return row[i].strip() if i < len(row) else ""
+
+
+def _norm_quote_date(raw: str, today: dt.date) -> Optional[str]:
+    """卓创报价日期形如 `10/14`（无年份）→ `2026-10-14`（跨年时回退一年）"""
+    m = re.match(r"(\d{1,2})\s*[/-]\s*(\d{1,2})", (raw or "").strip())
+    if not m:
+        return None
+    mo, da = int(m.group(1)), int(m.group(2))
+    year = today.year
+    if mo > today.month + 1:      # 1 月看到 12/xx ⇒ 属上一年
+        year -= 1
+    try:
+        return dt.date(year, mo, da).isoformat()
+    except ValueError:
+        return None
+
+
+def _to_price(raw: str) -> Optional[float]:
+    """清成纯数值；占位/空 → None（守铁律，绝不估值）"""
+    s = re.sub(r"[,，\s]", "", (raw or "").strip())
+    s = re.sub(r"^[▼▲↑↓+\-]+", "", s)
+    if not s or s in ("-", "--", "无", "暂无"):
+        return None
+    try:
+        v = float(s)
+    except ValueError:
+        return None
+    return v if v > 0 else None
+
+
+def parse_mand_row(rows: List[List[str]], vid: int,
+                   today: Optional[dt.date] = None) -> Optional[dict]:
+    """在搜索页表格里按编号取出目标行 → 结构化结果（含**源报价日期**）"""
+    today = today or dt.date.today()
+    target = str(vid)
+    for row in rows:
+        if _cell(row, "id") != target:
+            continue
+        avg_raw = _cell(row, "avg")
+        if not avg_raw:                      # 表头行没有「平均价」数字位
+            continue
+        value = _to_price(avg_raw)
+        if value is None:
+            return {"value": None, "date": _norm_quote_date(_cell(row, "date"), today),
+                    "raw_unit": _cell(row, "unit"), "spec": _cell(row, "spec"),
+                    "vendor": _cell(row, "vendor"), "market": _cell(row, "market"),
+                    "pnote": _cell(row, "ptype"), "note": ""}
+        return {
+            "value": value,
+            "date": _norm_quote_date(_cell(row, "date"), today),
+            "raw_unit": _cell(row, "unit"),
+            "spec": _cell(row, "spec"),
+            "vendor": _cell(row, "vendor"),
+            "market": _cell(row, "market"),
+            "pnote": _cell(row, "ptype"),
+            "note": row[-1] if len(row) > 16 else "",
+        }
+    return None
+
+
+async def fetch_sci99_mand_async(targets=None, wait_ms: int = 3000,
+                                 holder: Optional[Dict[str, dict]] = None
+                                 ) -> Dict[str, dict]:
+    """按品种编号抓取曼德新品种的单行报价（含单位归一与源报价日期）。
+
+    参数
+        targets: 可覆盖默认的 SCI99_MAND_TARGETS（测试用）
+        holder : 外部字典，逐项取到即写入（外层超时也不丢已得部分）
+
+    返回
+        {code: {"value": float 元/吨, "date": "YYYY-MM-DD", "raw_unit": str,
+                "spec": str, "vendor": str, "market": str}}
+        —— 取不到价格的编号**不入结果**（前端按缺失渲染，绝不沿用前值）。
+    """
+    targets = targets or SCI99_MAND_TARGETS
+
+    cookies = _load_cookies()
+    if not cookies:
+        print("  [卓创] cookie 不可用，跳过曼德新品种")
+        return {}
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        print("  [卓创] Playwright 未安装")
+        return {}
+
+    out: Dict[str, dict] = {}
+    today = dt.date.today()
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(
+            headless=True,
+            args=["--disable-quic", "--disable-blink-features=AutomationControlled"],
+        )
+        ctx = await browser.new_context(
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                       "AppleWebKit/537.36",
+            viewport={"width": 1600, "height": 1000},
+            locale="zh-CN",
+        )
+        await ctx.add_cookies(cookies)
+        page = await ctx.new_page()
+        try:
+            await page.goto("https://www.sci99.com/", wait_until="domcontentloaded",
+                            timeout=30000)
+        except Exception:                                        # noqa: BLE001
+            pass
+
+        for code, vid, desc, scale in targets:
+            url = SEARCH_URL.format(vid=vid)
+            try:
+                await page.goto(url, timeout=60000, wait_until="domcontentloaded")
+                await page.wait_for_timeout(wait_ms)
+                rows = await page.evaluate(_JS_MAND_TABLE)
+            except Exception as e:                               # noqa: BLE001
+                print(f"  [卓创] {code}: 页面加载失败 ({type(e).__name__}: {e})")
+                continue
+
+            hit = parse_mand_row(rows, vid, today)
+            if hit is None:
+                print(f"  [卓创] {code}（编号 {vid}）: 页面未返回该编号行 → 留空")
+                continue
+            if hit["value"] is None:
+                print(f"  [卓创] {code}（编号 {vid}）: 源方无报价（{hit.get('note') or '空值'}）"
+                      f" → 留空")
+                continue
+
+            value = hit["value"] * scale
+            rec = {
+                "value": round(value, 2),
+                "date": hit["date"],
+                "raw_unit": hit["raw_unit"],
+                "spec": hit["spec"], "vendor": hit["vendor"], "market": hit["market"],
+            }
+            out[code] = rec
+            if holder is not None:
+                holder[code] = rec
+            unit_note = "" if scale == 1 else f"（源 {hit['raw_unit']} ×{scale:g}）"
+            print(f"  [卓创] {code}: {rec['value']:,.2f} 元/吨{unit_note}"
+                  f"  @{rec['date']}  [{hit['vendor'] or '-'}"
+                  f"|{hit['market'] or '-'}|{hit['spec']}]")
+
+        await browser.close()
+
+    return out
+
+
+def fetch_sci99_mand_sync(targets=None) -> Dict[str, dict]:
+    """同步包装，供 mand_update.py 调用"""
+    return asyncio.run(fetch_sci99_mand_async(targets=targets))
