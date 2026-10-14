@@ -24,6 +24,7 @@
 | `probe_sci99_lines.py` | 卓创 `selectedlines/getlines.ashx` 曲线接口（请求体 + 响应 + 是否含日期序列） | `/tmp/sci99_lines.json` |
 | `probe_sci99_product.py` | 卓创**品种页**（`product.aspx?ppid=`，即曼德所述「塑料→工程塑料→PA6」导航树）的历史能力 | `/tmp/sci99_product_xhr.json` |
 | `verify_mand_varieties.py` | 曼德页渲染回归（27 项断言，含「按源报价日期归位」列位校验） | 终端 |
+| `verify_mand_backfill.py` | 曼德历史回填验证（21 项断言：data.json 段结构/边界 + 页面逐列取值 + 趋势图点位） | 终端 |
 
 **运行方式**：必须在**仓库根目录**执行——脚本内的 `data/`、`cookies/`、`sources/` 相对路径按 cwd 解析。
 
