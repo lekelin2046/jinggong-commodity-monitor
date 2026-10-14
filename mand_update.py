@@ -165,8 +165,7 @@ def merge(prices: dict) -> dict:
             continue                       # 历史补位：不覆盖已发布值
         row[code] = val
 
-    doc["source"] = ("长江有色网 · SMM 上海有色 · 卓创资讯"
-                     "（已暂停：PCI 巴斯夫PA66）")
+    doc["source"] = "长江有色网 · SMM 上海有色 · 卓创资讯"
     doc["unit"] = "元/吨（1#白银为 元/千克）"
     doc["last_updated"] = today
     doc["total_days"] = len(data)
