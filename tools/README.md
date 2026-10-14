@@ -18,6 +18,12 @@
 | `probe_dc_varieties.py` | 隆众目标品类 → `varietiesId` / `channelId` 映射 | `data/probe_dc/` |
 | `probe_lme_official.py` | LME 官网官方价接口 | `data/lme_official_latest.json` |
 | `probe_xlsx_history.py` | 诺博工作簿历史序列 ↔ `data.json` 逐点比对 | 终端 |
+| `probe_sci99_table.py` | 卓创搜索页 DOM 结构 + 「品种编号」精确检索能力 | 终端 |
+| `probe_mand_specs.py` | 曼德（拟）新增品种在**卓创 / 隆众**双源的收录情况 | 终端 |
+| `probe_sci99_history.py` | 卓创**历史数据**入口枚举（候选历史页 + 站内 XHR） | 终端 |
+| `probe_sci99_lines.py` | 卓创 `selectedlines/getlines.ashx` 曲线接口（请求体 + 响应 + 是否含日期序列） | `/tmp/sci99_lines.json` |
+| `probe_sci99_product.py` | 卓创**品种页**（`product.aspx?ppid=`，即曼德所述「塑料→工程塑料→PA6」导航树）的历史能力 | `/tmp/sci99_product_xhr.json` |
+| `verify_mand_varieties.py` | 曼德页渲染回归（27 项断言，含「按源报价日期归位」列位校验） | 终端 |
 
 **运行方式**：必须在**仓库根目录**执行——脚本内的 `data/`、`cookies/`、`sources/` 相对路径按 cwd 解析。
 
