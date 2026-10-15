@@ -6,7 +6,7 @@
 ------------------------------------------------------------------
 蜂巢看板 2026-10-15 首日上线，`docs/finest/data.json` 仅 1 天数据，
 页面「月均环比」「年度对比」「下月预测」初期无值。
-可行性实测见 `sources/蜂巢/蜂巢大宗-历史回填可行性.md`。
+可行性实测见 `sources/蜂巢汽车/蜂巢大宗-历史回填可行性.md`。
 主人 2026-10-15 指令：**有多少先补多少**。
 
 ⚠️ 与 `backfill_mand.py` 的关键差异
@@ -25,7 +25,7 @@
    2020-04-07 ~ 最新（1500+ 天），且比客户工作簿更新（工作簿止于 2026-08-18）。
 2. **精工** `docs/data.json` → CU（ccmn 长江 1#铜）/ ADC12 → AL_ADC12
 3. **曼德** `docs/mand/data.json` → CU（与精工互校取并集）/ AG（1#白银，仅 14 天）
-4. **客户工作簿** `sources/橡胶/诺博橡胶大宗物料价格走势-2026.xlsx`「铝 -日」
+4. **客户工作簿** `sources/诺博橡胶/诺博橡胶大宗物料价格走势-2026.xlsx`「铝 -日」
    B 列 —— 仅作 AL_A00 的独立基准。
 5. **亚洲金属网曲线接口** → PRND / DYFE / TB（近 12 个月日度序列）
 
@@ -95,7 +95,7 @@ SRC_JINGGONG = ROOT / "docs" / "data.json"
 SRC_MAND = ROOT / "docs" / "mand" / "data.json"
 
 # 客户工作簿（仅作独立基准，见 docstring）
-XLSX = ROOT / "sources" / "橡胶" / "诺博橡胶大宗物料价格走势-2026.xlsx"
+XLSX = ROOT / "sources" / "诺博橡胶" / "诺博橡胶大宗物料价格走势-2026.xlsx"
 XLSX_SHEET, XLSX_MIN_ROW = "铝 -日", 23
 XLSX_COLS = {"B": "AL_A00", "C": "AL_A380", "E": "AL_ALSI9CU3"}
 

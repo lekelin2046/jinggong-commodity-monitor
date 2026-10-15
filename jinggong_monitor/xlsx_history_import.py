@@ -40,8 +40,8 @@ from openpyxl import load_workbook
 from .trading_calendar import is_trading_day
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# 2026-09-23 整理：源工作簿已归入 sources/橡胶/
-XLSX_DEFAULT = os.path.join(BASE, "sources", "橡胶", "诺博橡胶大宗物料价格走势-2026.xlsx")
+# 2026-09-23 整理：源工作簿已归入 sources/诺博橡胶/
+XLSX_DEFAULT = os.path.join(BASE, "sources", "诺博橡胶", "诺博橡胶大宗物料价格走势-2026.xlsx")
 DATA_DEFAULT = os.path.join(BASE, "docs", "plastic", "data.json")
 
 # (工作表, 列字母) -> 看板品种代码
