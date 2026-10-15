@@ -64,7 +64,7 @@ from jinggong_monitor.lz_price_center import (                            # noqa
 from jinggong_monitor.safe_io import atomic_write_json                    # noqa: E402
 
 DATA_FILE = ROOT / "docs" / "plastic" / "data.json"
-BACKUP_DIR = ROOT / "backups" / "plastic"
+BACKUP_DIR = ROOT / "backups" / "塑料"
 
 logger = logging.getLogger("jinggong.daily_plastic_ext")
 

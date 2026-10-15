@@ -183,7 +183,7 @@ def merge(prices: dict) -> dict:
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_json(OUT_PATH, doc, indent=1, sort_keys=True,
-                      backup=True, backup_dir=SCRIPT_DIR / "backups" / "mand")
+                      backup=True, backup_dir=SCRIPT_DIR / "backups" / "曼德")
     return doc
 
 

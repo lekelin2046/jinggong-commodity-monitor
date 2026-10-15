@@ -24,7 +24,7 @@ from safe_io import atomic_write_json
 
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_FILE = os.path.join(_PROJECT_ROOT, "docs", "plastic", "data.json")
-BACKUP_DIR = os.path.join(_PROJECT_ROOT, "backups", "plastic")
+BACKUP_DIR = os.path.join(_PROJECT_ROOT, "backups", "塑料")
 
 
 def resolve_pid(keyword, brand_kw, prefer):

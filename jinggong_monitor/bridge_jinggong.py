@@ -137,7 +137,7 @@ def sync(history: bool = False, refresh: bool = False,
     nb["last_updated"] = dates[-1]
     nb["total_days"] = len(dates)
     atomic_write_json(NOBO_FILE, nb, indent=1,
-                      backup=True, backup_dir=ROOT / "backups" / "plastic")
+                      backup=True, backup_dir=ROOT / "backups" / "塑料")
     print(f"✓ 已写入 {NOBO_FILE}")
     return written
 
