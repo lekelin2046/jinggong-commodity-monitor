@@ -2,9 +2,17 @@
 name: 精工有色金属共享表自动化填写
 description: 精工板块每日有色金属市场均价采集与 Excel 填写。覆盖 26 项品种（Excel 列 2–27）、7 类数据源（ccmn 公开 AJAX / SMM 登录态 / 亚洲金属网登录态 / 卓创 Cookie / akshare / 中钨在线 OCR / LME 官方价）。每日 15:00 主抓 + 17:00 补抓 + 次日 09:00 LME 回填，均由平台定时任务触发。
 agent_created: true
-version: 3.7
-last_updated: 2026-10-14
+version: 3.8
+last_updated: 2026-10-15
 changelog:
+  v3.8 (2026-10-15):
+    - + **第五个看板 `docs/finest/`（蜂巢汽车 13 项）上线**：12 项已接入 + 巴斯夫 PA66 挂起。SMM 新增 copper 频道（`CU_CATH1`）；亚洲金属网新增稀土三品种「价格走势」页（HTML 表格、无需 OCR）；卓创 PA6/PA66 复用曼德已核编号（43234 / 16980）。定时任务 `bacf064b` 工作日 15:50（错峰避开 15:00/15:30/15:35/15:40 —— 五档现货任务**共用同一批 cookie 文件**，并发会相互覆盖）。
+      ⚠️ 连带修 `fetcher_smm._parse_prices` 合理性上限 `100000 → 1000000`：电解铜约 11 万元/吨，旧阈值会**零报错静默丢弃**该列。
+    - ❗ **「历史回溯限制」整节重写**（旧两条结论经 2026-10-15 全链路实测**证伪**）：
+      · ~~「ccmn AJAX 可按 publishDate 回溯历史（已支持）」~~ → 实测**不生效**（请求 2015/2020/2026 三日期返回同一份当日数据）。
+      · ~~「SMM 只提供当日实时价，无法回溯历史日期」~~ → 实为**付费专站** `price.smm.cn`，我方账号无权限；且该站与本账号**单点登录冲突**（探测时返回「账号已在其他设备登陆」），不宜反复登录。
+      · + **新发现**：亚洲金属网 `POST /price/priceChartExpectation.am`（`ppId`+`chartDate=1|2|4`）可回溯 **12 个月 250 点**；⚠️ 尾部含 7/14/28 天**预测值**，回填须按 `PDate` 截断至当日。探针 `tools/probes/probe_am_chart_history.py`。
+    - + **蜂巢历史回填可行性实测**：13 项中 **8 项可回填**（铝三项 ← 客户工作簿「铝 -日」2020-04-07 起 1506 天；稀土三项 ← 曲线接口 12 个月；CU 184 天；AL_ADC12 186 天），5 项无历史。详见 `sources/finest/蜂巢大宗-历史回填可行性.md`。**尚未执行**。
   v3.7 (2026-10-14):
     - **四大项目口径统一 + Obsidian 知识库重构**：项目文档与知识笔记中原「三板块」表述全部作废，统一为**四项目**——精工（26）/ 诺博橡胶（21）/ 诺博内外饰（14）/ 曼德热系统（13）。
     - 🔴 **曼德热系统 13 项全部接入**（原「7 已接入 / 3 待接入 / 3 无公开源」作废）：卓创 5 项（镨钕金属 / PA6 / PA66 / PP T30S / PP EP548R）按**品种编号**精确定位接入；巴斯夫 PA66 整项删除（PCI 订阅制，无账号）。**后续勿再当「未接入 / 待确认」处理。**
@@ -555,11 +563,23 @@ elif source == "ASIANMETAL":
 3. ~~**登录态自动重试**~~：✅ 已实现——抓取脚本内置自动重登（`fetcher_smm.py`）
 4. **邮件/Slack 通知**：填表完成后自动发主人日报
 
-### 历史回溯限制
-- SMM 只提供当日实时价，**无法回溯历史日期**
-- ccmn AJAX 可按 `publishDate` 回溯历史（已支持）
-- 亚洲金属网文章按日期归档，可回溯
-- akshare `futures_foreign_hist` 可回溯
+### 历史回溯限制（2026-10-15 全面复测修正）
+
+> ⚠️ 本节旧版两条结论经实测**证伪**，已重写。旧文：「SMM 只提供当日实时价，无法回溯历史日期」／「ccmn AJAX 可按 `publishDate` 回溯历史（已支持）」——**勿再引用**。
+
+- **ccmn 长江** ❌ **不能回溯**。`getCorpStmarketPriceList` 的 `publishDate` 参数**不生效**：实测请求 `2026-10-15` / `2020-10-15` / `2015-06-01` 三个日期，响应体**完全一致**（体内 `publishDate` 恒为当日、1#铜恒 110670~110710、1#白银恒 13625）。
+  历史需**会员登录**（`POST /metalquote/query`，未登录返回 400）。→ 同源历史只能走「复用其他看板 `data.json`」（见 `backfill_mand.py` 范式）。
+- **SMM 上海有色** ⚠️ 并非「只提供当日价」，历史在**独立付费站** `price.smm.cn`（接口 `platform.smm.cn/spotcenter/v31/settlement/history/prices?token=<JWT>`，含「SMM 1#电解铜」等品目 + 连续日期列表）。
+  我方账号**无该权限**（`bridge_jinggong.py` docstring 载明：SMM 铝历史源站付费）。
+  🔴 **该站与本账号存在单点登录冲突** —— 探测时返回「您的账号已在其他设备登陆」。**不宜反复登录该站**，以免影响 15:00 主流程（已回归验证 `hq.smm.cn` 生产通道正常，勿因此误判登录态失效）。
+- **亚洲金属网** ✅ **可回溯**，两条路：
+  1. **文章归档**（镁锭类在用）：`/{Product}PricesHistory` 按日期归档，镁锭页更新至当日（5642 页），走 `NEWS_LIST_URL` 抓取。
+  2. **曲线接口**（2026-10-15 新发现）：`POST /price/priceChartExpectation.am`，body `ppId=<价格参数ID>&chartDate=<1|2|4>`（1/3/12 个月）→ JS 数组 `chartList`，元素含 `PDate`/`PLNum`(低)/`PHNum`(高)/`PNum`(中间)。实测 **chartDate=4 → 250 点 / 12 个月**。`ppId` 取自 `POST /price/ajax/findParamList.am`（body `pId=<英文品名>`）。
+     - ⚠️ **尾部含 7/14/28 天预测值**（序列止于未来日期），回填**必须按 `PDate` 截断至当日**；预测行 `PLNum/PHNum` 为 `null`，不能靠字段空值判断。
+     - ⚠️ **稀土三品种的文章归档页停更于 2024-06-14**（`/PraseodymiumPricesHistory` 等第一页即 2024-06）→ 稀土历史**只能走曲线接口**，不能走文章归档。
+     - 探针：`tools/probes/probe_am_chart_history.py`；已定位 ppId 见 `.workbuddy/memory/board-finest.md`。**该接口不限稀土，镁锭应同样适用**，可作精工历史回填备选通道。
+- **卓创 sci99** ⚠️ 历史需**登录态**：`POST /selectedlines/getlines.ashx` 返回 `{"isLogin":"0","data":[]}`；搜索页有「查看并下载历史数据」「查看对比曲线」控件。**当日价通道正常**（无需登录态）。
+- **akshare** ✅ `futures_foreign_hist` 可回溯。
 
 ---
 
