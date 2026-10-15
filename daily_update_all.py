@@ -339,10 +339,14 @@ def run_git(args, timeout=60, retries=3):
     return last
 
 
-def export_and_push(row: int):
+def export_and_push(row: int, push: bool = True):
     print("  导出 data.json...")
     subprocess.run([sys.executable, str(SCRIPT_DIR / "export_excel_to_json.py")],
         cwd=str(SCRIPT_DIR), capture_output=True, text=True)
+    if not push:
+        # 由编排器 daily_all.py 统一提交推送（合并定时任务后 push 由 5 次收敛为 1 次）
+        print("  (--no-push：跳过提交推送，交由编排器统一处理)")
+        return True
     # 2026-09-11 修正：changelog.json 由 write_excel 写入，此前未纳入 git add，
     # 导致自动抓取的变更留痕永远上不了线上 changelog 页（09-08 / 09-10 / 09-11 连续三次踩坑，
     # 每次都要人工补提交）。此处与 data.json 一并提交。
@@ -371,7 +375,7 @@ def export_and_push(row: int):
     return True
 
 
-async def main():
+async def main(push: bool = True):
     # ===== 周末及法定节假日跳过（2026-09-08 确立）=====
     # 所有数据源周末/法定节假日均休市（LME/SMM/长江现货/卓创等），不应抓取。
     # 此前因定时任务未过滤周末，导致 Excel 写入 34 个周末行（部分含错误数据）。
@@ -448,7 +452,7 @@ async def main():
     row = write_excel(all_prices)
 
     print(f"[发布] ", end="")
-    export_and_push(row)
+    export_and_push(row, push=push)
 
     # ===== 异地备份（2026-10-15 新增）=====
     # 主表与 sources/ 下客户原始表均被 .gitignore 的 *.xlsx 排除，只存在于本机，
@@ -470,4 +474,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import argparse
+    _ap = argparse.ArgumentParser(description="精工全品种每日抓取（25 项）")
+    _ap.add_argument("--no-push", action="store_true",
+                     help="只写表与导出 data.json，不提交推送（供 daily_all.py 编排器统一推送）")
+    _args = _ap.parse_args()
+    asyncio.run(main(push=not _args.no_push))

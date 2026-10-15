@@ -18,6 +18,21 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
+# --no-push：供编排器 daily_all.py 调用。本脚本触发补抓时会把该参数透传给
+# daily_update_all.py，使推送统一由编排器做一次（合并定时任务后 push 收敛）。
+import argparse as _argparse
+_ap = _argparse.ArgumentParser(description="5PM 补抓检查（精工 25 品种）")
+_ap.add_argument("--no-push", action="store_true",
+                 help="补抓时不提交推送（由 daily_all.py 统一推送）")
+PUSH = not _ap.parse_args().no_push
+
+
+def _update_all_cmd():
+    cmd = [sys.executable, str(SCRIPT_DIR / "daily_update_all.py")]
+    if not PUSH:
+        cmd.append("--no-push")
+    return cmd
+
 # 工作日 / 法定节假日判定（与主抓取共用同一交易日历）
 from jinggong_monitor.trading_calendar import is_trading_day, skip_reason
 
@@ -76,7 +91,7 @@ for r in range(2, ws.max_row + 1):
 if not target_row:
     print(f"→ 今天 ({today}) 无数据行，触发全品种补抓")
     import subprocess
-    subprocess.run([sys.executable, str(SCRIPT_DIR / "daily_update_all.py")], cwd=str(SCRIPT_DIR))
+    subprocess.run(_update_all_cmd(), cwd=str(SCRIPT_DIR))
     sys.exit()
 
 # 检查
@@ -95,4 +110,4 @@ missing_labels = {2:"ADC12",3:"A380",4:"AlSi9Cu3",5:"A356",
 missing_names = [missing_labels.get(c, f"col{c}") for c in missing]
 print(f"→ 今日 #{target_row} 行缺 {len(missing)}/{TOTAL} 品种: {', '.join(missing_names)}，触发补抓")
 import subprocess
-subprocess.run([sys.executable, str(SCRIPT_DIR / "daily_update_all.py")], cwd=str(SCRIPT_DIR))
+subprocess.run(_update_all_cmd(), cwd=str(SCRIPT_DIR))
