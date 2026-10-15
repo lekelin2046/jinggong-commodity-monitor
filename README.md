@@ -15,14 +15,17 @@
 **之前**：纯人工 + Excel 操作员手工填表，每天 1-2 小时。
 **现在**：每天 15:00 由定时任务自动抓取 + 一次性写入 Excel，同步发布网页看板。
 
-> 本项目还承载另外**三个项目**的看板，合计四大项目共享同一套底座（交易日历 / 推送 / fetcher），详见 SKILL.md 附录 F：
+> 本项目还承载另外**四个板块**的看板，合计**五个看板**共享同一套底座（交易日历 / 推送 / fetcher），详见 SKILL.md 附录 F：
 >
-> | 项目 | 看板 | 品种数 | 更新 |
+> | 板块 | 看板 | 品种数 | 更新 |
 > |---|:-:|:-:|:-:|
-> | **诺博橡胶**（密封条原料） | `docs/rubber/` | 21 项 | 15:40 |
-> | **诺博内外饰**（塑料牌号） | `docs/plastic/` | 14 项 | 15:30 |
-> | **曼德热系统**（铜铝/工程塑料/稀土） | `docs/mand/` | 13 项 | 15:35 |
+> | **精工**（有色金属 / 钢铁 / 原油） | `docs/`（站点根） | 26 项 | 15:00 |
+> | **诺博内外饰**（塑料牌号） | `docs/plastic/` | 14 项 | 15:00 |
+> | **诺博橡胶**（密封条原料） | `docs/rubber/` | 21 项 | 15:00 |
+> | **曼德热系统**（铜铝 / 工程塑料 / 稀土） | `docs/mand/` | 13 项 | 15:00 |
+> | **蜂巢汽车**（有色 / 工程塑料 / 稀土） | `docs/finest/` | 13 项 | 15:00 |
 >
+> 五板块已由 `daily_all.py` **统一编排**（15:00 串行抓取后统一推送一次，17:00 统一补差），不再各自错峰。
 > 诺博两页**共用同一份 `docs/plastic/data.json`**（拆的是页面不是数据层）；三元乙丙组**跨页属有意为之**（`/rubber/` 留 6950C·3110M·13561C，`/plastic/` 留 3092PM）。
 
 ---
@@ -35,33 +38,39 @@
 jinggong-commodity-monitor/
 ├── 2026年有色金属市场价格.xlsx   ⚠️ 主共享表（8 处路径常量引用 → 见 sources/README.md）
 │
-├── daily_update_all.py           ⚠️ 15:00 全品种抓取（automation 入口）
-├── daily_check_missed.py         ⚠️ 17:00 补抓
-├── backfill_lme_official.py      ⚠️ 9:00 LME 官方价回填
-├── mand_update.py                ⚠️ 15:35 曼德抓取
+├── daily_all.py                  ⚠️ 15:00 / 17:00 五板块统一编排（定时任务入口）
+├── daily_update_all.py           ⚠️ 精工全品种抓取（由 daily_all 调用）
+├── daily_check_missed.py         ⚠️ 精工补抓 + LME 兜底（由 daily_all --check 调用）
+├── backfill_lme_official.py      ⚠️ 9:00 LME 官方价回填（独立任务）
+├── mand_update.py                ⚠️ 曼德热系统抓取（由 daily_all 调用）
+├── finest_update.py              ⚠️ 蜂巢汽车抓取（由 daily_all 调用）
 ├── export_excel_to_json.py ⚠️ · sync_from_web.py ⚠️ · changelog.py ⚠️ · git_helper.py ⚠️
 │        └─ 上述四者为定时任务的依赖（sys.path / subprocess 引用），同留根目录
-├── 其余根级脚本：backfill_mand / backfill_tungsten_from_article / capture_smm_daily /
-│   gen_mand_board / interactive_am_login / lz_login_setup / manual_fill_tungsten /
-│   push_to_cloud / refetch_smm_fill / refetch_wenxi_now
+├── 其余根级脚本：backfill_finest / backfill_mand / backfill_tungsten_from_article /
+│   capture_smm_daily / gen_finest_board / gen_mand_board / interactive_am_login /
+│   lz_login_setup / manual_fill_tungsten / push_to_cloud / refetch_smm_fill /
+│   refetch_wenxi_now / sync_excel_mirror
 │
 ├── jinggong_monitor/             核心包：fetcher_* + 交易日历 + 各看板日常抓取
-│   ├── daily_plastic.py          ⚠️ 15:30 诺博内外饰 · 中塑 13 牌号
-│   ├── daily_plastic_ext.py      ⚠️ 15:40 诺博橡胶 · 扩品类 21 项
+│   ├── daily_plastic.py          ⚠️ 诺博内外饰 · 中塑 13 牌号
+│   ├── daily_plastic_ext.py      ⚠️ 诺博橡胶 · 扩品类 21 项
+│   ├── safe_io.py                🔒 原子写 + 写前备份（全部落盘点共用）
 │   ├── lz_price_center.py        隆众价格中心（诺博橡胶 15 项 + 3092PM）
 │   ├── bridge_jinggong.py        精工 → 诺博 接续（原油 / 铝历史）
 │   └── xlsx_history_import.py    客户工作簿历史回填（--report / --apply）
 │
 ├── docs/                         看板前端（GitHub Pages 部署根）
 │   ├── index.html                精工（26 品种）
-│   ├── rubber/index.html         诺博橡胶（21 项）
 │   ├── plastic/index.html        诺博内外饰（14 项 = 13 中塑牌号 + 3092PM）
+│   ├── rubber/index.html         诺博橡胶（21 项）
 │   ├── mand/index.html           曼德热系统（13 品种）
-│   ├── data.json · plastic/data.json（rubber 与 plastic 共用）· mand/data.json
-│   └── board-analysis.js         分组分析模块（rubber / plastic 两页共用）
+│   ├── finest/index.html         蜂巢汽车（13 品种）
+│   ├── data.json · plastic/data.json（plastic 与 rubber 共用）
+│   │              · mand/data.json · finest/data.json
+│   └── board-analysis.js         分组分析模块（plastic / rubber 两页共用）
 │
 ├── sources/                      📥 原始数据源与日价格归档（按子项目）→ 见 sources/README.md
-│   ├── 精工/  ├── 橡胶/  ├── 塑料/  └── 曼德/
+│   └── 精工/ · 塑料/ · 橡胶/ · 曼德/ · 蜂巢/
 ├── backups/                      🗄 备份归档（按子项目，不入 git）→ 见 backups/README.md
 ├── tools/                        🔧 一次性工具：probes/（数据源侦察）+ board/（看板改造测试）→ 见 tools/README.md
 ├── data/                         抓取中间件：cookie / 探针产物（不入 git）→ 见 data/README.md
@@ -129,22 +138,24 @@ jinggong-commodity-monitor/
 cd ~/Desktop/AI/jinggong-commodity-monitor
 unset NODE_OPTIONS          # 跑 Playwright 前必须
 
-# 15:00 主抓 25 项
-PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 daily_update_all.py
+# 五板块统一抓取（15:00 定时任务跑的就是这个）
+PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 daily_all.py
 
-# 17:00 补抓漏项 + LME 兜底
-PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 daily_check_missed.py
+# 五板块统一补差（17:00 定时任务）
+PYTHONPATH=. /Users/siqi/.workbuddy/binaries/python/envs/jinggong/bin/python3 daily_all.py --check
 ```
 
 ### 3. 自动执行
 
 三个时点由**平台定时任务**驱动，无需本机常驻进程，且只在工作日跑：
 
-| 时间 | 脚本 |
-| :-: | --- |
-| 15:00 | `daily_update_all.py` |
-| 17:00 | `daily_check_missed.py` |
-| 次日 09:00 | `backfill_lme_official.py`（LME 铝按官方数据日回填） |
+| 时间 | 脚本 | 内容 |
+| :-: | --- | --- |
+| 15:00 | `daily_all.py` | 五板块**统一编排**：串行抓取精工 → 诺博内外饰 → 诺博橡胶 → 曼德热系统 → 蜂巢汽车，全部跑完后**统一推送一次** |
+| 17:00 | `daily_all.py --check` | 五板块**统一补差**：哪个板块当日不完整就补哪一个 |
+| 次日 09:00 | `backfill_lme_official.py` | LME 铝按官方数据日回填（**独立任务**，不并入编排） |
+
+> ⚠️ **必须串行，不可并行**：五板块共用同一批登录凭证（SMM / 卓创 / 亚洲金属网），并发会相互覆盖登录态。全程约 10–20 分钟属正常，不要中途判定卡死。
 
 ### 4. 登录态（基本无需手动操作）
 
@@ -163,13 +174,15 @@ SMM / 亚洲金属网登录态过期时，抓取脚本会**自动检测并重登
 jinggong-commodity-monitor/
 ├── README.md                       ← 本文件
 ├── SKILL.md                        ← 流程定义 + 附录 A~F（排障看附录 B）
-├── daily_update_all.py             ← 15:00 主抓 25 项（精工）
-├── daily_check_missed.py           ← 17:00 补抓漏项 + LME 兜底
-├── backfill_lme_official.py        ← 次日 09:00 LME 铝按官方数据日回填
-├── daily_plastic.py                ← 诺博内外饰 13 个中塑塑料牌号（15:30）
-├── daily_plastic_ext.py            ← 诺博橡胶 扩品类 21 项（15:40）
-├── mand_update.py                  ← 曼德热系统 13 品种（15:35）
-├── gen_mand_board.py               ← 从诺博内外饰模板生成曼德热系统看板骨架
+├── daily_all.py                    ← ⭐ 五板块统一编排（15:00 全量 / 17:00 补差），定时任务入口
+├── daily_update_all.py             ← 精工 26 品种抓取（由 daily_all 调用）
+├── daily_check_missed.py           ← 精工补抓检查 + LME 铝兜底
+├── backfill_lme_official.py        ← 次日 09:00 LME 铝按官方数据日回填（独立任务）
+├── mand_update.py                  ← 曼德热系统 13 品种
+├── finest_update.py                ← 蜂巢汽车 13 品种
+├── gen_mand_board.py               ← 生成曼德热系统看板骨架
+├── gen_finest_board.py             ← 生成蜂巢汽车看板骨架（模板取 docs/mand/index.html）
+├── sync_excel_mirror.py            ← 主表 + 客户原始表 → 私有备份仓库（满 7 天一次）
 ├── export_excel_to_json.py         ← Excel → docs/data.json
 ├── sync_from_web.py                ← 线上编辑回写 Excel
 ├── changelog.py                    ← 数据变更留痕
@@ -181,7 +194,7 @@ jinggong-commodity-monitor/
 ├── jinggong_monitor/               ← 核心代码
 │   ├── base.py                     ← BaseFetcher + 价格区间解析
 │   ├── orchestrator.py             ← 多源调度
-│   ├── trading_calendar.py         ← 交易日历（四项目共用，唯一权威）
+│   ├── trading_calendar.py         ← 交易日历（五板块共用，唯一权威）
 │   ├── fetcher_ccmn.py             ← 长江有色 AJAX（公开 ⭐）
 │   ├── fetcher_smm.py              ← SMM 上海有色（自动登录；精工/诺博橡胶/曼德热系统共用）
 │   ├── fetcher_asianmetal.py       ← 闻喜镁锭
@@ -197,10 +210,11 @@ jinggong-commodity-monitor/
 ├── config/                         ← varieties.yaml / sources.yaml
 ├── docs/                           ← GitHub Pages 发布目录
 │   ├── index.html  data.json       ← 精工看板
-│   ├── rubber/                     ← 诺博橡胶看板
 │   ├── plastic/                    ← 诺博内外饰看板（data.json 与 rubber 共用）
+│   ├── rubber/                     ← 诺博橡胶看板
 │   ├── mand/                       ← 曼德热系统看板
-│   ├── board-analysis.js           ← 分组分析模块（rubber / plastic 共用）
+│   ├── finest/                     ← 蜂巢汽车看板
+│   ├── board-analysis.js           ← 分组分析模块（plastic / rubber 共用）
 │   ├── editor.html                 ← 线上编辑页
 │   └── changelog.html / .json      ← 变更记录
 ├── cookies/  data/  screenshots/   ← 登录态与抓取缓存（均 gitignore）
@@ -436,4 +450,4 @@ price = df.iloc[0]['最新价']  # 实时价（每日 15:00 时点）
 
 ---
 
-_最后更新：2026-08-04 15:55_
+_最后更新：2026-10-15_
