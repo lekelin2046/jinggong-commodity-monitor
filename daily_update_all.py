@@ -450,6 +450,18 @@ async def main():
     print(f"[发布] ", end="")
     export_and_push(row)
 
+    # ===== 异地备份（2026-10-15 新增）=====
+    # 主表与 sources/ 下客户原始表均被 .gitignore 的 *.xlsx 排除，只存在于本机，
+    # 磁盘故障即全部丢失。此处同步到私有镜像仓库 jinggong-commodity-backup。
+    # 距上次备份满 7 天才实际执行（不自建定时任务）；失败只告警、不影响主流程。
+    print(f"[备份] ", end="")
+    try:
+        from sync_excel_mirror import sync as _mirror_sync
+        _mirror_ok, _mirror_msg = _mirror_sync()
+        print(("✓ " if _mirror_ok else "⚠️ ") + _mirror_msg)
+    except Exception as _e:  # noqa: BLE001  备份失败绝不阻断抓取与发布
+        print(f"⚠️ 异地备份异常（不影响主流程）: {type(_e).__name__}: {_e}")
+
     active_total = len(COL_MAP) - len(DEFERRED_CODES)
     print(f"\n  已更新 {len(all_prices)}/{active_total} 品种（LME_AL 另由次日 9:00 回填）")
     if failed_sources:
