@@ -69,8 +69,8 @@ jinggong-commodity-monitor/
 │   │              · mand/data.json · finest/data.json
 │   └── board-analysis.js         分组分析模块（plastic / rubber 两页共用）
 │
-├── sources/                      📥 原始数据源与日价格归档（按子项目）→ 见 sources/README.md
-│   └── 精工/ · 塑料/ · 橡胶/ · 曼德/ · 蜂巢/
+├── sources/                      📥 原始数据源与日价格归档（按板块，**用全称**）→ 见 sources/README.md
+│   └── 精工/ · 诺博内外饰/ · 诺博橡胶/ · 曼德热系统/ · 蜂巢汽车/
 ├── backups/                      🗄 备份归档（按子项目，不入 git）→ 见 backups/README.md
 ├── tools/                        🔧 一次性工具：probes/（数据源侦察）+ board/（看板改造测试）→ 见 tools/README.md
 ├── data/                         抓取中间件：cookie / 探针产物（不入 git）→ 见 data/README.md
@@ -87,9 +87,9 @@ jinggong-commodity-monitor/
 
 | 新增内容 | 放置位置 |
 |---|---|
-| 外部数据源（xlsx / csv 等**结构化**文件） | `sources/<子项目>/` |
+| 外部数据源（xlsx / csv 等**结构化**文件） | `sources/<板块全称>/`（如 `sources/诺博橡胶/`） |
 | 客户提供的图表 / 报告 / PDF（**非结构化**材料） | `references/` |
-| 备份文件 | `backups/<子项目>/` |
+| 备份文件 | `backups/<板块代号>/`（**跟 `docs/` 同代号**，见 `backups/README.md`） |
 | cookie / 登录态 / 探针产物 | `data/` |
 | 一次性或侦察类脚本 | `tools/` |
 | OCR 临时切片等垃圾 | `_archive/tmp/`（定期清扫，**不要直接删**） |
