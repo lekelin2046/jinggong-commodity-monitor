@@ -1,0 +1,177 @@
+{
+ "data": {
+  "2026-10-15": {
+   "AG": 13625.0,
+   "AL_A00": 23260.0,
+   "AL_A380": 26200.0,
+   "AL_ADC12": 24300.0,
+   "AL_ALSI9CU3": 25200.0,
+   "CU": 110690.0,
+   "CU_CATH1": 110485.0,
+   "DYFE": 1370.0,
+   "PA6": 15100.0,
+   "PA66": 19000.0,
+   "PRND": 897500.0,
+   "TB": 8200.0
+  }
+ },
+ "display_names": {
+  "AG": "1#白银",
+  "AL_A00": "SMM A00铝",
+  "AL_A380": "A380铝合金",
+  "AL_ADC12": "SMM铝合金ADC12",
+  "AL_ALSI9CU3": "AlSi9Cu3铝合金",
+  "BASF_PA66": "巴斯夫 PA66",
+  "CU": "铜（上海地区现货）",
+  "CU_CATH1": "CU-CATH-1（1#电解铜）",
+  "DYFE": "镝铁 80%",
+  "PA6": "PA6",
+  "PA66": "PA66",
+  "PRND": "镨钕混合金属",
+  "TB": "金属铽 99.9%"
+ },
+ "last_updated": "2026-10-15",
+ "meta": {
+  "AG": {
+   "name": "1#白银",
+   "source": "长江有色网",
+   "status": "live",
+   "unit": "元/千克"
+  },
+  "AL_A00": {
+   "name": "SMM A00铝",
+   "source": "SMM 上海有色",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "AL_A380": {
+   "name": "A380铝合金",
+   "source": "SMM 上海有色",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "AL_ADC12": {
+   "name": "SMM铝合金ADC12",
+   "source": "SMM 上海有色",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "AL_ALSI9CU3": {
+   "name": "AlSi9Cu3铝合金",
+   "source": "SMM 上海有色",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "BASF_PA66": {
+   "name": "巴斯夫 PA66",
+   "source": "PCI (ChemOrbis)",
+   "status": "paused",
+   "unit": "—"
+  },
+  "CU": {
+   "name": "铜（上海地区现货）",
+   "source": "长江有色网",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "CU_CATH1": {
+   "name": "CU-CATH-1（1#电解铜）",
+   "source": "SMM 上海有色",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "DYFE": {
+   "name": "镝铁 80%",
+   "source": "亚洲金属网",
+   "status": "live",
+   "unit": "元/公斤"
+  },
+  "PA6": {
+   "name": "PA6",
+   "source": "卓创资讯",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "PA66": {
+   "name": "PA66",
+   "source": "卓创资讯",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "PRND": {
+   "name": "镨钕混合金属",
+   "source": "亚洲金属网",
+   "status": "live",
+   "unit": "元/吨"
+  },
+  "TB": {
+   "name": "金属铽 99.9%",
+   "source": "亚洲金属网",
+   "status": "live",
+   "unit": "元/公斤"
+  }
+ },
+ "source": "长江有色网 · SMM 上海有色 · 卓创资讯 · 亚洲金属网",
+ "sources": {
+  "AG": "长江有色网",
+  "AL_A00": "SMM 上海有色",
+  "AL_A380": "SMM 上海有色",
+  "AL_ADC12": "SMM 上海有色",
+  "AL_ALSI9CU3": "SMM 上海有色",
+  "BASF_PA66": "PCI (ChemOrbis)",
+  "CU": "长江有色网",
+  "CU_CATH1": "SMM 上海有色",
+  "DYFE": "亚洲金属网",
+  "PA6": "卓创资讯",
+  "PA66": "卓创资讯",
+  "PRND": "亚洲金属网",
+  "TB": "亚洲金属网"
+ },
+ "status": {
+  "AG": "live",
+  "AL_A00": "live",
+  "AL_A380": "live",
+  "AL_ADC12": "live",
+  "AL_ALSI9CU3": "live",
+  "BASF_PA66": "paused",
+  "CU": "live",
+  "CU_CATH1": "live",
+  "DYFE": "live",
+  "PA6": "live",
+  "PA66": "live",
+  "PRND": "live",
+  "TB": "live"
+ },
+ "total_days": 1,
+ "unit": "元/吨（1#白银 元/千克；镝铁、金属铽 元/公斤）",
+ "units": {
+  "AG": "元/千克",
+  "AL_A00": "元/吨",
+  "AL_A380": "元/吨",
+  "AL_ADC12": "元/吨",
+  "AL_ALSI9CU3": "元/吨",
+  "BASF_PA66": "—",
+  "CU": "元/吨",
+  "CU_CATH1": "元/吨",
+  "DYFE": "元/公斤",
+  "PA6": "元/吨",
+  "PA66": "元/吨",
+  "PRND": "元/吨",
+  "TB": "元/公斤"
+ },
+ "varieties": [
+  "CU",
+  "AG",
+  "AL_ADC12",
+  "AL_A00",
+  "AL_A380",
+  "AL_ALSI9CU3",
+  "CU_CATH1",
+  "PA6",
+  "PA66",
+  "PRND",
+  "DYFE",
+  "TB",
+  "BASF_PA66"
+ ]
+}

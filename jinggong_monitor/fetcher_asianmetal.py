@@ -281,6 +281,185 @@ async def fetch_async(target_date: Optional[str] = None) -> dict:
     return await _fetch_asianmetal_raw()
 
 
+# =============================================================================
+# 2026-10-15 蜂巢汽车板块新增：稀土三品种（镨钕 / 镝铁 / 铽）
+# -----------------------------------------------------------------------------
+# 蜂巢清单指定数据源为「亚洲金属网」。实测结论：
+#   · 「价格走势」页为**结构化 HTML table**（品名/规格/单位/价格/美元价格/变化/更新时间），
+#     **不是图片，无需 OCR**，直接解析 DOM 即可；
+#   · 首次访问常显示「登录查看」，触发弹窗登录后即出数 —— 与闻喜镁锭同一登录机制、
+#     同一账号，**不新增账号依赖**；
+#   · 取数口径：只取**人民币价**（单位列须为「元/吨」或「元/公斤」），
+#     取区间中值 (low+high)/2 —— 与闻禧镁锭既有取法保持一致。
+#     **美元价列一律不取**，避免美元/人民币口径混入（同页两者并存且列序固定为
+#     人民币在前、美元折算在后）。
+#
+# 本组品种为**独立入口**（fetch_rare_earth_sync），不并入 _fetch_asianmetal_raw，
+# 以免精工/曼德主流程因多抓 3 个页面而变慢、或受稀土页异常牵连。
+# =============================================================================
+
+RARE_EARTH_TARGETS = {
+    # code: (价格走势页 URL, 品名列原文, 规格关键词, 人民币单位, 中值合理区间)
+    "PRND": ("https://www.asianmetal.cn/PraseodymiumPriceIndex",
+             "镨钕混合金属", "中国出厂", "元/吨", (100_000.0, 5_000_000.0)),
+    "DYFE": ("https://www.asianmetal.cn/DysprosiumPriceIndex",
+             "镝铁", "中国出厂", "元/公斤", (500.0, 10_000.0)),
+    "TB":   ("https://www.asianmetal.cn/TerbiumPriceIndex",
+             "金属铽", "中国出厂", "元/公斤", (2_000.0, 30_000.0)),
+}
+
+# 价格区间形如「895000-900000」「1360-1380」（可能有全角/波浪号变体、千分位逗号）
+_RANGE_RE = re.compile(r"(\d[\d,]*)\s*[-–~]\s*(\d[\d,]*)")
+
+# 取表格全部行（每行 → 单元格文本数组），列位由调用方按名/单位/规格三重锚定，
+# 不硬编码列号，页面增删列时不至于静默取错值。
+_TABLE_ROWS_JS = """
+() => {
+    const out = [];
+    for (const t of document.querySelectorAll('table')) {
+        for (const row of t.querySelectorAll('tr')) {
+            const cells = Array.from(row.querySelectorAll('td, th'))
+                               .map(c => (c.innerText || '').trim());
+            if (cells.length >= 5 && cells.some(x => x !== '')) out.push(cells);
+        }
+    }
+    return out;
+}
+"""
+
+
+async def _page_table_rows(page, url: str, wait_ms: int = 4000) -> list:
+    """访问指定页面并返回全部表格行。"""
+    await page.goto(url, timeout=60000, wait_until="domcontentloaded")
+    await page.wait_for_timeout(wait_ms)
+    rows = await page.evaluate(_TABLE_ROWS_JS)
+    return rows or []
+
+
+def _pick_rare_earth(code: str, rows: list) -> Optional[float]:
+    """从表格行中挑出目标品种的人民币价（区间中值）。
+
+    三重锚定（缺一不可），任一不满足即跳过该行：
+      1. 品名列（前两列）命中目标品名原文；
+      2. 该行存在单元格含规格关键词（「中国出厂」）；
+      3. 该行存在单元格**精确等于**人民币单位（「元/吨」或「元/公斤」）
+         —— 这一条同时排除了同品种的「中国离岸 美元/公斤」行。
+    再取第一个落入品种合理区间的价格单元格（人民币价列），取中值返回。
+    """
+    _url, name, spec_kw, unit, (lo, hi) = RARE_EARTH_TARGETS[code]
+    for cells in rows:
+        head = " ".join(cells[:2])
+        if name not in head:
+            continue
+        if not any(spec_kw in c for c in cells):
+            continue
+        if unit not in cells:
+            continue
+        for c in cells:
+            m = _RANGE_RE.fullmatch(c.strip())
+            if not m:
+                continue
+            low = float(m.group(1).replace(",", ""))
+            high = float(m.group(2).replace(",", ""))
+            if lo <= low <= high <= hi:
+                mid = round((low + high) / 2, 2)
+                logger.info(f"  ✅ {code}: {low:,.0f}-{high:,.0f} {unit} → 中值 {mid:,.2f}")
+                return mid
+        return None
+    return None
+
+
+async def _ensure_rare_earth_logged_in(page) -> bool:
+    """预检稀土页登录态并按需登录。
+
+    稀土「价格走势」页未登录时，价格列渲染为「登录查看」。逐页撞墙后再登录
+    会白跑 3 个页面（约 15s），故先用**首页（镨）**探一次，只在确实存在
+    登录墙时才触发 `_login_in_popup`（该函数自身会处理「账号在线」情形）。
+    """
+    try:
+        await page.goto(RARE_EARTH_TARGETS["PRND"][0],
+                        timeout=60000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(4000)
+        body = await page.inner_text("body")
+    except Exception as e:                                         # noqa: BLE001
+        logger.warning(f"  登录态预检失败（仍继续尝试抓取）: {type(e).__name__}: {e}")
+        return True
+    if "登录查看" not in body:
+        return True
+    logger.info("  稀土页检测到「登录查看」登录墙，弹窗登录 ...")
+    return await _login_in_popup(page)
+
+
+async def _fetch_rare_earth(page, ctx) -> dict:
+    """抓取稀土三品种（先保登录态，再逐页取数）。"""
+    if not await _ensure_rare_earth_logged_in(page):
+        logger.error("  登录失败，稀土三品种本轮留空（不沿用前值）")
+        return {}
+
+    out: dict = {}
+    for code in RARE_EARTH_TARGETS:
+        url = RARE_EARTH_TARGETS[code][0]
+        try:
+            rows = await _page_table_rows(page, url)
+        except Exception as e:                                     # noqa: BLE001
+            logger.warning(f"  {code} 页访问失败: {type(e).__name__}: {e}")
+            continue
+        v = _pick_rare_earth(code, rows)
+        if v is not None:
+            out[code] = v
+
+    missing = [c for c in RARE_EARTH_TARGETS if c not in out]
+    if missing:
+        logger.warning(f"  未取到: {','.join(missing)}（留空）")
+    return out
+
+
+async def _fetch_rare_earth_raw() -> dict:
+    """稀土三品种抓取主流程（独立浏览器会话）。"""
+    async with async_playwright() as p:
+        headless = os.environ.get("ASIANMETAL_HEADLESS", "1") != "0"
+        launch_args = ["--no-sandbox", "--disable-blink-features=AutomationControlled"]
+        b = await p.chromium.launch(headless=headless, args=launch_args)
+        try:
+            ctx_kw = dict(viewport={"width": 1280, "height": 900}, bypass_csp=True)
+            if headless:
+                ctx_kw["user_agent"] = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                        "Chrome/126.0.0.0 Safari/537.36")
+            ctx = await b.new_context(**ctx_kw)
+            await _load_cookies(ctx)
+            page = await ctx.new_page()
+            out = await _fetch_rare_earth(page, ctx)
+
+            # 截图存证（项目惯例；失败不影响取数）
+            _SHOT_DIR.mkdir(parents=True, exist_ok=True)
+            try:
+                await page.screenshot(
+                    path=str(_SHOT_DIR / f"asianmetal_稀土_{datetime.now().strftime('%H%M%S')}.png"),
+                    full_page=True, timeout=10000)
+            except Exception as e:                                 # noqa: BLE001
+                logger.debug(f"稀土页截图失败（不影响取数）: {e}")
+
+            if out:
+                await _save_cookies(ctx)
+            return out
+        finally:
+            await b.close()
+
+
+def fetch_rare_earth_sync() -> dict:
+    """同步入口：稀土三品种（镨钕 PRND / 镝铁 DYFE / 铽 TB）。
+
+    返回 {"PRND": 897500.0, "DYFE": 1370.0, "TB": 8200.0} 形式；
+    单项抓不到即不含该键（由调用方按「留空不沿用前值」处理）。
+    """
+    try:
+        return asyncio.run(_fetch_rare_earth_raw())
+    except Exception as e:                                         # noqa: BLE001
+        logger.warning(f"稀土抓取异常: {type(e).__name__}: {e}")
+        return {}
+
+
 async def _fetch_asianmetal_raw() -> dict:
     """抓取闻喜镁锭价格。"""
     async with async_playwright() as p:

@@ -45,6 +45,8 @@ SMM_PAGES = {
     "aluminum": "https://hq.smm.cn/aluminum",
     "magnesium": "https://hq.smm.cn/magnesium",
     "alloy_chart": "https://hq.smm.cn/h5/aluminum-alloy-price-chart",
+    # 2026-10-15 蜂巢汽车看板新增：铜频道（供 CU-CATH-1 / 1#电解铜）
+    "copper": "https://hq.smm.cn/copper",
 }
 
 # 品种 → 页面 → 正则模式
@@ -114,6 +116,16 @@ SMM_VARIETIES = {
     "A360": {
         "page": "aluminum",
         "pattern": r"(?<!低碳)A360铝合金\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
+    },
+    # 2026-10-15 蜂巢汽车看板新增：SMM 1#电解铜（对应蜂巢清单的 CU-CATH-1）
+    # ⚠️ copper 页同段存在多个地区变体行，价格互不相同，必须精确锚定：
+    #    「SMM 1#电解铜」(全国均价，本项)  vs  「SMM 广东1#电解铜」/「SMM鹰潭1#电解铜」
+    #    vs 「1#电解铜(山东|河南|华东|华北|西南)」(无 SMM 前缀的地区行)。
+    #    pattern 要求 "SMM " 紧接 "1#电解铜" 后跟空白+数字，
+    #    故「SMM 广东1#电解铜」(SMM 后是"广东")、「SMM鹰潭1#电解铜」(无空格) 均不命中，天然排除。
+    "CU_CATH1": {
+        "page": "copper",
+        "pattern": r"SMM 1#电解铜\s+(\d{4,6})~(\d{4,6})\s+(\d{4,6})",
     },
 }
 
@@ -280,8 +292,12 @@ def _parse_prices(texts: dict) -> dict:
         m = re.search(cfg["pattern"], text)
         if m:
             low, high, avg = int(m.group(1)), int(m.group(2)), int(m.group(3))
-            # 简单合理性检查：低价 ≤ 均价 ≤ 高价，且都在 100-100000 区间
-            if low <= avg <= high and 100 <= avg <= 100000:
+            # 简单合理性检查：低价 ≤ 均价 ≤ 高价，且都在 100-1000000 区间
+            # ⚠️ 2026-10-15 上限由 100000 放宽到 1000000：电解铜报价约 11 万元/吨
+            #    （实测 SMM 1#电解铜 110230~110740 → 均价 110485），
+            #    旧的 10 万上限会把铜价整体判为异常并丢弃（零报错静默留空）。
+            #    全部现役 SMM 品种实际量级均 < 100 万，放宽不引入误收风险。
+            if low <= avg <= high and 100 <= avg <= 1000000:
                 results[variety] = float(avg)
                 logger.info(f"  ✅ {variety}: {low}~{high}, 均价 {avg}")
             else:
