@@ -41,6 +41,11 @@ from jinggong_monitor.trading_calendar import (   # noqa: E402
     skip_reason as _skip_reason,
 )
 
+# 落盘安全层（2026-10-15 引入）：原子写（tmp + fsync + os.replace）+ 写前备份。
+# 原先 wb.save() 是「先截断再重写」，中途被杀会得到一个损坏的 xlsx。
+# 详见 jinggong_monitor/safe_io.py。
+from jinggong_monitor.safe_io import atomic_save_workbook  # noqa: E402
+
 # Excel 列 → (品种代码, 来源)
 COL_MAP = {
     2:  ("ADC12",    "smm"),  3:  ("A380",      "smm"),
@@ -290,7 +295,13 @@ def write_excel(all_prices: dict) -> int:
         else:
             # 延后回填的品种（如 LME_AL）不算「缺失」，避免每日假告警
             (deferred if code in DEFERRED_CODES else skipped).append(code)
-    wb.save(EXCEL_PATH)
+    # 原子保存 + 写前备份（备份落 backups/精工/，同一自然日一份）。
+    # 注意：原先只有 9:00 的 LME 任务会备份主表，15:00 主流程是「无备份覆盖」，
+    # 导致一天只有一个备份时点；此处补齐。
+    atomic_save_workbook(
+        wb, EXCEL_PATH,
+        backup=True, backup_dir=SCRIPT_DIR / "backups" / "精工",
+    )
     active_total = len(COL_MAP) - len(DEFERRED_CODES)
     print(f"  行 {row}: 写入 {len(written)}/{active_total} 项")
     if deferred:

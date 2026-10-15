@@ -19,9 +19,12 @@ from fetcher_21cp import (TARGETS, search_detail_ids, parse_detail,
                           match_brand, prefer_match, safe_get,
                           _parse_price_rows, DETAIL_URL)
 from trading_calendar import is_trading_day, skip_reason
+# 落盘安全层（2026-10-15 引入）：原子写 + 写前备份
+from safe_io import atomic_write_json
 
-DATA_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                         "docs", "plastic", "data.json")
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_FILE = os.path.join(_PROJECT_ROOT, "docs", "plastic", "data.json")
+BACKUP_DIR = os.path.join(_PROJECT_ROOT, "backups", "plastic")
 
 
 def resolve_pid(keyword, brand_kw, prefer):
@@ -89,8 +92,8 @@ def main():
     dates = sorted(db["data"].keys())
     db["last_updated"] = dates[-1]
     db["total_days"] = len(dates)
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(db, f, ensure_ascii=False, indent=1)
+    atomic_write_json(DATA_FILE, db, indent=1,
+                      backup=True, backup_dir=BACKUP_DIR)
 
     print("-" * 70)
     if added_days:

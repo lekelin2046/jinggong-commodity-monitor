@@ -50,6 +50,8 @@ OUT_PATH = SCRIPT_DIR / "docs" / "finest" / "data.json"
 # 与精工/塑料/曼德共用同一交易日历（周末/法定节假日休市）
 sys.path.insert(0, str(SCRIPT_DIR / "jinggong_monitor"))
 from trading_calendar import is_trading_day, skip_reason  # noqa: E402
+# 落盘安全层（2026-10-15 引入）：原子写 + 写前备份
+from safe_io import atomic_write_json  # noqa: E402
 
 # (code, 显示名, 数据源, 单位, 接入状态)
 #  status: live=已接入 / paused=挂起占位 / pending=待接入 / blocked=无公开源
@@ -217,10 +219,8 @@ def merge(prices: dict) -> dict:
     }
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUT_PATH.write_text(
-        json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True),
-        encoding="utf-8",
-    )
+    atomic_write_json(OUT_PATH, doc, indent=1, sort_keys=True,
+                      backup=True, backup_dir=SCRIPT_DIR / "backups" / "finest")
     return doc
 
 

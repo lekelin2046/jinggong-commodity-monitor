@@ -60,8 +60,11 @@ from jinggong_monitor.fetcher_baiinfo import fetch_coal_tar               # noqa
 from jinggong_monitor.lz_price_center import (                            # noqa: E402
     fetch_daily as lz_fetch_daily, check_login as lz_check_login,
 )
+# 落盘安全层（2026-10-15 引入）：原子写 + 写前备份
+from jinggong_monitor.safe_io import atomic_write_json                    # noqa: E402
 
 DATA_FILE = ROOT / "docs" / "plastic" / "data.json"
+BACKUP_DIR = ROOT / "backups" / "plastic"
 
 logger = logging.getLogger("jinggong.daily_plastic_ext")
 
@@ -260,8 +263,8 @@ def main():
     db["last_updated"] = dates[-1]
     db["total_days"] = len(dates)
 
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(db, f, ensure_ascii=False, indent=1)
+    atomic_write_json(DATA_FILE, db, indent=1,
+                      backup=True, backup_dir=BACKUP_DIR)
 
     print(f"✓ 写入完成：本次新增 {added_to_existing} 个数据点"
           f"（新交易日 {new_days} 个，覆盖 {overwritten} 个）"

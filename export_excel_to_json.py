@@ -22,6 +22,11 @@ except ImportError:
 
 # ===== 配置 =====
 SCRIPT_DIR = Path(__file__).parent
+
+# 落盘安全层（2026-10-15 引入）：原子写 + 写前备份
+sys.path.insert(0, str(SCRIPT_DIR / "jinggong_monitor"))
+from safe_io import atomic_write_json  # noqa: E402
+
 # 数据源：2026年有色金属市场价格.xlsx（主人指定的唯一数据源）
 DEFAULT_EXCEL = SCRIPT_DIR / "2026年有色金属市场价格.xlsx"
 OUTPUT_JSON = SCRIPT_DIR / "docs" / "data.json"
@@ -145,9 +150,10 @@ def export(excel_path: str, output_path: str):
         "data": data,
     }
 
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    # 原子写 + 写前备份（备份落 backups/精工/，同一自然日一份）
+    atomic_write_json(output_path, output, indent=2,
+                      backup=True,
+                      backup_dir=SCRIPT_DIR / "backups" / "精工")
 
     print(f"OK: {row_count} days exported")
     print(f"  Source: {excel_path}")

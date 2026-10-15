@@ -44,6 +44,12 @@ ROOT = Path(__file__).resolve().parent.parent
 JINGGONG_FILE = ROOT / "docs" / "data.json"
 NOBO_FILE = ROOT / "docs" / "plastic" / "data.json"
 
+# 落盘安全层（2026-10-15 引入）：原子写 + 写前备份
+try:
+    from jinggong_monitor.safe_io import atomic_write_json
+except ImportError:  # 以脚本方式直接运行时的兜底
+    from safe_io import atomic_write_json
+
 logger = logging.getLogger("jinggong.bridge")
 
 # 每日接续：诺博键 -> 精工键。同源同口径，值完全一致。
@@ -130,8 +136,8 @@ def sync(history: bool = False, refresh: bool = False,
     dates = sorted(nb_data)
     nb["last_updated"] = dates[-1]
     nb["total_days"] = len(dates)
-    with open(NOBO_FILE, "w", encoding="utf-8") as f:
-        json.dump(nb, f, ensure_ascii=False, indent=1)
+    atomic_write_json(NOBO_FILE, nb, indent=1,
+                      backup=True, backup_dir=ROOT / "backups" / "plastic")
     print(f"✓ 已写入 {NOBO_FILE}")
     return written
 

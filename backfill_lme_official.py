@@ -41,6 +41,9 @@ os.environ.pop("NODE_OPTIONS", None)   # Playwright driver 兼容性，必须在
 
 import openpyxl  # noqa: E402
 
+# 落盘安全层（2026-10-15 引入）：原子保存 xlsx，避免「截断写」产生损坏的压缩包
+from jinggong_monitor.safe_io import atomic_save_workbook  # noqa: E402
+
 from changelog import (  # noqa: E402
     record_changes, current_commit_sha, SOURCE_AUTO_CRON, norm_value,
 )
@@ -208,7 +211,8 @@ def main():
         log(f"[3/4] 已备份: {bak.name}（已存在则跳过）")
 
     ws.cell(target_row, LME_COL).value = price
-    wb.save(EXCEL_PATH)
+    # 原子保存：本脚本上面已按自然日备份（backups/精工/），故此处不再重复备份
+    atomic_save_workbook(wb, EXCEL_PATH)
     log(f"  ✅ 写入 行{target_row}（{dod}）列{LME_COL} LME_AL = {price}")
 
     sha = current_commit_sha(str(SCRIPT_DIR))
