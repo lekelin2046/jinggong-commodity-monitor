@@ -76,7 +76,7 @@ PLATES: List[Dict] = [
     },
     {
         "key": "plastic",
-        "name": "塑料/橡塑 13 牌号 + 扩品类 21 项",
+        "name": "诺博内外饰 13 牌号 + 诺博橡胶 21 项",
         "cmds": [["jinggong_monitor/daily_plastic.py"],
                  ["jinggong_monitor/daily_plastic_ext.py"]],
         "json": "docs/plastic/data.json",

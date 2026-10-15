@@ -46,7 +46,7 @@
     from safe_io import atomic_write_json, atomic_save_workbook
 
     atomic_write_json(out_path, doc, indent=1,
-                      backup=True, backup_dir=ROOT / "backups" / "mand")
+                      backup=True, backup_dir=ROOT / "backups" / "曼德")
     atomic_save_workbook(wb, excel_path,
                          backup=True, backup_dir=ROOT / "backups" / "精工")
 """
