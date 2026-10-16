@@ -454,6 +454,23 @@ async def main(push: bool = True):
     print(f"[发布] ", end="")
     export_and_push(row, push=push)
 
+    # ===== 「直接写 JSON」影子比对（2026-10-16 新增）=====
+    # 目的：持续验证「抓取结果不经 Excel、直接写 data.json」是否与现有
+    # 「Excel → export_excel_to_json.py」链路逐日逐品种等价，为后续废弃 Excel 中转铺路。
+    # 届时两项长期成本同时消失：①「新增品种须在 5 处手工同步」（前端漏改静默失效）；
+    # ②「在线编辑必须回写 Excel，否则下次导出被覆盖」。
+    # 纯只读：只读 docs/data.json、只往 output/ 追加一行报告；异常一律吞掉，不阻断主流程。
+    print("[影子] ", end="")
+    try:
+        from jinggong_monitor.direct_json import shadow_compare
+        shadow_compare(
+            all_prices, TODAY, COL_MAP,
+            SCRIPT_DIR / "docs" / "data.json",
+            SCRIPT_DIR / "output" / "direct_json_shadow.jsonl",
+        )
+    except Exception as _e:  # noqa: BLE001  比对失败绝不影响抓取与发布
+        print(f"⚠️ 影子比对跳过（不影响主流程）: {type(_e).__name__}: {_e}")
+
     # ===== 异地备份（2026-10-15 新增）=====
     # 主表与 sources/ 下客户原始表均被 .gitignore 的 *.xlsx 排除，只存在于本机，
     # 磁盘故障即全部丢失。此处同步到私有镜像仓库 jinggong-commodity-backup。
