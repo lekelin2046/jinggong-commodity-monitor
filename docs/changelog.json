@@ -21730,6 +21730,66 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "8ecd474cb2758778167dce1b5ab8928d9b3948d1"
+    },
+    {
+      "ts": "2026-10-19T15:27:46",
+      "date_row": "2026-10-19",
+      "code": "SS_304",
+      "old": null,
+      "new": 14650.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "d795fb4d724dd88e8ea14ecdaf3e4bd95e9c580b"
+    },
+    {
+      "ts": "2026-10-19T15:27:46",
+      "date_row": "2026-10-19",
+      "code": "SS_409",
+      "old": null,
+      "new": 8000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "d795fb4d724dd88e8ea14ecdaf3e4bd95e9c580b"
+    },
+    {
+      "ts": "2026-10-19T15:27:46",
+      "date_row": "2026-10-19",
+      "code": "SS_439",
+      "old": null,
+      "new": 10000.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "d795fb4d724dd88e8ea14ecdaf3e4bd95e9c580b"
+    },
+    {
+      "ts": "2026-10-19T15:27:46",
+      "date_row": "2026-10-19",
+      "code": "SS_441",
+      "old": null,
+      "new": 11200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "d795fb4d724dd88e8ea14ecdaf3e4bd95e9c580b"
+    },
+    {
+      "ts": "2026-10-19T15:27:46",
+      "date_row": "2026-10-19",
+      "code": "NICKEL_IRON",
+      "old": null,
+      "new": 1038.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "d795fb4d724dd88e8ea14ecdaf3e4bd95e9c580b"
+    },
+    {
+      "ts": "2026-10-19T15:27:46",
+      "date_row": "2026-10-19",
+      "code": "HIGH_CARBON_FECR",
+      "old": null,
+      "new": 7700.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "d795fb4d724dd88e8ea14ecdaf3e4bd95e9c580b"
     }
   ]
 }
