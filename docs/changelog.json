@@ -22050,6 +22050,96 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "1e1d72a520e1c86df2653654dd3fcf0dfe8ec39d"
+    },
+    {
+      "ts": "2026-10-20T15:25:46",
+      "date_row": "2026-10-20",
+      "code": "A356",
+      "old": 23900.0,
+      "new": 23800.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "882767a982df3ba5da328e747e5321b46ea72af6"
+    },
+    {
+      "ts": "2026-10-20T15:25:46",
+      "date_row": "2026-10-20",
+      "code": "A00_AL",
+      "old": 23650.0,
+      "new": 23530.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "882767a982df3ba5da328e747e5321b46ea72af6"
+    },
+    {
+      "ts": "2026-10-20T15:25:46",
+      "date_row": "2026-10-20",
+      "code": "CU",
+      "old": 110820.0,
+      "new": 110030.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "882767a982df3ba5da328e747e5321b46ea72af6"
+    },
+    {
+      "ts": "2026-10-20T15:25:46",
+      "date_row": "2026-10-20",
+      "code": "SI_3303",
+      "old": 10600.0,
+      "new": 10500.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "882767a982df3ba5da328e747e5321b46ea72af6"
+    },
+    {
+      "ts": "2026-10-20T15:25:46",
+      "date_row": "2026-10-20",
+      "code": "MG",
+      "old": 16800.0,
+      "new": 16700.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "882767a982df3ba5da328e747e5321b46ea72af6"
+    },
+    {
+      "ts": "2026-10-20T15:25:46",
+      "date_row": "2026-10-20",
+      "code": "W",
+      "old": null,
+      "new": 730.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "882767a982df3ba5da328e747e5321b46ea72af6"
+    },
+    {
+      "ts": "2026-10-20T15:25:46",
+      "date_row": "2026-10-20",
+      "code": "WTI",
+      "old": 98.53,
+      "new": 99.34,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "882767a982df3ba5da328e747e5321b46ea72af6"
+    },
+    {
+      "ts": "2026-10-20T15:25:46",
+      "date_row": "2026-10-20",
+      "code": "IRON_ORE",
+      "old": 807.0,
+      "new": 810.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "882767a982df3ba5da328e747e5321b46ea72af6"
+    },
+    {
+      "ts": "2026-10-20T15:25:46",
+      "date_row": "2026-10-20",
+      "code": "NICKEL_IRON",
+      "old": 1038.0,
+      "new": 1030.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "882767a982df3ba5da328e747e5321b46ea72af6"
     }
   ]
 }
