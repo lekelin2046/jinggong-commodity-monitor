@@ -22040,6 +22040,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "e3302d5696b23ea4de822d04ba3079bb53620902"
+    },
+    {
+      "ts": "2026-10-20T08:55:35",
+      "date_row": "2026-10-20",
+      "code": "WTI",
+      "old": 98.44,
+      "new": 98.53,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "1e1d72a520e1c86df2653654dd3fcf0dfe8ec39d"
     }
   ]
 }
