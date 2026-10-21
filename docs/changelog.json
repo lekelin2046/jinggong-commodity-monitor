@@ -22510,6 +22510,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "e013b91733369bf8a8d1cb36b698780fb342bc34"
+    },
+    {
+      "ts": "2026-10-21T15:44:40",
+      "date_row": "2026-10-21",
+      "code": "W",
+      "old": null,
+      "new": 740.0,
+      "source": "manual_xlsx",
+      "editor": "主人",
+      "commit": "dda4789cd3090b30cd7b5a37f71246fe95891d41"
     }
   ]
 }
