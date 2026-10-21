@@ -45,6 +45,7 @@ import datetime
 import json
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -143,8 +144,16 @@ def fetch_lz() -> dict[str, tuple[str, float]]:
     ok, msg = lz_check_login()
     print(f"  隆众登录态：{'✓' if ok else '✗'} {msg}")
     if not ok:
-        logger.error("隆众登录态不可用，本轮全部留空")
+        logger.error("隆众登录态不可用，本轮全部留空"
+                     "（修复：unset NODE_OPTIONS && python lz_login_setup.py"
+                     "，已支持免参数自动读 cookies/lz_credentials.json）")
         return {}
+    # 到期预警（2026-10-20 加）：token 寿命约 30 天，剩 <3 天时提前告警，
+    # 避免再次出现「两天数据全空才发现」。
+    _m = re.search(r"token 剩余\s*(-?[\d.]+)\s*天", msg)
+    if _m and float(_m.group(1)) < 3:
+        logger.warning("⚠ 隆众 token 仅剩 %s 天，请尽快重跑 lz_login_setup.py 重登",
+                       _m.group(1))
     out: dict[str, tuple[str, float]] = {}
     for lz_key, r in lz_fetch_daily().items():
         dk = LZ_KEY_MAP.get(lz_key)

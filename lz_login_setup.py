@@ -128,6 +128,20 @@ async def main():
     print("隆众资讯 登录引导 + 权限体检")
     print("=" * 72)
     print(f"profile: {PROFILE_DIR}  ({'新建' if new_profile else '复用已有（若已登录可跳过）'})")
+
+    # 未显式传账密 → 尝试读本地凭据（cookies/ 已被 .gitignore 忽略，永不入库）
+    # 2026-10-20 实测：带账密可全自动登录，未触发网易易盾验证码，无需人工介入。
+    if not (args.username and args.password):
+        cred = PROJECT / "cookies" / "lz_credentials.json"
+        if cred.exists():
+            try:
+                c = json.loads(cred.read_text(encoding="utf-8"))
+                args.username = args.username or c.get("username", "")
+                args.password = args.password or c.get("password", "")
+                if args.username and args.password:
+                    print(f"凭据: 已从 {cred.name} 自动读取（账号 {args.username}）")
+            except Exception as e:                    # noqa: BLE001
+                print(f"凭据: 读取失败（忽略，改为人工登录）：{e}")
     print()
 
     async with async_playwright() as p:
