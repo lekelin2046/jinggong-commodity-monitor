@@ -43,7 +43,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -72,6 +72,12 @@ POST_CHECK_DAYS = 5
 # 橡胶/助剂品种**整段留空**（符合铁律「抓不到就留空」，但历史上因此在
 # 2026-10-19 静默缺数三轮未被发现）。故提前 N 天就在推送信息与汇总里喊。
 TOKEN_WARN_DAYS = 5
+
+# 隆众历史缺口回补（每日收尾自动跑）。回看天数决定「最久能自愈到几天前」，
+# 取 7 是为了覆盖「周末 + 假期连休」又不至于每天都扫半个月。
+LZ_BACKFILL_DAYS = 7
+LZ_BACKFILL_TIMEOUT = 420
+PLASTIC_JSON = "docs/plastic/data.json"
 
 PLATES: List[Dict] = [
     {
@@ -120,6 +126,16 @@ PUSH_FILES = [
 # --------------------------------------------------------------------------
 # 补差判定
 # --------------------------------------------------------------------------
+def _filled(row: Dict) -> int:
+    """当日**真正有值**的品种数。
+
+    只数 key 会把「键在、值为 None」当成有数（2026-10-21 验证发现：
+    人为置 None 后 len 不变，缺口检测与回补增量双双失灵）。当前各脚本
+    都是「有值才写键」，故行为不变，但判据从此不依赖这个约定。
+    """
+    return sum(1 for v in (row or {}).values() if v is not None and v != "")
+
+
 def _json_incomplete(json_rel: str) -> Tuple[bool, str]:
     """当日数据是否疑似不完整（当日行缺失，或品种数低于近 N 日基线）。"""
     p = SCRIPT_DIR / json_rel
@@ -143,8 +159,8 @@ def _json_incomplete(json_rel: str) -> Tuple[bool, str]:
     if not history:
         return False, "无历史基线可比，视为正常"
 
-    baseline = max(len(data[d]) for d in history)
-    cur = len(data[today])
+    baseline = max(_filled(data[d]) for d in history)
+    cur = _filled(data[today])
     if cur < baseline:
         return True, f"当日 {cur} 个品种 < 近 {len(history)} 日基线 {baseline}（疑有留空）"
     return False, f"当日 {cur} 个品种 ≥ 近 {len(history)} 日基线 {baseline}"
@@ -206,10 +222,10 @@ def _recent_gaps(json_rel: str, plate_name: str) -> List[str]:
         return [f"{plate_name}：data 段为空"]
 
     days = sorted(data)[-POST_CHECK_DAYS:]
-    peak = max(len(data[d]) for d in days)
+    peak = max(_filled(data[d]) for d in days)
     out = []
     for d in days:
-        n = len(data[d])
+        n = _filled(data[d])
         if n < peak:
             out.append(f"{plate_name}：{d} 仅 {n} 个品种（窗口峰值 {peak}），疑有留空")
     return out
@@ -218,18 +234,19 @@ def _recent_gaps(json_rel: str, plate_name: str) -> List[str]:
 # --------------------------------------------------------------------------
 # 执行
 # --------------------------------------------------------------------------
-def _run_cmd(cmd: List[str]) -> Tuple[bool, float, str]:
+def _run_cmd(cmd: List[str], timeout: Optional[int] = None) -> Tuple[bool, float, str]:
     """运行单个子脚本，返回 (是否成功, 耗时秒, 输出摘要)。超时不算崩溃。"""
+    limit = timeout or STEP_TIMEOUT
     full = [PY, str(SCRIPT_DIR / cmd[0])] + list(cmd[1:])
     label = " ".join(cmd)
     t0 = time.time()
     try:
         r = subprocess.run(full, cwd=str(SCRIPT_DIR), env=ENV,
-                           capture_output=True, text=True, timeout=STEP_TIMEOUT)
+                           capture_output=True, text=True, timeout=limit)
     except subprocess.TimeoutExpired:
         dur = time.time() - t0
-        print(f"  ❌ {label} 超时（>{STEP_TIMEOUT}s），已终止")
-        return False, dur, f"超时（>{STEP_TIMEOUT}s）"
+        print(f"  ❌ {label} 超时（>{limit}s），已终止")
+        return False, dur, f"超时（>{limit}s）"
     except Exception as e:  # noqa: BLE001
         dur = time.time() - t0
         print(f"  ❌ {label} 启动失败：{type(e).__name__}: {e}")
@@ -245,6 +262,47 @@ def _run_cmd(cmd: List[str]) -> Tuple[bool, float, str]:
     for ln in tail:
         print(f"      | {ln.strip()[:150]}")
     return r.returncode == 0, dur, "\n".join(tail)
+
+
+# --------------------------------------------------------------------------
+# 隆众历史缺口回补（收尾自动跑，只填空、幂等）
+# --------------------------------------------------------------------------
+def _plastic_counts(days: int = LZ_BACKFILL_DAYS) -> Dict[str, int]:
+    """近 N 个数据日 → 当日有值品种数（用于算回补增量）。"""
+    p = SCRIPT_DIR / PLASTIC_JSON
+    try:
+        data = json.loads(p.read_text(encoding="utf-8")).get("data") or {}
+    except Exception:  # noqa: BLE001
+        return {}
+    return {d: _filled(data[d]) for d in sorted(data)[-days:]}
+
+
+def _lz_backfill() -> Tuple[str, int]:
+    """跑隆众回补脚本，返回 (状态, 回补点数)。失败只告警、不阻断整轮。
+
+    为什么每天都要跑：隆众日报接口只给**最新一条**，历史缺口只能走曲线接口
+    （`fetch_variety_curve`）。token 一旦到期（约 30 天），`daily_plastic_ext`
+    会把 16 个橡胶/助剂品种整段留空；等人工从图表上发现时，往往已过 2~3 天。
+    虽然曲线接口能补，但「补登后只能覆盖到最新报价日」的品种就永久缺了。
+    故每日收尾扫最近 LZ_BACKFILL_DAYS 天，把漏的一两天当天就补回来。
+
+    安全性：脚本**只填空、不覆盖已有值**（--refresh 才覆盖），逐日幂等；
+    退出码非 0 只记 warn，不影响其他板块与本轮推送。
+    """
+    script = SCRIPT_DIR / "tools" / "backfill_plastic_lz_days.py"
+    if not script.is_file():
+        return "warn", 0
+
+    before = _plastic_counts()
+    d_from = (date.today() - timedelta(days=LZ_BACKFILL_DAYS)).isoformat()
+    ok, _dur, _tail = _run_cmd(
+        ["tools/backfill_plastic_lz_days.py", "--from", d_from],
+        timeout=LZ_BACKFILL_TIMEOUT,
+    )
+    after = _plastic_counts()
+    # 只填空不覆盖 ⇒ 品种数增量即回补点数
+    added = sum(max(0, n - before.get(d, 0)) for d, n in after.items())
+    return ("ok" if ok else "warn"), added
 
 
 def _push_all(notes: List[str]) -> bool:
@@ -336,6 +394,21 @@ def main() -> int:
         results.append((plate["name"], "ok" if plate_ok else "fail",
                         "完成" if plate_ok else "有步骤失败", plate_dur))
 
+    # ===== 收尾：隆众历史缺口回补（只填空、幂等，失败不阻断）=====
+    backfill_note = ""
+    if not args.dry_run and any(p["key"] == "plastic" for p in plates):
+        print(f"\n{'-' * 72}")
+        print(f"隆众历史缺口回补（近 {LZ_BACKFILL_DAYS} 天，只填空不覆盖）")
+        print("-" * 72)
+        bf_state, bf_added = _lz_backfill()
+        if bf_state != "ok":
+            backfill_note = "隆众回补失败（详见日志）"
+        elif bf_added:
+            backfill_note = f"隆众回补 {bf_added} 点"
+        else:
+            backfill_note = "隆众无缺口"
+        print(f"  → {backfill_note}")
+
     # ===== 跑完复核当日完整度（只告警、不补跑，补跑交给 17:00 --check）=====
     data_issues: List[str] = []
     if not args.dry_run and not args.check:
@@ -359,6 +432,8 @@ def main() -> int:
         print("  （本轮无板块产出，不提交）")
     else:
         notes = [f"{n}：{s}（{d:.0f}s）" for n, s, _, d in results if s != "dry"]
+        if backfill_note:
+            notes.append(f"↺ {backfill_note}")
         # 告警一并写进提交信息，便于事后回溯「哪天开始缺数、缺多久」
         notes += [f"⚠ {w}" for w in warns]
         notes += [f"⚠ 不完整 {it}" for it in data_issues]
@@ -377,6 +452,8 @@ def main() -> int:
         icon = {"ok": "✓", "fail": "❌", "skip": "－", "dry": "·"}.get(st, "?")
         print(f"  {icon} {name:34s} {note}（{dur:.0f}s）")
     print(f"\n  成功 {ok_n} / 失败 {fail_n} / 跳过 {skip_n}")
+    if backfill_note:
+        print(f"  回补：{backfill_note}")
     if warns or data_issues:
         print(f"  ⚠️  告警 {len(warns) + len(data_issues)} 条：")
         for w in warns:
