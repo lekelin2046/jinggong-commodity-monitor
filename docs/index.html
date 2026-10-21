@@ -387,6 +387,9 @@ function renderSingleTrend() {
     keys = Object.keys(ALL_DATA).filter(k => k.startsWith(String(year))).sort();
   }
 
+  // 只保留「该品种当日有值」的日期（2026-10-21 改）：周末 / 节假日 / 整行为空的
+  // 日期不再占位，曲线不再在休市处断线（原先周六日空行会把线切成锯齿）。
+  keys = keys.filter(k => ALL_DATA[k] && ALL_DATA[k][code] != null && ALL_DATA[k][code] !== "");
   const labels = keys.map(k => { const p = k.split("-"); return parseInt(p[1]) + "/" + parseInt(p[2]); });
   const points = keys.map(k => ALL_DATA[k] && ALL_DATA[k][code] != null ? ALL_DATA[k][code] : null);
   const unit = VARIETY_UNITS[code] || DEFAULT_UNIT;
@@ -424,7 +427,8 @@ function renderSingleTrend() {
       plugins: { tooltip: { mode: "index", intersect: false } },
       scales: {
         x: { title: { display: true, text: "日期" }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
-        y: { title: { display: true, text: "价格 (" + unit + ")" }, beginAtZero: false }
+        // grace：上下留 6% 余量，避免创新高的品种贴住绘图区顶边（像「突破上限被截断」）
+        y: { title: { display: true, text: "价格 (" + unit + ")" }, beginAtZero: false, grace: "6%" }
       }
     }
   });

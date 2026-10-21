@@ -554,7 +554,14 @@ function renderSingleTrend() {
   const codes = Array.from(MS_STATE.msTrend || []);
   const spanGaps = !!(document.getElementById("mtSpanGaps") || {}).checked;
 
-  const ds = allDataDates().filter(k => (!trendStart || k >= trendStart) && (!trendEnd || k <= trendEnd));
+  // 只保留「所选指标至少一个当日有值」的日期（2026-10-21 改）：
+  // 周末 / 节假日 / 整行为空的日期不再占位，曲线不再在休市处断线。
+  const ds = allDataDates().filter(k => {
+    if (trendStart && k < trendStart) return false;
+    if (trendEnd && k > trendEnd) return false;
+    const row = ALL_DATA[k];
+    return !!row && codes.some(c => row[c] != null && row[c] !== "");
+  });
   const order = [], buckets = new Map();
   ds.forEach(k => {
     const b = trendBucket(k);
@@ -618,7 +625,9 @@ function renderSingleTrend() {
       },
       scales: {
         x: { title: { display: true, text: "日期" }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
-        y: { title: { display: true, text: "价格 (" + unit + ")" }, beginAtZero: false }
+        // grace：上下留 6% 余量，避免创新高的品种（如 2026-10 的天然橡胶 RSS3）
+        // 贴住绘图区顶边，看起来像「突破表格上限」。
+        y: { title: { display: true, text: "价格 (" + unit + ")" }, beginAtZero: false, grace: "6%" }
       }
     }
   });

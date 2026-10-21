@@ -207,7 +207,21 @@
     var ctx = ctxRef;
     var anchor = ctx.dates[ctx.dates.length - 1];
     var cutoff = shiftDays(anchor, -rdef.days);
-    var win = ctx.dates.filter(function (d) { return d >= cutoff; });
+    // 横轴只保留「本组至少一个品种有值」的日期（2026-10-21 改）：
+    //   ① 周末 / 节假日 / 整行为空的日期不再占位 → 曲线不再在休市处断开；
+    //   ② 与统计口径一致（周/月均值本就只认有值日）。
+    //   注意：仅去掉「全组都无值」的日期；某品种单独缺值时仍保留该日期，
+    //   这时断线是真实信号，不能抹平。
+    var hasAny = function (d) {
+      var row = ctx.data ? ctx.data[d] : null;
+      if (!row) return false;
+      for (var ci = 0; ci < codes.length; ci++) {
+        var cv = row[codes[ci]];
+        if (cv !== null && cv !== undefined && cv !== "" && isFinite(cv)) return true;
+      }
+      return false;
+    };
+    var win = ctx.dates.filter(function (d) { return d >= cutoff && hasAny(d); });
 
     // 横轴标签：跨度 ≥ 1 年时带年份，否则 M/D（否则多年数据会出现 "7/1" 这种年份歧义）
     var multiYear = false;
@@ -274,7 +288,9 @@
         },
         scales: {
           x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
-          y: { beginAtZero: false, title: { display: true, text: "价格 (" + (ctx.units[codes[0]] || ctx.defaultUnit) + ")" } }
+          // grace：上下各留 6% 余量。原先无余量时，创新高的品种（如 2026-10 的
+          // 天然橡胶 RSS3 触 26,000）会贴着绘图区顶边，看起来像「突破上限被截断」。
+          y: { beginAtZero: false, grace: "6%", title: { display: true, text: "价格 (" + (ctx.units[codes[0]] || ctx.defaultUnit) + ")" } }
         }
       }
     });

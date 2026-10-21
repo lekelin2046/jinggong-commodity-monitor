@@ -64,6 +64,15 @@ STEP_TIMEOUT = 900
 # 补差基线：最近 N 个交易日
 BASELINE_DAYS = 10
 
+# 跑完后复核的窗口（有数据日）。取 5 是为了「漏一天能在当天或次日被发现」，
+# 又不至于把上周的个别缺值天天报一遍。
+POST_CHECK_DAYS = 5
+
+# 凭证到期预警阈值（天）。隆众 token 到期后 daily_plastic_ext 会对 16 个
+# 橡胶/助剂品种**整段留空**（符合铁律「抓不到就留空」，但历史上因此在
+# 2026-10-19 静默缺数三轮未被发现）。故提前 N 天就在推送信息与汇总里喊。
+TOKEN_WARN_DAYS = 5
+
 PLATES: List[Dict] = [
     {
         "key": "jinggong",
@@ -139,6 +148,71 @@ def _json_incomplete(json_rel: str) -> Tuple[bool, str]:
     if cur < baseline:
         return True, f"当日 {cur} 个品种 < 近 {len(history)} 日基线 {baseline}（疑有留空）"
     return False, f"当日 {cur} 个品种 ≥ 近 {len(history)} 日基线 {baseline}"
+
+
+def _credential_warnings() -> List[str]:
+    """凭证到期预警（只提示，不阻断）。目前只有隆众是「token 到期即静默留空」的源。"""
+    warns: List[str] = []
+    try:
+        from jinggong_monitor.lz_price_center import token_expiry  # noqa: E402
+
+        exp = token_expiry()
+        if exp:
+            days = (exp - time.time()) / 86400
+            if days <= TOKEN_WARN_DAYS:
+                state = "已过期" if days <= 0 else f"剩余 {days:.1f} 天"
+                warns.append(
+                    f"隆众 token {state} → 请重跑 lz_login_setup.py"
+                    f"（否则橡胶 16 品种将整段留空）"
+                )
+    except Exception as e:  # noqa: BLE001
+        warns.append(f"隆众 token 体检失败：{type(e).__name__}: {e}")
+    return warns
+
+
+def _post_check(plates: List[Dict]) -> List[str]:
+    """跑完后复核每个 json 板块「近几日」的完整度。失败不阻断，只进告警。
+
+    为什么要看近几日而不只看当日：2026-10-17 隆众 token 到期后，10-19 那轮
+    照常「✓ 完成」并推送（当日有行、只是品种大半为空），直到三天后人工
+    看图表才发现。故此处以「近 POST_CHECK_DAYS 个有数据日」为窗口，
+    任一日的品种数低于窗口内峰值即视为有留空。
+
+    与 --check 模式的判据同源，但此处**不做补跑**，只要求「看得到」。
+    """
+    issues: List[str] = []
+    for p in plates:
+        if p.get("check") != "json":
+            continue
+        try:
+            issues.extend(_recent_gaps(p["json"], p["name"]))
+        except Exception as e:  # noqa: BLE001
+            issues.append(f"{p['name']}：完整性检查异常 {type(e).__name__}: {e}")
+    return issues
+
+
+def _recent_gaps(json_rel: str, plate_name: str) -> List[str]:
+    """近 POST_CHECK_DAYS 个有数据日里，品种数低于窗口峰值的日子。"""
+    p = SCRIPT_DIR / json_rel
+    if not p.is_file():
+        return [f"{plate_name}：数据文件不存在（{json_rel}）"]
+    try:
+        doc = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001
+        return [f"{plate_name}：数据文件解析失败 {type(e).__name__}: {e}"]
+
+    data = doc.get("data") or {}
+    if not data:
+        return [f"{plate_name}：data 段为空"]
+
+    days = sorted(data)[-POST_CHECK_DAYS:]
+    peak = max(len(data[d]) for d in days)
+    out = []
+    for d in days:
+        n = len(data[d])
+        if n < peak:
+            out.append(f"{plate_name}：{d} 仅 {n} 个品种（窗口峰值 {peak}），疑有留空")
+    return out
 
 
 # --------------------------------------------------------------------------
@@ -222,6 +296,13 @@ def main() -> int:
     pushed = False
     total_t0 = time.time()
 
+    # 凭证预检：到期预警要在开跑前就喊出来（跑完才发现就晚了）
+    warns = _credential_warnings()
+    if warns:
+        print()
+        for w in warns:
+            print(f"  ⚠️  {w}")
+
     for idx, plate in enumerate(plates, 1):
         print(f"\n{'-' * 72}")
         print(f"[{idx}/{len(plates)}] {plate['name']}")
@@ -255,6 +336,17 @@ def main() -> int:
         results.append((plate["name"], "ok" if plate_ok else "fail",
                         "完成" if plate_ok else "有步骤失败", plate_dur))
 
+    # ===== 跑完复核当日完整度（只告警、不补跑，补跑交给 17:00 --check）=====
+    data_issues: List[str] = []
+    if not args.dry_run and not args.check:
+        data_issues = _post_check(plates)
+        if data_issues:
+            print(f"\n{'!' * 72}")
+            print("⚠️  数据完整度复核未通过（本轮有留空，17:00 --check 会再补一次）")
+            print(f"{'!' * 72}")
+            for it in data_issues:
+                print(f"  · {it}")
+
     # ===== 统一推送 =====
     print(f"\n{'=' * 72}")
     print("统一推送")
@@ -267,6 +359,9 @@ def main() -> int:
         print("  （本轮无板块产出，不提交）")
     else:
         notes = [f"{n}：{s}（{d:.0f}s）" for n, s, _, d in results if s != "dry"]
+        # 告警一并写进提交信息，便于事后回溯「哪天开始缺数、缺多久」
+        notes += [f"⚠ {w}" for w in warns]
+        notes += [f"⚠ 不完整 {it}" for it in data_issues]
         pushed = _push_all(notes) if notes else False
 
     # ===== 汇总 =====
@@ -282,6 +377,12 @@ def main() -> int:
         icon = {"ok": "✓", "fail": "❌", "skip": "－", "dry": "·"}.get(st, "?")
         print(f"  {icon} {name:34s} {note}（{dur:.0f}s）")
     print(f"\n  成功 {ok_n} / 失败 {fail_n} / 跳过 {skip_n}")
+    if warns or data_issues:
+        print(f"  ⚠️  告警 {len(warns) + len(data_issues)} 条：")
+        for w in warns:
+            print(f"     - {w}")
+        for it in data_issues:
+            print(f"     - 不完整 {it}")
     if not args.dry_run:
         print(f"  推送：{'✅ 已推送' if pushed else '❌ 未推送或失败'}")
     print()
