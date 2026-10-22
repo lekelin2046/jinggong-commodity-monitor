@@ -305,6 +305,41 @@ def _lz_backfill() -> Tuple[str, int]:
     return ("ok" if ok else "warn"), added
 
 
+def _tungsten_pending() -> str:
+    """当日钨粉(W)是否仍「已存证官方图、待视觉确认」。返回提示串（空串=无需关注）。
+
+    背景（2026-10-22）：中钨在线**栏目页文章列表**已停更，但官方每日报价表
+    图片仍按日发布（URL 规则固定）。`ChinatungstenFetcher.fetch()` 在原文章
+    路径取不到时会自动下载该图存证并抛错——数值**不由程序猜**（水印压行、
+    OCR 结构性不可靠），须视觉读取后经 `refetch_tungsten_fill.py --price` 写入。
+
+    这里只做「把待办喊出来」：15:00 常因官方图尚未上传（实测 14:00~15:26 才发）
+    而留空，17:00 `--check` 再取一次；若仍存证未回填，就在汇总与推送信息里
+    明确列出图路径与命令，避免像 10-20~10-22 那样静默留空无人察觉。
+    """
+    today = date.today()
+    try:
+        doc = json.loads((SCRIPT_DIR / "docs/data.json").read_text(encoding="utf-8"))
+        w = ((doc.get("data") or {}).get(today.isoformat()) or {}).get("W")
+    except Exception as e:  # noqa: BLE001
+        return f"钨粉状态检查失败：{type(e).__name__}: {e}"
+
+    if w not in (None, ""):
+        return ""
+
+    try:
+        from jinggong_monitor.tungsten_official import fill_command, pending_evidence
+    except Exception as e:  # noqa: BLE001
+        return f"钨粉待办模块不可用：{type(e).__name__}: {e}"
+
+    img = pending_evidence(today)
+    if img is not None:
+        return (f"钨粉 W 待视觉确认：官方报价表已存证 {img}。"
+                f"读取图内 Tungsten Powder 99.9% 的 Price(Domestic) 后执行 "
+                f"{fill_command(today)}")
+    return "钨粉 W 留空，且官方报价表当日不可得（可能未发布）→ 按铁律留空"
+
+
 def _push_all(notes: List[str]) -> bool:
     """统一提交并推送一次。"""
     try:
@@ -409,6 +444,16 @@ def main() -> int:
             backfill_note = "隆众无缺口"
         print(f"  → {backfill_note}")
 
+    # ===== 钨粉待视觉确认（官方图已存证但未取数，需读图后回填）=====
+    tungsten_note = ""
+    if not args.dry_run and any(p["key"] == "jinggong" for p in plates):
+        tungsten_note = _tungsten_pending()
+        if tungsten_note:
+            print(f"\n{'-' * 72}")
+            print("钨粉(W) 待办")
+            print("-" * 72)
+            print(f"  ⚠️  {tungsten_note}")
+
     # ===== 跑完复核当日完整度（只告警、不补跑，补跑交给 17:00 --check）=====
     data_issues: List[str] = []
     if not args.dry_run and not args.check:
@@ -437,6 +482,8 @@ def main() -> int:
         # 告警一并写进提交信息，便于事后回溯「哪天开始缺数、缺多久」
         notes += [f"⚠ {w}" for w in warns]
         notes += [f"⚠ 不完整 {it}" for it in data_issues]
+        if tungsten_note:
+            notes.append(f"⚠ {tungsten_note}")
         pushed = _push_all(notes) if notes else False
 
     # ===== 汇总 =====
@@ -454,6 +501,8 @@ def main() -> int:
     print(f"\n  成功 {ok_n} / 失败 {fail_n} / 跳过 {skip_n}")
     if backfill_note:
         print(f"  回补：{backfill_note}")
+    if tungsten_note:
+        print(f"  ⚠️  钨粉待办：{tungsten_note}")
     if warns or data_issues:
         print(f"  ⚠️  告警 {len(warns) + len(data_issues)} 条：")
         for w in warns:

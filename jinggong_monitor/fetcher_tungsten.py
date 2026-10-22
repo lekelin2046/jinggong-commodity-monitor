@@ -558,7 +558,71 @@ class ChinatungstenFetcher(BaseFetcher):
         return dated
 
     def fetch(self, target_date: Optional[str] = None) -> dict[str, float]:
-        """抓取钨系价格。
+        """抓取钨粉价格（入口编排：栏目页文章优先，官方报价表图兜底存证）。
+
+        2026-10-22 改造背景
+        -------------------
+        栏目页**文章列表**自 2026-10-20 起停止更新（中钨在线官方每日报价表
+        图片仍在按日发布），原实现只认「栏目页当日文章」→ W 连续静默留空。
+
+        现编排：
+          1. 先走原文章路径（HTML 报价表 > 图 OCR > 散文正则）。
+             👉 该路径能出值时最可靠，不动它的优先级，零回归。
+          2. 拿不到 → 下载**官方报价表图片**存证（`data/tungsten_evidence/`）。
+          3. 存证成功即抛 FetchError，detail 里带图路径与回填命令。
+             数值**不由程序猜**（该图水印压行，OCR 结构性不可靠），
+             交由视觉读取后 `refetch_tungsten_fill.py --price N` 写入。
+          4. 图也不可得（如 09-25/09-30 实测 404）→ 按铁律留空。
+
+        ⚠️ 发布时点：官方图常在北京 14:00~15:26 才上传，15:00 编排多半取不到，
+           由 17:00 `daily_all.py --check` 补差再取。
+        """
+        target = self._normalize_target_date(target_date)
+
+        try:
+            results = self._fetch_from_articles(target)
+        except FetchError as e:
+            primary = str(e.detail if hasattr(e, "detail") else e)
+            results = {}
+        else:
+            primary = ""
+
+        if results.get("W") is not None:
+            return results
+
+        # ── 兜底：官方报价表图片存证（换入口、不换源）─────────────────
+        from jinggong_monitor.tungsten_official import (
+            download_official_image, fill_command, official_image_url,
+        )
+
+        img = download_official_image(target)
+        if img is not None:
+            self._after_fetch(False)
+            self._raise(
+                f"栏目页路径未取到钨粉（{primary or '无值'}）；"
+                f"官方报价表图已存证 → {img}（{official_image_url(target)}）。"
+                f"该图水印压行、OCR 不可靠，请视觉读取 Tungsten Powder 99.9% 的 "
+                f"Price(Domestic) 后执行：{fill_command(target)}"
+            )
+        else:
+            self._after_fetch(False)
+            self._raise(
+                f"中钨在线当日无可用数据：{primary or '栏目页无当日文章'}；"
+                f"官方报价表图亦不可得（{official_image_url(target)}）。按铁律留空"
+            )
+        return {}
+
+    @staticmethod
+    def _normalize_target_date(target_date: Optional[object]) -> date:
+        """统一把 target_date 归一为 date（None → 今天）。"""
+        if target_date is None:
+            return date.today()
+        if isinstance(target_date, date):
+            return target_date
+        return date.fromisoformat(str(target_date)[:10])
+
+    def _fetch_from_articles(self, target: date) -> dict[str, float]:
+        """原文章路径：从栏目页当日文章中解析钨粉价（2026-10-08 版逻辑）。
 
         6/29 主人拍板：题目含「钨」的都要试，钨粉价格在文章正文里才计入。
         遍历栏目页前 5 篇文章，哪篇含「钨粉价格 X 元/千克」就用哪篇。
@@ -583,16 +647,8 @@ class ChinatungstenFetcher(BaseFetcher):
             pass  # 网络异常交给后续正常流程处理
 
         # 1. 从栏目页拿多篇含「钨」的文章 URL（带发布日期过滤）
-        #    2026-09-30 加固：target_date（默认今天）之外的旧文章一律跳过，
+        #    2026-09-30 加固：target（默认今天）之外的旧文章一律跳过，
         #    防止当日文章未上线时把昨日价写进当日行。
-        target: date
-        if target_date is None:
-            target = date.today()
-        elif isinstance(target_date, date):
-            target = target_date
-        else:
-            target = date.fromisoformat(str(target_date))
-
         candidates = self._find_dated_candidate_articles(limit=5)
         if not candidates:
             # 栏目页不可用或结构变化导致无法解析发布日期。
