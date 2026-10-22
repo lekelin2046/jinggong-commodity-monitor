@@ -22520,6 +22520,16 @@
       "source": "manual_xlsx",
       "editor": "主人",
       "commit": "dda4789cd3090b30cd7b5a37f71246fe95891d41"
+    },
+    {
+      "ts": "2026-10-22T09:02:56",
+      "date_row": "2026-10-21",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3031.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "ba4cbbc407053cf5d4ca70bfc9ce7dfdd9d68b57"
     }
   ]
 }
