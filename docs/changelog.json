@@ -23030,6 +23030,36 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "8c4cb79032f24632e561d2d970b51c96f2f3704c"
+    },
+    {
+      "ts": "2026-10-23T17:14:18",
+      "date_row": "2026-10-23",
+      "code": "WTI",
+      "old": 100.84,
+      "new": 100.3,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "1f44538e1dcb26252ce5f7fad0e45754c2b19bb7"
+    },
+    {
+      "ts": "2026-10-23T17:24:33",
+      "date_row": "2026-10-23",
+      "code": "W",
+      "old": null,
+      "new": 750.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "1f44538e1dcb26252ce5f7fad0e45754c2b19bb7"
+    },
+    {
+      "ts": "2026-10-23T17:24:33",
+      "date_row": "2026-10-23",
+      "code": "WTI",
+      "old": 100.3,
+      "new": 100.99,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "1f44538e1dcb26252ce5f7fad0e45754c2b19bb7"
     }
   ]
 }
