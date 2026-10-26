@@ -252,6 +252,27 @@ _JS_MAND_TABLE = """
 }
 """
 
+# 目标编号行等待与重试参数（2026-10-26 引入，见 fetch_sci99_mand_async 注释）
+_MAND_WAIT_MS = 12000       # 单次页面「等待目标编号行出现」的上限
+_MAND_RETRY = 3             # 最多尝试次数（含首次）
+
+
+async def _wait_rows_for(page, vid, timeout_ms: int = _MAND_WAIT_MS,
+                         poll_ms: int = 500) -> List[List[str]]:
+    """轮询表格，直到出现「首列 == 目标编号」的行为止，返回最后一次快照。
+
+    替代原先「固定 sleep 后取一次」的做法，消除页面渲染竞态导致的空结果。
+    超时未出现也返回最后快照，由上层 parse_mand_row 判定命中与否。
+    """
+    target = str(vid)
+    rows: List[List[str]] = []
+    for _ in range(max(1, timeout_ms // poll_ms)):
+        rows = await page.evaluate(_JS_MAND_TABLE)
+        if any(r and str(r[0]).strip() == target for r in rows):
+            return rows
+        await page.wait_for_timeout(poll_ms)
+    return rows
+
 
 def _cell(row: List[str], key: str) -> str:
     i = _MAND_COLS[key]
@@ -366,17 +387,36 @@ async def fetch_sci99_mand_async(targets=None, wait_ms: int = 3000,
 
         for code, vid, desc, scale in targets:
             url = SEARCH_URL.format(vid=vid)
-            try:
-                await page.goto(url, timeout=60000, wait_until="domcontentloaded")
-                await page.wait_for_timeout(wait_ms)
-                rows = await page.evaluate(_JS_MAND_TABLE)
-            except Exception as e:                               # noqa: BLE001
-                print(f"  [卓创] {code}: 页面加载失败 ({type(e).__name__}: {e})")
-                continue
+            hit = None
+            load_err = None
+            # 2026-10-26 修复：原「固定 sleep(wait_ms) 后取一次表格」存在渲染竞态——
+            # 结果行尚未渲染即快照，得 rows 只有表头 → parse 返回 None →
+            # 打印「页面未返回该编号行」静默留空。实测同一编号 2 分钟内连测
+            # 两次结果互相矛盾（一次成功、一次全缺），即典型竞态而非源方停更。
+            # 改为「轮询等待目标编号行出现 + 未命中退避重载重试」。
+            for attempt in range(1, _MAND_RETRY + 1):
+                try:
+                    await page.goto(url, timeout=60000, wait_until="domcontentloaded")
+                    if attempt == 1:
+                        await page.wait_for_timeout(min(wait_ms, 1500))
+                    rows = await _wait_rows_for(page, vid, timeout_ms=_MAND_WAIT_MS)
+                except Exception as e:                           # noqa: BLE001
+                    load_err = f"{type(e).__name__}: {e}"
+                    await page.wait_for_timeout(1500 * attempt)
+                    continue
 
-            hit = parse_mand_row(rows, vid, today)
+                hit = parse_mand_row(rows, vid, today)
+                if hit is not None:
+                    break                                        # 命中（含源方空值）
+                if attempt < _MAND_RETRY:
+                    print(f"  [卓创] {code}（编号 {vid}）: 第 {attempt} 次未取到该行"
+                          f"（表格 {len(rows)} 行），退避重载重试")
+                    await page.wait_for_timeout(1500 * attempt)
+
             if hit is None:
-                print(f"  [卓创] {code}（编号 {vid}）: 页面未返回该编号行 → 留空")
+                extra = f"；末次异常 {load_err}" if load_err else ""
+                print(f"  [卓创] {code}（编号 {vid}）: 页面未返回该编号行 "
+                      f"（已重试 {_MAND_RETRY} 次）→ 留空{extra}")
                 continue
             if hit["value"] is None:
                 print(f"  [卓创] {code}（编号 {vid}）: 源方无报价（{hit.get('note') or '空值'}）"
