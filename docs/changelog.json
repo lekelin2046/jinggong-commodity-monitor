@@ -23310,6 +23310,26 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "ce037086c46fab127952bec2bfc1b6615a46ff1c"
+    },
+    {
+      "ts": "2026-10-26T17:05:23",
+      "date_row": "2026-10-26",
+      "code": "WTI",
+      "old": 101.14,
+      "new": 100.85,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "0509c3b93bff9417c3fb747bb1ad88bc451c0d22"
+    },
+    {
+      "ts": "2026-10-26T17:05:23",
+      "date_row": "2026-10-26",
+      "code": "IRON_ORE",
+      "old": 793.0,
+      "new": 791.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "0509c3b93bff9417c3fb747bb1ad88bc451c0d22"
     }
   ]
 }
