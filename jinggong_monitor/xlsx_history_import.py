@@ -37,6 +37,7 @@ import sys
 
 from openpyxl import load_workbook
 
+from .safe_io import atomic_write_json
 from .trading_calendar import is_trading_day
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -343,10 +344,11 @@ def main(argv=None):
     doc["data"] = board
     doc["total_days"] = len(board)
     doc["last_updated"] = max(board)
-    with open(args.data, "w", encoding="utf-8") as f:
-        # 必须与 export_excel_to_json.py 一致：1 空格缩进、无尾换行，
-        # 否则整文件重排、diff 失真（已实测往返字节一致）
-        json.dump(doc, f, ensure_ascii=False, indent=1)
+    # 必须与 export_excel_to_json.py 一致：1 空格缩进、无尾换行，
+    # 否则整文件重排、diff 失真（已实测往返字节一致）。
+    # 走 safe_io 原子写（tmp → fsync → os.replace）；本节已在上方 shutil 备份，
+    # 故 backup=False 避免重复备份。
+    atomic_write_json(args.data, doc, indent=1, ensure_ascii=False, backup=False)
     print(f"✓ 写入完成：新增 {added} 个数据点 | 覆盖 {sum(len(v) for v in plan.values()) - added} 个"
           f" | 共 {len(board)} 天 | 最新 {doc['last_updated']}")
     return 0
