@@ -24120,6 +24120,16 @@
       "source": "auto_cron",
       "editor": "中钨在线官方报价表",
       "commit": "68aebe3aae1d129dc11f984385974b0b73bff973"
+    },
+    {
+      "ts": "2026-10-30T09:16:46",
+      "date_row": "2026-10-29",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3071.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "86c8e1231f5156c9cbe7ff478e050f453c77bf1e"
     }
   ]
 }
