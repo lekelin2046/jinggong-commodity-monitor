@@ -50,6 +50,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 import openpyxl  # noqa: E402
 
 from changelog import record_changes, current_commit_sha, SOURCE_AUTO_CRON  # noqa: E402
+from jinggong_monitor.safe_io import atomic_save_workbook, atomic_write_text  # noqa: E402
 
 EXCEL_PATH = SCRIPT_DIR / "2026年有色金属市场价格.xlsx"
 SHEET_NAME = "日均价（2026年市场）"
@@ -134,7 +135,7 @@ def fetch_month_table(year: int, month: int) -> dict:
         raw = _get(page).decode("utf-8", "ignore")
         if "<table" not in raw.lower():
             raise RuntimeError(f"抓取内容不像 HTML（前 80 字：{raw[:80]!r}）")
-        cache.write_text(raw, encoding="utf-8")
+        atomic_write_text(cache, raw, encoding="utf-8")
         print(f"  已抓取 {page} → 缓存 {cache.name}")
 
     out = {}
@@ -272,9 +273,8 @@ def main():
     for r, day, old, off in fixes:
         ws.cell(r, LME_COL).value = off
         changes.append({"date_row": day, "code": CODE, "old": old, "new": off})
-    wb.save(EXCEL_PATH)
+    atomic_save_workbook(wb, EXCEL_PATH)
     print(f"  ✅ 已写入 Excel，{len(changes)} 个单元格")
-
     n = record_changes(changes, source=SOURCE_AUTO_CRON, editor="—",
                        commit=current_commit_sha(str(SCRIPT_DIR)))
     print(f"  📝 变更留痕 {n} 条")
@@ -286,7 +286,11 @@ def main():
         print("  --no-push：已导出，未推送。")
         return 0
 
-    r = subprocess.run(["git"] + ["add", "docs/data.json", "docs/changelog.json"],
+    # 月度源表缓存一并入库（与 2026-09 缓存同惯例，便于日后复核）
+    add_paths = ["docs/data.json", "docs/changelog.json",
+                 f"sources/lme_month/cnal-lme-{y}-{mo:02d}.html"]
+    add_paths = [p for p in add_paths if (SCRIPT_DIR / p).exists()]
+    r = subprocess.run(["git"] + ["add"] + add_paths,
                        cwd=str(SCRIPT_DIR), capture_output=True, text=True)
     if r.returncode != 0:
         print(f"  ⚠️ git add 失败: {(r.stdout + r.stderr).strip()}")
