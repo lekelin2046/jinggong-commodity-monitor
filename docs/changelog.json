@@ -25490,6 +25490,36 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "f15c85b9847b432623397acd591640b92088aa6f"
+    },
+    {
+      "ts": "2026-11-05T17:04:35",
+      "date_row": "2026-11-05",
+      "code": "Wenxi_MG",
+      "old": 15300.0,
+      "new": 15250.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "4ffb959619028e8b1b5fd2832f6e83f8576538a1"
+    },
+    {
+      "ts": "2026-11-05T17:04:35",
+      "date_row": "2026-11-05",
+      "code": "WTI",
+      "old": 87.14,
+      "new": 88.22,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "4ffb959619028e8b1b5fd2832f6e83f8576538a1"
+    },
+    {
+      "ts": "2026-11-05T17:04:35",
+      "date_row": "2026-11-05",
+      "code": "IRON_ORE",
+      "old": 807.0,
+      "new": 812.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "4ffb959619028e8b1b5fd2832f6e83f8576538a1"
     }
   ]
 }
