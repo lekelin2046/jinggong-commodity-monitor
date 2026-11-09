@@ -120,6 +120,9 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .avg-table-wrap .chg-down{color:#16a34a;font-weight:600}
 .avg-table-wrap .chg-flat{color:#94a3b8}
 .avg-table-wrap .unit-tag{font-size:10px;color:#94a3b8;margin-left:2px}
+/* 同比列口径说明 */
+.yoy-note{font-size:11px;color:#64748b;margin:2px 0 8px;line-height:1.6}
+.yoy-note b{color:#475569;font-weight:600}
 
 /* ===== 预测置信区间标签 ===== */
 .prediction-note{font-size:11px;color:#64748b;margin-top:6px;line-height:1.5}
@@ -255,7 +258,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 
   <div class="card" data-page-node-id="Kmb9QFcCIjTip8TVPSFJg8">
     <div class="collapsible-header" onclick="toggleAvgTable()" data-page-node-id="FhmlHDpheW4iyuNIlV16t1">
-      <h3 data-page-node-id="SOCATd2cT3Hlg2OXlVLMlo">📋 月度均价明细表 <span class="badge badge-monthly" data-page-node-id="TAJKqQXz41PwB7ThqXKBZ7">月度</span> <span class="badge badge-cross" data-page-node-id="ZT8TlBLrZkzDIn0Qg1TjF5">含环比</span></h3>
+      <h3 data-page-node-id="SOCATd2cT3Hlg2OXlVLMlo">📋 月度均价明细表 <span class="badge badge-monthly" data-page-node-id="TAJKqQXz41PwB7ThqXKBZ7">月度</span> <span class="badge badge-cross" data-page-node-id="ZT8TlBLrZkzDIn0Qg1TjF5">含环比 · 同比</span></h3>
       <span class="toggle-icon" id="avgToggleIcon" data-page-node-id="owYtaeSvzBtUq6Qk4ut0XC">▶ 点击展开</span>
     </div>
     <div class="collapsible-body" id="avgTableBody" style="display:none" data-page-node-id="tmAbCoaAAAiHgoqwTb6IjT">
@@ -267,6 +270,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
           <div class="ms-foot" data-page-node-id="Z7WdA07mXUSsdEW7xikbO3"><button type="button" onclick="msAll('msAvg')" data-page-node-id="TRnTkEMCVKEEQEhrZZO3W5">全选</button><button type="button" onclick="msClear('msAvg')" data-page-node-id="LfvduFkSJCK9nXW7NHgCGb">清空</button></div>
         </div>
       </div>
+      <div class="yoy-note"><b>同比</b>＝最新月月均价较上年同月。仅「SMM A00铝 / A380铝合金」有 2025 年同口径日价（全年 12 个月，取自同源看板序列并通过口径校验）；其余品种无同口径去年价格，一律留空「—」，不估算、不沿用前值。</div>
       <div class="avg-table-wrap" id="avgTableContainer" data-page-node-id="ukTxbZMbQF4dgatUsGGorh"></div>
     </div>
   </div>
@@ -299,6 +303,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <script>
 // ===== DATA =====
 let ALL_DATA = {};
+// 同比基准：上年同月月均价，见 docs/mand/yoy_base.json（缺失时同比列全留空）
+let YOY_BASE = null;
 const VARIETY_NAMES = {"CU": "铜（上海地区现货）", "AG": "1#白银", "PCU": "磷铜合金", "AL_A00": "SMM A00铝", "AL_A380": "A380铝合金", "AL_ADC12": "SMM铝合金ADC12", "AL_ALSI12FE": "AlSi12(Fe)铝合金", "AL_A360": "A360铝合金", "PRND": "镨钕金属", "PA6": "PA6", "PA66": "PA66", "PP_T30S": "PP T30S", "PP_EP548R": "PP EP548R"};
 const VARIETY_UNITS = {"AG": "元/千克"};
 const VARIETY_SOURCES = {"CU": "长江有色网", "AG": "长江有色网", "PCU": "长江有色网", "AL_A00": "SMM 上海有色", "AL_A380": "SMM 上海有色", "AL_ADC12": "SMM 上海有色", "AL_ALSI12FE": "SMM 上海有色", "AL_A360": "SMM 上海有色", "PRND": "卓创资讯", "PA6": "卓创资讯", "PA66": "卓创资讯", "PP_T30S": "卓创资讯", "PP_EP548R": "卓创资讯"};
@@ -702,6 +708,15 @@ function renderKPIs(year, month) {
 }
 
 // ===== 月度均价明细表（具体单品多选） =====
+// 上年同月月均价：仅在「基准年恰好是所选年份的上一年」且该品种该月有同口径基准时返回数值
+function getYoyBaseAvg(code, year, monthKey) {
+  if (!YOY_BASE || !YOY_BASE.years) return null;
+  const series = YOY_BASE.years[String(year - 1)];
+  const cell = series && series[code] && series[code][monthKey];
+  if (!cell || typeof cell.avg !== "number" || !isFinite(cell.avg) || cell.avg <= 0) return null;
+  return cell.avg;
+}
+
 function renderMonthlyAvgTable(year, codesArg) {
   const stats = computeMonthlyStats(year);
   const months = Object.keys(stats).sort();
@@ -712,10 +727,10 @@ function renderMonthlyAvgTable(year, codesArg) {
 
   let html = '<table><thead><tr><th class="sticky-col">品种</th><th class="sticky-unit">单位</th>';
   months.forEach(m => { html += `<th${m === latestMonth ? ' class="latest-month"' : ''}>${parseInt(m)}月均价</th>`; });
-  html += '<th>环比</th></tr></thead><tbody>';
+  html += '<th>环比</th><th title="最新月月均价较上年同月；无上年同口径价格的品种留空">同比</th></tr></thead><tbody>';
 
   if (selected.length === 0) {
-    html += `<tr><td colspan="${months.length + 3}" class="no-data" style="padding:20px;text-align:center">请在上方选择品种</td></tr>`;
+    html += `<tr><td colspan="${months.length + 4}" class="no-data" style="padding:20px;text-align:center">请在上方选择品种</td></tr>`;
   } else {
     selected.forEach(code => {
       html += `<tr><td class="sticky-col"><span class="variety-name" data-code="${code}" data-source="${VARIETY_SOURCES[code] || ''}" onclick="selectSingleTrend('${code}')" title="点击查看日趋势">${VARIETY_NAMES[code]}</span>${marketTag(code)}</td><td class="sticky-unit">${VARIETY_UNITS[code] || DEFAULT_UNIT}</td>`;
@@ -733,6 +748,16 @@ function renderMonthlyAvgTable(year, codesArg) {
         const cls = chg > 0.1 ? "chg-up" : chg < -0.1 ? "chg-down" : "chg-flat";
         html += `<td class="${cls}">${chg >= 0 ? "+" : ""}${chg.toFixed(1)}%</td>`;
       } else { html += '<td class="chg-flat">—</td>'; }
+      // 同比：最新月 vs 上年同月；基准缺失一律留空（铁律：不估算、不沿用）
+      const baseAvg = getYoyBaseAvg(code, year, latestMonth);
+      if (latestAvg != null && baseAvg != null) {
+        const yoy = (latestAvg - baseAvg) / baseAvg * 100;
+        const ycls = yoy > 0.1 ? "chg-up" : yoy < -0.1 ? "chg-down" : "chg-flat";
+        const tip = `${year}年${parseInt(latestMonth)}月均价 ${Math.round(latestAvg).toLocaleString()} / ${year - 1}年同月均价 ${Math.round(baseAvg).toLocaleString()}（同源日价按月算术平均）`;
+        html += `<td class="${ycls}" title="${tip}">${yoy >= 0 ? "+" : ""}${yoy.toFixed(1)}%</td>`;
+      } else {
+        html += '<td class="chg-flat" title="无上年同口径同月价格，留空">—</td>';
+      }
       html += '</tr>';
     });
   }
@@ -1002,6 +1027,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("updatedTime").textContent = "数据加载失败: " + e.message + " (需通过 HTTP 服务器访问)";
     console.error("Failed to load data.json:", e);
     return;
+  }
+  // 同比基准为可选依赖：文件缺失/加载失败时同比列全部留空，不影响主看板
+  try {
+    const yoyResp = await fetch("yoy_base.json?ts=" + Date.now());
+    if (yoyResp.ok) YOY_BASE = await yoyResp.json();
+    else console.warn("yoy_base.json 未加载(HTTP " + yoyResp.status + ")，同比列留空");
+  } catch (e) {
+    console.warn("yoy_base.json 未加载，同比列留空:", e);
   }
   initSelectors();
   initNewDropdowns();
