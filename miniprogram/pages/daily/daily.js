@@ -3,6 +3,9 @@ const { VARIETY_NAMES, VARIETY_UNITS, DEFAULT_UNIT, VARIETY_SOURCES, CATEGORIES 
 const { formatDate, getMonthDays, isWorkingDay, fmtNum, computeMonthlyStats } = require('../../utils/stats.js');
 const sheet = require('../../utils/sheet.js');
 
+// 境外品种：跟随境外交易日历，国内休市日照常报价（与 docs/index.html 的 FOREIGN_CODES 对齐）
+const FOREIGN_CODES = ['LME_AL'];
+
 function chg(cur, prev) {
   if (cur == null || prev == null) return '';
   const c = (cur - prev) / prev * 100;
@@ -74,9 +77,12 @@ const page = {
     const allData = this.allData;
     const days = getMonthDays(year, month);
     const activeDays = days.filter(d => {
-      if (!isWorkingDay(d)) return false;
       const row = allData[formatDate(d)];
-      return row && Object.values(row).some(v => v != null);
+      if (!row || !Object.values(row).some(v => v != null)) return false;
+      if (isWorkingDay(d)) return true;
+      // 境外品种（LME 铝）在国内长假期间照常报价：这些日期也要生成列并计入月均，
+      // 否则月均被静默拉低（2026-10 国庆 5 天：3045.35 vs LME 全月 3061.11）。
+      return FOREIGN_CODES.some(code => row[code] != null);
     });
     if (activeDays.length === 0) { this.setData({ empty: true, loading: false }); return; }
 

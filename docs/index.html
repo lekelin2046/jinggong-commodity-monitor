@@ -58,6 +58,10 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .table-wrap td.sticky-right,.table-wrap th.sticky-right{position:sticky;right:0;z-index:1}
 .table-wrap thead th.sticky-right{z-index:3}
 .no-data{color:#94a3b8}
+/* 境外交易所报价日（国内休市）：淡蓝底，避免与国内工作日混淆 */
+.table-wrap th.foreign-col{background:#eff6ff;color:#1e40af}
+.table-wrap td.foreign-col{background:#f8fbff}
+.table-wrap td.foreign-col.no-data{color:#cbd5e1}
 /* 今日列绿色高亮 */
 .table-wrap td.today-col{background:#dcfce7;font-weight:600;color:#14532d}
 .table-wrap thead th.today-col{background:#bbf7d0;color:#14532d}
@@ -529,14 +533,28 @@ function updateMsLabel(panelId) {
 }
 
 // 月度横拉表
+// 境外品种清单：跟随境外交易日历，国内休市日照常有报价（与 gen_monthly_report.py 的 FOREIGN_COLS 对齐）
+const FOREIGN_CODES = ["LME_AL"];
+
 function renderTable(year, month) {
   const container = document.getElementById("tableContainer");
   const prefix = year + "-" + String(month).padStart(2,"0");
   const days = getMonthDays(year, month);
   const allCodes = CATEGORIES.flatMap(c => c.codes);
 
-  // 该月所有工作日（整月齐列，列宽固定；无数据格子显示 "-"，不随列数拉伸）
-  const workDays = days.filter(d => isWorkingDay(d));
+  // ⚠️ 境外品种（LME 铝）跟随英国交易日历，国内长假期间照常报价。
+  // 这些「国内休市但有境外报价」的日期必须也生成列、计入月均，
+  // 否则数据已入库却被静默隐藏：2026-10 国庆 5 个报价日未计入，
+  // 月均 3045.35 vs LME 全月 3061.11（差 15.76 USD/t），曾引发对俄定价分歧。
+  const foreignOnly = new Set();
+  days.forEach(function(d) {
+    const ds = formatDateLocal(d);
+    if (isWorkingDay(d)) return;
+    if (FOREIGN_CODES.some(code => ALL_DATA[ds] && ALL_DATA[ds][code] != null)) foreignOnly.add(ds);
+  });
+
+  // 该月所有需展示的日期（整月齐列，列宽固定；无数据格子显示 "-"，不随列数拉伸）
+  const workDays = days.filter(d => isWorkingDay(d) || foreignOnly.has(formatDateLocal(d)));
   if(workDays.length === 0) {
     container.innerHTML = '<p class="no-data" style="padding:20px">该月份无工作日</p>';
     return;
@@ -555,9 +573,15 @@ function renderTable(year, month) {
 
   let html = '<table>' + colgroup + '<thead><tr><th class="sticky-col">品种</th><th class="sticky-unit">单位</th>';
   workDays.forEach(function(d, i) {
+    const ds = formatDateLocal(d);
     const isToday = i === todayIdx;
-    const cls = isToday ? ' class="today-col"' : '';
-    html += '<th' + cls + '>' + (d.getMonth()+1) + '/' + d.getDate() + (isToday ? '<br><span style="font-size:9px;font-weight:700">今日</span>' : '') + '</th>';
+    const isForeign = foreignOnly.has(ds);
+    const cls = [];
+    if (isToday) cls.push("today-col");
+    if (isForeign) cls.push("foreign-col");
+    const clsAttr = cls.length ? ' class="' + cls.join(" ") + '"' : '';
+    const tip = isForeign ? ' title="境外交易所报价日（国内休市）"' : '';
+    html += '<th' + clsAttr + tip + '>' + (d.getMonth()+1) + '/' + d.getDate() + (isToday ? '<br><span style="font-size:9px;font-weight:700">今日</span>' : '') + '</th>';
   });
   html += '<th class="avg-col sticky-right">月均价</th></tr></thead><tbody>';
 
@@ -569,12 +593,16 @@ function renderTable(year, month) {
       workDays.forEach(function(d, i) {
         const ds = formatDateLocal(d);
         const v = ALL_DATA[ds] && ALL_DATA[ds][code] != null ? ALL_DATA[ds][code] : null;
-        const isToday = i === todayIdx;
+        const cls = [];
+        if (i === todayIdx) cls.push("today-col");
+        if (foreignOnly.has(ds)) cls.push("foreign-col");
+        if (v == null) cls.push("no-data");
+        const clsAttr = cls.length ? ' class="' + cls.join(" ") + '"' : '';
         if(v != null) {
           sum += v; cnt++;
-          html += '<td' + (isToday ? ' class="today-col"' : '') + '>' + (Number.isInteger(v) ? v : v.toFixed(2)) + '</td>';
+          html += '<td' + clsAttr + '>' + (Number.isInteger(v) ? v : v.toFixed(2)) + '</td>';
         } else {
-          html += '<td' + (isToday ? ' class="today-col no-data"' : ' class="no-data"') + '>-</td>';
+          html += '<td' + clsAttr + '>-</td>';
         }
       });
       const avg = cnt > 0 ? Math.round(sum/cnt * 100) / 100 : null;
