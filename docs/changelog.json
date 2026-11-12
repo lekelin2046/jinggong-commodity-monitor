@@ -26790,6 +26790,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "5115bc9be10475da4bf8f09253fe81f76e27a9f2"
+    },
+    {
+      "ts": "2026-11-12T15:55:16",
+      "date_row": "2026-11-12",
+      "code": "W",
+      "old": null,
+      "new": 850.0,
+      "source": "auto_cron",
+      "editor": "中钨在线官方报价表",
+      "commit": "dcc5d53ae567275730a11bac3d48df6a7ad30c45"
     }
   ]
 }
