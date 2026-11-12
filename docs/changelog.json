@@ -26800,6 +26800,36 @@
       "source": "auto_cron",
       "editor": "中钨在线官方报价表",
       "commit": "dcc5d53ae567275730a11bac3d48df6a7ad30c45"
+    },
+    {
+      "ts": "2026-11-12T15:59:26",
+      "date_row": "2026-11-12",
+      "code": "WTI",
+      "old": 86.79,
+      "new": 86.94,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "1d3871236a9be74fb71b615f3b259170c0ecce96"
+    },
+    {
+      "ts": "2026-11-12T15:59:26",
+      "date_row": "2026-11-12",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 796.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "1d3871236a9be74fb71b615f3b259170c0ecce96"
+    },
+    {
+      "ts": "2026-11-12T15:59:26",
+      "date_row": "2026-11-12",
+      "code": "COKE",
+      "old": null,
+      "new": 1940.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "1d3871236a9be74fb71b615f3b259170c0ecce96"
     }
   ]
 }
