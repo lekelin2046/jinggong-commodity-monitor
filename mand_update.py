@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """曼德热系统大宗原材料价格采集 → docs/mand/data.json
 
-品种（共 13 项，全部已接入）：
-  长江有色网 3 项 + SMM 上海有色 5 项 + 卓创资讯 5 项
+品种（共 14 项，全部已接入）：
+  长江有色网 3 项 + SMM 上海有色 6 项 + 卓创资讯 5 项
+  2026-11-19 新增黄金 AU（金99 现货，SMM 贵金属页，单位 元/克，按源报价日归位）
 
 2026-10-14 依曼德逐项确认的口径完成「未接入品种」优化：
   · 镨钕金属  源由亚洲金属网改为**卓创资讯**（亚洲金属网价格栏为会员权限，无账号）
@@ -54,6 +55,7 @@ SPEC = [
     ("AL_ADC12",    "SMM铝合金ADC12",     "SMM 上海有色", "元/吨",   "live"),
     ("AL_ALSI12FE", "AlSi12(Fe)铝合金",   "SMM 上海有色", "元/吨",   "live"),
     ("AL_A360",     "A360铝合金",         "SMM 上海有色", "元/吨",   "live"),
+    ("AU",          "黄金（金99）",       "SMM 上海有色", "元/克",   "live"),
     # ---- 卓创资讯（2026-10-14 依曼德确认口径接入，按品种编号精确定位）----
     ("PRND",        "镨钕金属",           "卓创资讯",     "元/吨",   "live"),
     ("PA6",         "PA6",                "卓创资讯",     "元/吨",   "live"),
@@ -94,23 +96,39 @@ def fetch_ccmn() -> dict:
 
 
 async def fetch_smm() -> dict:
-    """SMM 上海有色：A00铝 / A380 / ADC12 / AlSi12(Fe) / A360"""
+    """SMM 上海有色：A00铝 / A380 / ADC12 / AlSi12(Fe) / A360 + 黄金（金99）"""
     print("  [SMM] 抓取 ...", end=" ", flush=True)
     try:
         from jinggong_monitor.fetcher_smm import _fetch_smm_raw
         raw = await asyncio.wait_for(_fetch_smm_raw(), timeout=150)
     except asyncio.TimeoutError:
         print("超时（150s）")
-        return {}
+        raw = {}
     except Exception as e:
         print(f"失败：{e}")
-        return {}
+        raw = {}
     out = {}
     for src_key, code in SMM_KEY_MAP.items():
         if raw.get(src_key) is not None:
             out[code] = raw[src_key]
     missing = [c for c in SMM_KEY_MAP.values() if c not in out]
     print(f"{len(out)}/{len(SMM_KEY_MAP)}" + (f"  缺 {','.join(missing)}" if missing else ""))
+
+    # 黄金（金99）：独立抓 SMM 贵金属页，小数元/克 + 源报价日归位，失败不影响其他品种
+    try:
+        from jinggong_monitor.fetcher_smm import _fetch_smm_gold_raw
+        gold = await asyncio.wait_for(_fetch_smm_gold_raw(), timeout=90)
+        if gold.get("AU"):
+            out["AU"] = gold["AU"]
+            gd = gold["AU"]["date"]
+            print(f"  [SMM黄金] 1/1  金99 {gold['AU']['value']:.2f} 元/克 ←源报价日 {gd}"
+                  f"{'（非当日，按真实日期归位）' if gd != datetime.now().strftime('%Y-%m-%d') else ''}")
+        else:
+            print("  [SMM黄金] 0/1  金99 未抓到 → 留空")
+    except asyncio.TimeoutError:
+        print("  [SMM黄金] 超时（90s）")
+    except Exception as e:
+        print(f"  [SMM黄金] 失败：{type(e).__name__}: {e}")
     return out
 
 
@@ -168,7 +186,7 @@ def merge(prices: dict) -> dict:
         row[code] = val
 
     doc["source"] = "长江有色网 · SMM 上海有色 · 卓创资讯"
-    doc["unit"] = "元/吨（1#白银为 元/千克）"
+    doc["unit"] = "元/吨（1#白银为 元/千克；黄金为 元/克）"
     doc["last_updated"] = today
     doc["total_days"] = len(data)
     doc["varieties"] = [s[0] for s in SPEC]

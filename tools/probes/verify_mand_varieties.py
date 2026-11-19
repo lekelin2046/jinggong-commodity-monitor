@@ -3,7 +3,7 @@
 """verify_mand_varieties.py — 曼德看板 2026-10-14 品种口径优化的渲染验证
 
 断言（本地起静态服务 + Playwright 无头浏览器）：
-  ① badge 文案为「13 品种 · 13 项已接入（长江有色 3 / SMM 5 / 卓创 5）」
+  ① badge 文案为「14 品种 · 14 项已接入（长江有色 3 / SMM 6 / 卓创 5）」
   ② 全文不含已移除/已改源的品种字样：巴斯夫 / PP-TD20 / PP-TD40 / 亚洲金属网
   ③ 明细表含 5 个新品种行：镨钕金属 / PA6 / PA66 / PP T30S / PP EP548R
   ④ 市场口径标签正确显示：PrNd≥99% · 中国 ｜ BL3280H · 华南 ｜ EPR27 · 神马塑料
@@ -69,7 +69,7 @@ def main() -> int:
         flat = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
 
         # ① badge
-        badge = "13 品种 · 13 项已接入（长江有色 3 / SMM 5 / 卓创 5）"
+        badge = "14 品种 · 14 项已接入（长江有色 3 / SMM 6 / 卓创 5）"
         ok(badge in flat, f"② badge 文案 = {badge}" if badge in flat else f"✗ badge 文案缺失")
 
         # ② 已移除 / 已改源字样
@@ -91,42 +91,73 @@ def main() -> int:
             ok(tag in rowtext, f"④ 市场标签「{tag}」"
                if tag in rowtext else f"✗ 市场标签缺「{tag}」")
 
-        # ⑤ 当日取值（明细表数值无千分位；EP548R 按源报价日归位到 10-13）
-        for val in ("900000", "15000", "19000", "10730", "10775"):
-            ok(val in rowtext, f"⑤ 取值 {val} 已渲染" if val in rowtext
-               else f"✗ 取值 {val} 未渲染")
+        # ⑤ 当日取值（动态读 data.json 最新日，不再硬编码 10-14 快照，避免随数据推进而失效）
+        import json
+        doc = json.loads((ROOT / "docs" / "mand" / "data.json").read_text(encoding="utf-8"))
+        latest = max(doc["data"].keys())
+        latest_row = doc["data"][latest]
+        def _shown(v):
+            f = float(v)
+            return str(int(f)) if f.is_integer() else f"{f:.2f}"
+        shown_vals = [_shown(v) for v in latest_row.values()]
+        for val in shown_vals:
+            ok(val in rowtext, f"⑤ 最新日({latest})取值 {val} 已渲染" if val in rowtext
+               else f"✗ 最新日取值 {val} 未渲染")
 
-        # ⑤b 精确列校验：EP548R 落 10-13（源报价日），T30S 落 10-14（当日）
-        #     注意当日表头带「今日」后缀（"10/14\n今日"），须用前缀匹配
-        pos = page.evaluate("""() => {
+        # ⑤b 精确列校验：最新日期列，逐品种比对页面单元格数值与 data.json（含小数容差）
+        mmdd = latest[5:7] + "/" + latest[8:10]
+        pos = page.evaluate("""({mmdd, expect}) => {
           const wrap = document.querySelector('.table-wrap');
           const heads = [...wrap.querySelectorAll('thead th')].map(e => e.innerText.trim());
-          const i13 = heads.findIndex(h => h.indexOf('10/13') === 0);
-          const i14 = heads.findIndex(h => h.indexOf('10/14') === 0);
-          const out = {i13: i13, i14: i14};
+          const idx = heads.findIndex(h => h.indexOf(mmdd) === 0);
+          const out = {idx: idx, diffs: []};
+          if (idx < 0) return out;
           for (const tr of wrap.querySelectorAll('tbody tr')) {
-            const cells = [...tr.querySelectorAll('td')].map(e => e.innerText.trim());
-            const nm = cells[0] || '';
-            if (nm.indexOf('PP EP548R') >= 0) out.ep = [cells[i13], cells[i14]];
-            if (nm.indexOf('PP T30S') >= 0)  out.t30 = [cells[i13], cells[i14]];
+            const span = tr.querySelector('.variety-name');
+            if (!span) continue;
+            const code = span.dataset.code || '';
+            if (!(code in expect)) continue;
+            const tds = [...tr.querySelectorAll('td')].map(e => e.innerText.trim());
+            const got = parseFloat(String(tds[idx]).replace(/,/g, ''));
+            if (!isFinite(got) || Math.abs(got - expect[code]) > 0.005)
+              out.diffs.push(code + ':' + tds[idx] + '≠' + expect[code]);
           }
           return out;
-        }""")
-        ok(pos.get("ep") == ["10775", "-"],
-           f"⑤b PP EP548R 落 10-13 列（{pos.get('ep')}），未伪标为 10-14"
-           if pos.get("ep") == ["10775", "-"] else f"✗ PP EP548R 列位异常 {pos.get('ep')} idx={pos.get('i13')}/{pos.get('i14')}")
-        ok(pos.get("t30") == ["-", "10730"],
-           f"⑤b PP T30S 落 10-14 列（{pos.get('t30')}）"
-           if pos.get("t30") == ["-", "10730"] else f"✗ PP T30S 列位异常 {pos.get('t30')} idx={pos.get('i13')}/{pos.get('i14')}")
+        }""", {"mmdd": mmdd, "expect": latest_row})
+        ok(pos.get("idx", -1) >= 0, f"⑤b 最新日表头 {mmdd} 存在（idx={pos.get('idx')}）"
+           if pos.get("idx", -1) >= 0 else f"✗ 最新日表头 {mmdd} 未找到")
+        ok(not pos.get("diffs"), f"⑤b 最新日 {latest} 全品种列位数值一致（{len(latest_row)} 项）"
+           if not pos.get("diffs") else f"✗ 列位数值不符 {pos.get('diffs')}")
 
-        # ⑥ 分组
+        # ⑥ 黄金 AU（2026-11-19 新增）：明细表行 + 元/克单位 + 小数未被 Math.round 抹平
+        ok("黄金（金99）" in rowtext, "⑥ 明细表含黄金（金99）" if "黄金（金99）" in rowtext
+           else "✗ 明细表缺黄金（金99）")
+        # 金99 当日值 797.75 —— KPI/明细应显示两位小数，而非取整成 798
+        gold_view = page.evaluate("""() => {
+          const flat = document.body.innerText.replace(/\\s+/g, ' ');
+          return { hasDecimal: flat.indexOf('797.75') >= 0, hasRounded: /(^|\\D)798(\\D|$)/.test(flat) };
+        }""")
+        ok(gold_view["hasDecimal"], "⑥ 黄金小数 797.75 完整显示（未被取整）"
+           if gold_view["hasDecimal"] else f"✗ 黄金小数未显示 {gold_view}")
+        # 明细表黄金属元/克（非默认元/吨）
+        au_unit = page.evaluate("""() => {
+          for (const tr of document.querySelectorAll('table tr')) {
+            const tds = [...tr.querySelectorAll('td')].map(e => e.innerText.trim());
+            if (tds[0] && tds[0].indexOf('黄金') >= 0) return tds[1] || '';
+          }
+          return '';
+        }""")
+        ok(au_unit == "元/克", f"⑥ 黄金单位为元/克（实际 {au_unit}）"
+           if au_unit == "元/克" else f"✗ 黄金单位异常 {au_unit}")
+
+        # ⑦ 分组
         for grp in ("稀土金属", "工程塑料", "PP 聚丙烯"):
             ok(grp in rowtext, f"⑥ 分组「{grp}」" if grp in rowtext
                else f"✗ 分组缺「{grp}」")
 
-        # ⑦ 控制台
+        # ⑧ 控制台
         shown = [e for e in errors if "favicon" not in e.lower()]
-        ok(not shown, "⑦ 零 console 错误" if not shown else f"✗ console 错误 {shown[:3]}")
+        ok(not shown, "⑧ 零 console 错误" if not shown else f"✗ console 错误 {shown[:3]}")
 
         browser.close()
     httpd.shutdown()

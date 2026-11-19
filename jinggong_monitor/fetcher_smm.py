@@ -47,6 +47,8 @@ SMM_PAGES = {
     "alloy_chart": "https://hq.smm.cn/h5/aluminum-alloy-price-chart",
     # 2026-10-15 蜂巢汽车看板新增：铜频道（供 CU-CATH-1 / 1#电解铜）
     "copper": "https://hq.smm.cn/copper",
+    # 2026-11-19 曼德热系统看板新增：贵金属频道（供黄金 AU = 金99 现货，元/克）
+    "precious": "https://hq.smm.cn/precious-metals",
 }
 
 # 品种 → 页面 → 正则模式
@@ -176,6 +178,9 @@ _PRICE_TABLE_RE = re.compile(r"\d{4,6}~\d{4,6}")
 _PAGE_READY_RE: dict = {}
 for _cfg in SMM_VARIETIES.values():
     _PAGE_READY_RE.setdefault(_cfg["page"], []).append(re.compile(_cfg["pattern"]))
+# 黄金贵金属页：金99 是小数价格区间（815.35~815.35），通用 \d{4,6}~\d{4,6}
+# 就绪判据不匹配，需专用正则，否则每次都空轮询 8 次。
+_PAGE_READY_RE["precious"] = [re.compile(r"金99\s+\d+\.\d+~\d+\.\d+\s+\d+\.\d+")]
 
 
 async def _fetch_page_text(ctx, page_url: str, page_name: Optional[str] = None,
@@ -305,6 +310,75 @@ def _parse_prices(texts: dict) -> dict:
         else:
             logger.warning(f"  ❌ {variety}: 正则未匹配")
     return results
+
+
+# ============================================================
+# 黄金（AU，金99 现货）—— 曼德热系统看板 2026-11-19 新增
+# 口径：SMM 贵金属页「今日贵金属现货价格 → 黄金 → 金99」，单位 **元/克**。
+# 与其余 SMM 品种（整数 元/吨）不同：① 小数价格；② 源报价日常滞后一交易日，
+# 故必须返回 {"value": v, "date": "YYYY-MM-DD"} 供 mand_update.merge() 按源日归位，
+# 绝不伪标为抓取当日。独立于 SMM_VARIETIES，不影响精工/蜂巢共用的整数解析路径。
+# ============================================================
+_GOLD_RE = re.compile(
+    r"金99\s+([\d.]+)~([\d.]+)\s+([\d.]+)\s+[-\d.]+\s+元/克\s+(\d{1,2})-(\d{1,2})"
+)
+
+
+def _parse_gold(text: str) -> dict:
+    """解析贵金属页金99现货 → {"AU": {"value": 815.35, "date": "2026-11-18"}}
+
+    源报价日仅含 MM-DD，按「不得晚于今日」补年份；若落在未来（跨年 1 月初
+    仍显示去年 12 月日期），回退上一年。价目量级校验 100~5000 元/克。
+    """
+    m = _GOLD_RE.search(text or "")
+    if not m:
+        logger.warning("  ❌ 金99(AU): 正则未匹配")
+        return {}
+    try:
+        low, high, avg = float(m.group(1)), float(m.group(2)), float(m.group(3))
+        mm, dd = int(m.group(4)), int(m.group(5))
+    except ValueError:
+        logger.warning("  ⚠️ 金99(AU): 数值解析失败")
+        return {}
+    if not (low <= avg <= high and 100 <= avg <= 5000):
+        logger.warning(f"  ⚠️ 金99(AU) 价格异常: {low}~{high} avg={avg}，跳过")
+        return {}
+    today = datetime.now()
+    year = today.year
+    try:
+        src = datetime(year, mm, dd)
+        if src.date() > today.date():      # 跨年：今日 1 月初、源仍为去年 12 月
+            src = datetime(year - 1, mm, dd)
+        date_str = src.strftime("%Y-%m-%d")
+    except ValueError:
+        logger.warning(f"  ⚠️ 金99(AU) 源日期非法: {mm}-{dd}")
+        return {}
+    logger.info(f"  ✅ 金99(AU): {avg} 元/克, 源报价日 {date_str}")
+    return {"AU": {"value": avg, "date": date_str}}
+
+
+async def _fetch_smm_gold_raw() -> dict:
+    """独立抓 SMM 金99现货（元/克）。
+
+    单独开浏览器上下文抓 precious 页，复用现有 cookies。失败返回 {}，
+    由调用方（mand_update.fetch_smm）独立兜底，不影响其余 SMM 品种。
+    """
+    async with async_playwright() as p:
+        b = await p.chromium.launch(headless=True, args=["--no-sandbox"])
+        try:
+            ctx = await b.new_context()
+            if COOKIE_FILE.exists():
+                cookies = json.loads(COOKIE_FILE.read_text())
+                await ctx.add_cookies(cookies)
+                logger.info(f"[gold] 已加载 {len(cookies)} 个 cookies")
+            text = await _fetch_page_text(ctx, SMM_PAGES["precious"], "precious")
+            if "登录" in text[:500] and "欢迎您" not in text:
+                logger.warning("[gold] 疑似登录态失效，尝试重新登录")
+                if await _login_and_save_cookies(ctx):
+                    text = await _fetch_page_text(ctx, SMM_PAGES["precious"], "precious")
+            return _parse_gold(text)
+        finally:
+            await b.close()
 
 
 class SmmFetcher(BaseFetcher):
