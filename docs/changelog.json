@@ -28120,6 +28120,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "fbd7103cb3d4e67abaa5b59d0fc65cf1b17cb333"
+    },
+    {
+      "ts": "2026-11-20T09:20:01",
+      "date_row": "2026-11-19",
+      "code": "LME_AL",
+      "old": null,
+      "new": 3105.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "60a021377ab9627f0a1f3ab9060afc7b92f1fce0"
     }
   ]
 }
