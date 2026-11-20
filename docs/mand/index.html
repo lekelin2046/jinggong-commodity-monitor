@@ -100,6 +100,9 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .seg-btn{appearance:none;border:0;background:#fff;padding:6px 12px;font-size:13px;cursor:pointer;color:#475569;border-right:1px solid #e2e8f0}
 .seg-btn:last-child{border-right:0}
 .seg-btn.active{background:#2563eb;color:#fff;font-weight:600}
+/* 单品日趋势：平均水平线开关 */
+.trend-line-toggle{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#475569;cursor:pointer;user-select:none;padding:5px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#fff}
+.trend-line-toggle input{accent-color:#dc2626;cursor:pointer;margin:0}
 .trend-meta{font-size:12px;color:#64748b}
 .variety-name{cursor:pointer}
 .variety-name:hover{text-decoration:underline;color:#2563eb}
@@ -244,6 +247,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
         <button type="button" class="seg-btn" data-range="3month" onclick="setSingleTrendRange('3month')" data-page-node-id="MkSa12ijIamDZF99ktFMQH">近3月</button>
         <button type="button" class="seg-btn" data-range="ytd" onclick="setSingleTrendRange('ytd')" data-page-node-id="AAypwGlKxwPpD3CaOnTO4Z">今年</button>
       </div>
+      <label class="trend-line-toggle" title="叠加一条当前区间算术平均价水平线，作为价格中枢参考">
+        <input type="checkbox" id="singleTrendLineChk" checked onchange="renderSingleTrend()">平均水平线</label>
       <span id="singleTrendMeta" class="trend-meta" data-page-node-id="sHFvWNOPDM8mX9DXQK6FQK"></span>
     </div>
     <div class="chart-wrap" style="height:320px" data-page-node-id="f4O4UGe4yKxQFhHYfIUmVu"><canvas id="singleTrendChart" data-page-node-id="kAcEG8H14QDBp5hXeXryHe"></canvas></div>
@@ -434,20 +439,36 @@ function renderSingleTrend() {
   const canvas = document.getElementById("singleTrendChart");
   if (!canvas) return;
   if (window._singleTrendChart) window._singleTrendChart.destroy();
+
+  // 平均水平线：当前区间全部有效交易日的算术均价，红色实线贯穿全图（价格中枢参考）
+  const datasets = [{
+    label: VARIETY_NAMES[code] + " (" + unit + ")",
+    data: points,
+    borderColor: color,
+    backgroundColor: color + "18",
+    fill: true,
+    tension: 0.3,
+    pointRadius: 2, pointHoverRadius: 5, spanGaps: false, borderWidth: 2,
+  }];
+  const showAvg = document.getElementById("singleTrendLineChk")?.checked;
+  if (showAvg && valid.length > 0) {
+    const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+    datasets.push({
+      label: "均价 " + fmtPrice(avg), data: labels.map(() => avg),
+      borderColor: "#dc2626", backgroundColor: "transparent", borderWidth: 2,
+      pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0, spanGaps: false,
+    });
+    // 元信息补充均价数值（与红线同色）
+    if (metaEl) metaEl.innerHTML += ` · 均价 <b style="color:#dc2626">${fmtPrice(avg)}</b>`;
+  }
+
   window._singleTrendChart = new Chart(canvas, {
     type: "line",
-    data: { labels, datasets: [{
-      label: VARIETY_NAMES[code] + " (" + unit + ")",
-      data: points,
-      borderColor: color,
-      backgroundColor: color + "18",
-      fill: true,
-      tension: 0.3,
-      pointRadius: 2, pointHoverRadius: 5, spanGaps: false, borderWidth: 2,
-    }]},
+    data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { tooltip: { mode: "index", intersect: false } },
+      plugins: { tooltip: { mode: "index", intersect: false },
+        legend: { display: true, position: "bottom", labels: { boxWidth: 14, font: { size: 11 } } } },
       scales: {
         x: { title: { display: true, text: "日期" }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
         // grace：上下留 6% 余量，避免创新高的品种贴住绘图区顶边（像「突破上限被截断」）
