@@ -28630,6 +28630,16 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "82ef84786a3bfe4561ed3fbd25f4ec50c1f9414a"
+    },
+    {
+      "ts": "2026-11-23T17:06:41",
+      "date_row": "2026-11-23",
+      "code": "WTI",
+      "old": 82.91,
+      "new": 82.65,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "d84b6203eb682ef6aefa190f433d5826c0cb5c25"
     }
   ]
 }
