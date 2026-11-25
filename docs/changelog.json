@@ -29140,6 +29140,36 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "015f1028759ce03295465c1b9a6bb4fa1eae4aad"
+    },
+    {
+      "ts": "2026-11-25T15:20:13",
+      "date_row": "2026-11-25",
+      "code": "WTI",
+      "old": 80.4,
+      "new": 80.5,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "05a45bc3dd4130cb2fb5cfbebb92f58b012534cf"
+    },
+    {
+      "ts": "2026-11-25T15:20:13",
+      "date_row": "2026-11-25",
+      "code": "IRON_ORE",
+      "old": null,
+      "new": 799.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "05a45bc3dd4130cb2fb5cfbebb92f58b012534cf"
+    },
+    {
+      "ts": "2026-11-25T15:20:13",
+      "date_row": "2026-11-25",
+      "code": "COKE",
+      "old": null,
+      "new": 1890.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "05a45bc3dd4130cb2fb5cfbebb92f58b012534cf"
     }
   ]
 }
