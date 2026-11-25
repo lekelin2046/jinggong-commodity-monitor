@@ -4,8 +4,11 @@
   - 进口铁矿石 · 卡粉 65% 京唐港（河北）：https://steel.smm.cn/steel/090?city=1195
   - 一级冶金焦 · MT<7 全国均价：        https://steel.smm.cn/steel/106
 
-关键结论（2026-07-16 验证）：
-  1. 页面价格公开，**无需登录** SMM 账号（无登录 vs 登录结果完全一致）。
+关键结论：
+  1. ~~页面价格公开，无需登录~~ **2026-11-25 起失效**：steel.smm.cn 价格列改为登录可见，
+     匿名访问时价格单元格渲染为 `<span class="UnBuy_unlogin">` 锁图标、inner_text 里只剩空 tab，
+     导致 `_parse_iron/_parse_coke` 全部返回 None（静默留空、无异常）。
+     现改为复用 `data/smm_cookies.json` 登录态，并在解析失败时重新登录后重试一次。
   2. 数据靠 JS 动态渲染，urllib/requests 静态抓取拿不到，必须用 Playwright 渲染后取 inner_text。
   3. page.screenshot(full_page=True) 在 steel.smm.cn 会卡「等待字体加载」超时，
      故截图存证改用 CDP Page.captureScreenshot 直接截取渲染表面绕过。
@@ -20,6 +23,7 @@
 
 import asyncio
 import base64
+import json
 import os
 import re
 import sys
@@ -40,6 +44,38 @@ IRON_CODE = "IRON_ORE"
 COKE_CODE = "COKE"
 
 SHOT_DIR = PROJECT_DIR / "screenshots" / date.today().isoformat()
+
+# SMM 登录态（与 fetcher_smm 共用同一份 cookies）
+COOKIE_FILE = PROJECT_DIR / "data" / "smm_cookies.json"
+
+
+# ============================================================
+# 登录态（2026-11-25 起 steel.smm.cn 价格改为登录可见）
+# ============================================================
+async def _load_cookies(ctx) -> bool:
+    """加载已存的 SMM cookies；无文件或失败时返回 False（退回匿名访问）。"""
+    try:
+        if COOKIE_FILE.exists():
+            cookies = json.loads(COOKIE_FILE.read_text())
+            await ctx.add_cookies(cookies)
+            print(f"  [steel] 已加载 SMM cookies（{len(cookies)} 个）")
+            return True
+    except Exception as e:
+        print(f"  [steel] 加载 cookies 失败(忽略): {e}")
+    return False
+
+
+async def _relogin(ctx) -> bool:
+    """复用 fetcher_smm 的登录实现，登录成功后 cookies 会回写同一文件。"""
+    try:
+        from jinggong_monitor.fetcher_smm import _login_and_save_cookies
+
+        ok = await _login_and_save_cookies(ctx)
+        print(f"  [steel] SMM 重新登录{'成功' if ok else '失败'}")
+        return ok
+    except Exception as e:
+        print(f"  [steel] 重新登录异常: {e}")
+        return False
 
 
 # ============================================================
@@ -131,6 +167,7 @@ async def _run() -> dict:
         args=["--disable-blink-features=AutomationControlled", "--no-sandbox"],
     )
     ctx = await browser.new_context(viewport={"width": 1280, "height": 900})
+    await _load_cookies(ctx)
     page = await ctx.new_page()
 
     async def grab_until(url: str, needle: str) -> str:
@@ -147,6 +184,12 @@ async def _run() -> dict:
         # 1. 铁矿石
         iron_text = await grab_until(IRON_URL, "京唐港")
         v = _parse_iron(iron_text)
+        if not v:
+            # 2026-11-25 起价格登录可见：匿名访问表格行仍在但价格列空白 → 登录后重试一次
+            print("  [steel] 铁矿石未匹配（可能登录墙/页面改版）→ 尝试登录后重试")
+            if await _relogin(ctx):
+                iron_text = await grab_until(IRON_URL, "京唐港")
+                v = _parse_iron(iron_text)
         if v:
             result[IRON_CODE] = v
             print(f"  [steel] 铁矿石卡粉65%京唐港 = {v} 元/湿吨")
@@ -157,6 +200,11 @@ async def _run() -> dict:
         # 2. 冶金焦
         coke_text = await grab_until(COKE_URL, "MT<7")
         v = _parse_coke(coke_text)
+        if not v:
+            print("  [steel] 冶金焦未匹配（可能登录墙/页面改版）→ 尝试登录后重试")
+            if await _relogin(ctx):
+                coke_text = await grab_until(COKE_URL, "MT<7")
+                v = _parse_coke(coke_text)
         if v:
             result[COKE_CODE] = v
             print(f"  [steel] 一级冶金焦 MT<7 全国均价 = {v} 元/吨")
