@@ -29380,6 +29380,86 @@
       "source": "auto_cron",
       "editor": "—",
       "commit": "3828bc85b7d59411bf21debcd53f03af584a41e5"
+    },
+    {
+      "ts": "2026-11-26T15:24:42",
+      "date_row": "2026-11-26",
+      "code": "ADC12",
+      "old": null,
+      "new": 23300.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "177126089d44a480ca830d790062cdb378953421"
+    },
+    {
+      "ts": "2026-11-26T15:24:42",
+      "date_row": "2026-11-26",
+      "code": "A380",
+      "old": null,
+      "new": 25200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "177126089d44a480ca830d790062cdb378953421"
+    },
+    {
+      "ts": "2026-11-26T15:24:42",
+      "date_row": "2026-11-26",
+      "code": "AlSi9Cu3",
+      "old": null,
+      "new": 24200.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "177126089d44a480ca830d790062cdb378953421"
+    },
+    {
+      "ts": "2026-11-26T15:24:42",
+      "date_row": "2026-11-26",
+      "code": "A356",
+      "old": null,
+      "new": 23100.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "177126089d44a480ca830d790062cdb378953421"
+    },
+    {
+      "ts": "2026-11-26T15:24:42",
+      "date_row": "2026-11-26",
+      "code": "AM60B",
+      "old": null,
+      "new": 17300.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "177126089d44a480ca830d790062cdb378953421"
+    },
+    {
+      "ts": "2026-11-26T15:24:42",
+      "date_row": "2026-11-26",
+      "code": "AZ91D",
+      "old": null,
+      "new": 17500.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "177126089d44a480ca830d790062cdb378953421"
+    },
+    {
+      "ts": "2026-11-26T15:24:42",
+      "date_row": "2026-11-26",
+      "code": "WTI",
+      "old": 83.96,
+      "new": 83.68,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "177126089d44a480ca830d790062cdb378953421"
+    },
+    {
+      "ts": "2026-11-26T15:24:42",
+      "date_row": "2026-11-26",
+      "code": "ADC12_JAPAN_CIF",
+      "old": null,
+      "new": 2950.0,
+      "source": "auto_cron",
+      "editor": "—",
+      "commit": "177126089d44a480ca830d790062cdb378953421"
     }
   ]
 }
